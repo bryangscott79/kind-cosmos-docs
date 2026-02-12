@@ -3,7 +3,11 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/contexts/AuthContext";
+import ProtectedRoute from "@/components/ProtectedRoute";
 import Landing from "./pages/Landing";
+import Auth from "./pages/Auth";
+import Onboarding from "./pages/Onboarding";
 import IndustryDashboard from "./pages/IndustryDashboard";
 import IndustryDetail from "./pages/IndustryDetail";
 import SignalFeed from "./pages/SignalFeed";
@@ -21,17 +25,21 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route path="/industries" element={<IndustryDashboard />} />
-          <Route path="/industries/:slug" element={<IndustryDetail />} />
-          <Route path="/signals" element={<SignalFeed />} />
-          <Route path="/prospects" element={<Prospects />} />
-          <Route path="/pipeline" element={<Pipeline />} />
-          <Route path="/outreach" element={<Outreach />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AuthProvider>
+          <Routes>
+            <Route path="/" element={<Landing />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/industries" element={<ProtectedRoute><IndustryDashboard /></ProtectedRoute>} />
+            <Route path="/industries/:slug" element={<ProtectedRoute><IndustryDetail /></ProtectedRoute>} />
+            <Route path="/signals" element={<ProtectedRoute><SignalFeed /></ProtectedRoute>} />
+            <Route path="/prospects" element={<ProtectedRoute><Prospects /></ProtectedRoute>} />
+            <Route path="/pipeline" element={<ProtectedRoute><Pipeline /></ProtectedRoute>} />
+            <Route path="/outreach" element={<ProtectedRoute><Outreach /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

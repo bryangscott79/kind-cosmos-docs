@@ -20,11 +20,11 @@ export default function Landing() {
             <span className="text-xs font-medium text-brand-purple">.ai</span>
           </Link>
           <div className="flex items-center gap-4">
-            <Link to="/industries" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              Dashboard
+            <Link to="/auth" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              Sign In
             </Link>
             <Link
-              to="/industries"
+              to="/auth"
               className="rounded-md bg-gradient-to-r from-brand-blue to-brand-purple px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
             >
               Get Started
@@ -52,16 +52,16 @@ export default function Landing() {
           </p>
           <div className="mt-8 flex items-center justify-center gap-4">
             <Link
-              to="/industries"
+              to="/auth"
               className="inline-flex items-center gap-2 rounded-md bg-gradient-to-r from-brand-blue to-brand-purple px-6 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"
             >
-              Explore Industries <ArrowRight className="h-4 w-4" />
+              Get Started Free <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
               to="/industries"
               className="inline-flex items-center gap-2 rounded-md border border-border bg-card px-6 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-accent"
             >
-              Get Started
+              Explore Industries
             </Link>
           </div>
         </div>
