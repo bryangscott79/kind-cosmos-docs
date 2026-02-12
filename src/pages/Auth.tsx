@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Navigate } from "react-router-dom";
-import { Zap, Mail, Lock, User, ArrowRight } from "lucide-react";
+import { Mail, Lock, User, ArrowRight } from "lucide-react";
+import vigylLogo from "@/assets/vigyl-logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -74,8 +75,8 @@ export default function Auth() {
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-brand-blue to-brand-purple">
-            <Zap className="h-6 w-6 text-white" />
+          <div className="mx-auto mb-4">
+            <img src={vigylLogo} alt="VIGYL" className="h-10 mx-auto" />
           </div>
           <h1 className="text-2xl font-bold text-foreground">
             {mode === "login" ? "Welcome back" : "Create your account"}
