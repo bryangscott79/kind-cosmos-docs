@@ -57,10 +57,11 @@ export default function Outreach() {
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[280px_1fr_260px]">
+        {/* On mobile, prospect selector is a dropdown-style list */}
         {/* Left — Prospect Selector */}
         <div className="space-y-3">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Select Prospect</h3>
-          <div className="space-y-1.5 max-h-[calc(100vh-220px)] overflow-y-auto">
+          <div className="flex gap-2 overflow-x-auto pb-2 lg:flex-col lg:gap-1.5 lg:overflow-x-visible lg:overflow-y-auto lg:max-h-[calc(100vh-220px)] lg:pb-0">
             {prospects.map((p) => {
               const ind = industries.find((i) => i.id === p.industryId);
               const isSelected = p.id === selectedProspectId;
@@ -68,7 +69,7 @@ export default function Outreach() {
                 <button
                   key={p.id}
                   onClick={() => { setSelectedProspectId(p.id); setGeneratedContent(""); setGeneratedSubject(""); }}
-                  className={`w-full text-left rounded-md border p-3 transition-colors ${
+                  className={`shrink-0 text-left rounded-md border p-3 transition-colors lg:w-full min-w-[180px] lg:min-w-0 ${
                     isSelected ? "border-primary bg-primary/5" : "border-border bg-card hover:border-primary/20"
                   }`}
                 >
@@ -85,7 +86,7 @@ export default function Outreach() {
 
         {/* Center — Content Editor */}
         <div className="space-y-4">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {contentTypes.map((ct) => (
               <button
                 key={ct.value}
@@ -121,7 +122,7 @@ export default function Outreach() {
             />
           </div>
 
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <button
               onClick={handleGenerate}
               disabled={generating || !selectedProspect}

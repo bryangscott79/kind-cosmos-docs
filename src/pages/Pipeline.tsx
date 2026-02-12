@@ -49,14 +49,14 @@ export default function Pipeline() {
 
   return (
     <DashboardLayout>
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Pipeline</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Track prospects through your sales process
           </p>
         </div>
-        <button className="inline-flex items-center gap-1.5 rounded-md bg-gradient-to-r from-brand-blue to-brand-purple px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90">
+        <button className="inline-flex items-center justify-center gap-1.5 rounded-md bg-gradient-to-r from-brand-blue to-brand-purple px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90">
           <Plus className="h-4 w-4" /> Add Prospect
         </button>
       </div>

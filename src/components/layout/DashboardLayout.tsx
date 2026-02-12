@@ -5,8 +5,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-background">
       <AppSidebar />
-      <main className="pl-60">
-        <div className="mx-auto max-w-7xl px-6 py-6">
+      <main className="pt-14 md:pt-0 md:pl-60">
+        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 sm:py-6">
           {children}
         </div>
       </main>

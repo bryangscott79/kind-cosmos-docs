@@ -1,7 +1,8 @@
 import { Link, useLocation } from "react-router-dom";
-import { BarChart3, Radio, Users, Kanban, PenTool, Settings, Zap, LogOut, CreditCard, Lock, Shield } from "lucide-react";
+import { BarChart3, Radio, Users, Kanban, PenTool, Settings, Zap, LogOut, CreditCard, Lock, Shield, Menu, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { TIERS, hasAccess, FEATURE_ACCESS, TierKey } from "@/lib/tiers";
+import { useState, useEffect } from "react";
 
 const navItems = [
   { label: "Dashboard", path: "/industries", icon: BarChart3, feature: "industries" },
@@ -16,9 +17,15 @@ export default function AppSidebar() {
   const location = useLocation();
   const { tier, profile, signOut, isAdmin } = useAuth();
   const currentTierInfo = TIERS[tier];
+  const [mobileOpen, setMobileOpen] = useState(false);
 
-  return (
-    <aside className="fixed left-0 top-0 z-40 flex h-screen w-60 flex-col border-r border-border bg-sidebar">
+  // Close sidebar on route change
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [location.pathname]);
+
+  const sidebarContent = (
+    <>
       <Link to="/" className="flex items-center gap-2.5 px-5 py-5 border-b border-border">
         <div className="flex h-8 w-8 items-center justify-center rounded-md bg-gradient-to-br from-brand-blue to-brand-purple">
           <Zap className="h-4 w-4 text-white" />
@@ -27,7 +34,6 @@ export default function AppSidebar() {
         <span className="text-xs font-medium text-brand-purple">.ai</span>
       </Link>
 
-      {/* User info */}
       {profile?.company_name && (
         <div className="border-b border-border px-5 py-3">
           <p className="text-xs font-semibold text-foreground truncate">{profile.company_name}</p>
@@ -99,6 +105,49 @@ export default function AppSidebar() {
           <LogOut className="h-3.5 w-3.5" /> Sign Out
         </button>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Mobile top bar */}
+      <div className="fixed left-0 right-0 top-0 z-50 flex items-center justify-between border-b border-border bg-background px-4 py-3 md:hidden">
+        <Link to="/" className="flex items-center gap-2">
+          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-gradient-to-br from-brand-blue to-brand-purple">
+            <Zap className="h-3.5 w-3.5 text-white" />
+          </div>
+          <span className="text-base font-bold tracking-tight text-foreground">VIGYL</span>
+          <span className="text-xs font-medium text-brand-purple">.ai</span>
+        </Link>
+        <button
+          onClick={() => setMobileOpen(!mobileOpen)}
+          className="rounded-md p-2 text-foreground hover:bg-accent transition-colors"
+        >
+          {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </button>
+      </div>
+
+      {/* Mobile overlay */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-foreground/20 backdrop-blur-sm md:hidden"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      {/* Mobile slide-out drawer */}
+      <aside
+        className={`fixed left-0 top-0 z-50 flex h-screen w-64 flex-col border-r border-border bg-sidebar transition-transform duration-200 md:hidden ${
+          mobileOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        {sidebarContent}
+      </aside>
+
+      {/* Desktop sidebar */}
+      <aside className="fixed left-0 top-0 z-40 hidden h-screen w-60 flex-col border-r border-border bg-sidebar md:flex">
+        {sidebarContent}
+      </aside>
+    </>
   );
 }

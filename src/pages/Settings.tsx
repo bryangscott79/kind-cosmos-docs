@@ -24,14 +24,14 @@ export default function Settings() {
         <p className="mt-1 text-sm text-muted-foreground">Manage your account and preferences</p>
       </div>
 
-      <div className="mt-6 flex gap-6">
+      <div className="mt-6 flex flex-col gap-6 md:flex-row">
         {/* Sidebar */}
-        <div className="w-52 shrink-0 space-y-1">
+        <div className="flex gap-1 overflow-x-auto md:w-52 md:shrink-0 md:flex-col md:space-y-1 md:gap-0">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+              className={`flex shrink-0 items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors md:w-full ${
                 activeTab === tab.id
                   ? "bg-primary/10 text-primary"
                   : "text-muted-foreground hover:bg-secondary hover:text-foreground"
@@ -111,7 +111,7 @@ export default function Settings() {
               <div className="rounded-lg border border-border bg-card p-6">
                 <h3 className="text-sm font-semibold text-foreground mb-4">Signal Preferences</h3>
                 <p className="text-xs text-muted-foreground mb-3">Select the signal types most relevant to your business</p>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   {["Political", "Regulatory", "Economic", "Hiring", "Technology", "Supply Chain"].map((type) => (
                     <label key={type} className="flex items-center gap-2 rounded-md border border-border bg-background p-2.5 cursor-pointer hover:bg-accent transition-colors">
                       <input type="checkbox" defaultChecked className="rounded border-border text-primary focus:ring-primary" />
@@ -177,7 +177,7 @@ export default function Settings() {
                     Upgrade to Pro
                   </button>
                 </div>
-                <div className="mt-4 grid grid-cols-3 gap-3">
+                <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   {[
                     { name: "Pro", price: "$49/mo", features: ["Unlimited signals", "Prospect engine", "10 outreach/day"] },
                     { name: "Team", price: "$149/mo", features: ["Everything in Pro", "5 team members", "Shared pipeline"] },
