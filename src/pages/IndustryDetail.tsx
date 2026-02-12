@@ -250,7 +250,7 @@ export default function IndustryDetail() {
           </CollapsibleSection>
 
           <Link
-            to="/prospects"
+            to={`/prospects?industry=${industry.id}`}
             className="block w-full rounded-md bg-gradient-to-r from-brand-blue to-brand-purple px-4 py-2.5 text-center text-sm font-medium text-white transition-opacity hover:opacity-90"
           >
             Find Prospects in {industry.name}
