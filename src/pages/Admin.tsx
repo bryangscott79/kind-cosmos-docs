@@ -3,9 +3,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
 import { TIERS, TierKey } from "@/lib/tiers";
-import { Loader2, Shield, Crown, ArrowUpDown } from "lucide-react";
+import { Loader2, Shield, Crown, ArrowUpDown, UserPlus, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 interface AdminUser {
   id: string;
@@ -24,6 +26,8 @@ export default function Admin() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviting, setInviting] = useState(false);
 
   useEffect(() => {
     if (isAdmin) fetchUsers();
@@ -68,6 +72,24 @@ export default function Admin() {
     }
   };
 
+  const inviteUser = async () => {
+    if (!inviteEmail.trim()) return;
+    setInviting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-users", {
+        body: { action: "invite-user", email: inviteEmail.trim() },
+      });
+      if (error) throw error;
+      toast({ title: "Invitation sent", description: `Invite email sent to ${inviteEmail}` });
+      setInviteEmail("");
+      fetchUsers();
+    } catch (err: any) {
+      toast({ title: "Invite failed", description: err.message, variant: "destructive" });
+    } finally {
+      setInviting(false);
+    }
+  };
+
   if (!session) return <Navigate to="/auth" replace />;
   if (!isAdmin) return <Navigate to="/industries" replace />;
 
@@ -81,6 +103,26 @@ export default function Admin() {
           <div>
             <h1 className="text-2xl font-bold text-foreground">Admin Panel</h1>
             <p className="text-sm text-muted-foreground">Manage user tiers for testing</p>
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-border bg-card p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <UserPlus className="h-4 w-4 text-primary" />
+            <h2 className="text-sm font-semibold text-foreground">Invite User</h2>
+          </div>
+          <div className="flex gap-2">
+            <Input
+              type="email"
+              placeholder="email@example.com"
+              value={inviteEmail}
+              onChange={(e) => setInviteEmail(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && inviteUser()}
+              className="flex-1"
+            />
+            <Button onClick={inviteUser} disabled={inviting || !inviteEmail.trim()} size="sm">
+              {inviting ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Send className="h-4 w-4 mr-1" /> Send Invite</>}
+            </Button>
           </div>
         </div>
 

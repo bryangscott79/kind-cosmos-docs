@@ -59,6 +59,18 @@ serve(async (req) => {
       });
     }
 
+    if (action === "invite-user") {
+      const { email } = body;
+      if (!email) throw new Error("email is required");
+
+      const { data: inviteData, error: inviteError } = await supabase.auth.admin.inviteUserByEmail(email);
+      if (inviteError) throw inviteError;
+
+      return new Response(JSON.stringify({ success: true, user: inviteData.user }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     if (action === "set-tier") {
       const { userEmail, productId } = body;
       if (!userEmail) throw new Error("userEmail is required");
