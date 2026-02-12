@@ -17,6 +17,7 @@ import Prospects from "./pages/Prospects";
 import Pipeline from "./pages/Pipeline";
 import Outreach from "./pages/Outreach";
 import Settings from "./pages/Settings";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +41,7 @@ const App = () => (
             <Route path="/pipeline" element={<ProtectedRoute><TierGate requiredTier="pro" featureName="Pipeline"><Pipeline /></TierGate></ProtectedRoute>} />
             <Route path="/outreach" element={<ProtectedRoute><TierGate requiredTier="pro" featureName="Outreach"><Outreach /></TierGate></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            <Route path="/admin" element={<Admin />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

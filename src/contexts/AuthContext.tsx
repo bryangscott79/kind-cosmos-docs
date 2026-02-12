@@ -26,6 +26,7 @@ interface AuthContextType {
   loading: boolean;
   tier: TierKey;
   subscriptionEnd: string | null;
+  isAdmin: boolean;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   refreshSubscription: () => Promise<void>;
@@ -40,6 +41,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [tier, setTier] = useState<TierKey>("free");
   const [subscriptionEnd, setSubscriptionEnd] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  const checkAdminRole = async (userId: string) => {
+    const { data } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .eq("role", "admin")
+      .maybeSingle();
+    setIsAdmin(!!data);
+  };
 
   const fetchProfile = async (userId: string) => {
     const { data } = await supabase
@@ -82,11 +94,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setTimeout(() => {
             fetchProfile(session.user.id);
             refreshSubscription();
+            checkAdminRole(session.user.id);
           }, 0);
         } else {
           setProfile(null);
           setTier("free");
           setSubscriptionEnd(null);
+          setIsAdmin(false);
         }
         setLoading(false);
       }
@@ -98,6 +112,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (session?.user) {
         fetchProfile(session.user.id);
         refreshSubscription();
+        checkAdminRole(session.user.id);
       }
       setLoading(false);
     });
@@ -117,10 +132,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(null);
     setTier("free");
     setSubscriptionEnd(null);
+    setIsAdmin(false);
   };
 
   return (
-    <AuthContext.Provider value={{ session, user, profile, loading, tier, subscriptionEnd, signOut, refreshProfile, refreshSubscription }}>
+    <AuthContext.Provider value={{ session, user, profile, loading, tier, subscriptionEnd, isAdmin, signOut, refreshProfile, refreshSubscription }}>
       {children}
     </AuthContext.Provider>
   );
