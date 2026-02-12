@@ -94,14 +94,14 @@ export default function Landing() {
 
       {/* Footer */}
       <footer className="border-t border-border bg-card">
-        <div className="mx-auto max-w-6xl px-6 py-8 flex items-center justify-between">
+        <div className="mx-auto max-w-6xl px-6 py-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
           <div className="flex items-center gap-2">
             <div className="flex h-6 w-6 items-center justify-center rounded bg-gradient-to-br from-brand-blue to-brand-purple">
               <Zap className="h-3 w-3 text-white" />
             </div>
             <span className="text-sm font-bold text-foreground">VIGYL.ai</span>
           </div>
-          <p className="text-xs text-muted-foreground">© 2026 VIGYL.ai — Market intelligence for modern sellers</p>
+          <p className="text-xs text-muted-foreground text-center">© 2026 VIGYL.ai — Market intelligence for modern sellers</p>
         </div>
       </footer>
     </div>

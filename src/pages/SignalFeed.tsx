@@ -81,14 +81,14 @@ function CategorySection({ type, signalList, defaultOpen }: { type: Signal["sign
     <div className="rounded-xl border border-border bg-card overflow-hidden">
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between p-5 text-left hover:bg-accent/30 transition-colors"
+        className="w-full flex flex-col gap-2 p-4 sm:p-5 text-left hover:bg-accent/30 transition-colors sm:flex-row sm:items-center sm:justify-between"
       >
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg" style={{ backgroundColor: `${config.color}15` }}>
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg shrink-0" style={{ backgroundColor: `${config.color}15` }}>
             <Icon className="h-5 w-5" style={{ color: config.color }} />
           </div>
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-base font-semibold text-foreground">{config.label}</h2>
               <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
                 {signalList.length} signal{signalList.length !== 1 ? "s" : ""}
@@ -97,10 +97,10 @@ function CategorySection({ type, signalList, defaultOpen }: { type: Signal["sign
                 Avg severity: <span className="font-mono font-semibold">{avgSeverity}</span>/5
               </span>
             </div>
-            <p className="text-xs text-muted-foreground mt-0.5">{config.description}</p>
+            <p className="text-xs text-muted-foreground mt-0.5 hidden sm:block">{config.description}</p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 ml-13 sm:ml-0">
           <SentimentSummary signals={signalList} />
           {open ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
         </div>
