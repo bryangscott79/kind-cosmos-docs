@@ -1,11 +1,13 @@
 import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { Search, ArrowRight, ArrowUpRight, ArrowDownRight, Radio, Users, BarChart3, TrendingUp, TrendingDown, Minus, AlertTriangle, Zap, Clock } from "lucide-react";
+import { Search, ArrowRight, ArrowUpRight, ArrowDownRight, Radio, Users, BarChart3, TrendingUp, TrendingDown, Minus, AlertTriangle, Clock } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import IndustryCard from "@/components/IndustryCard";
 import GlobalSignalBanner from "@/components/GlobalSignalBanner";
 import Sparkline from "@/components/Sparkline";
 import { industries, signals, prospects } from "@/data/mockData";
+import { useAuth } from "@/contexts/AuthContext";
+import { matchUserIndustries, getRelevantSignals, getRelevantProspects } from "@/lib/industryMatching";
 
 const signalTypeColors: Record<string, string> = {
   political: "bg-purple-100 text-purple-700 border-purple-200",
@@ -29,32 +31,40 @@ function getIndustryName(id: string) {
 export default function IndustryDashboard() {
   const [search, setSearch] = useState("");
 
-  // Top 5 most recent signals
+  const { profile } = useAuth();
+  const userIndustries = profile?.target_industries;
+
+  // User's matched industries
+  const myIndustries = useMemo(() => matchUserIndustries(userIndustries), [userIndustries]);
+  const mySignals = useMemo(() => getRelevantSignals(userIndustries), [userIndustries]);
+  const myProspects = useMemo(() => getRelevantProspects(userIndustries), [userIndustries]);
+
+  // Top 5 most recent signals relevant to user
   const recentSignals = useMemo(
-    () => [...signals].sort((a, b) => b.publishedAt.localeCompare(a.publishedAt)).slice(0, 5),
-    []
+    () => [...mySignals].sort((a, b) => b.publishedAt.localeCompare(a.publishedAt)).slice(0, 5),
+    [mySignals]
   );
 
   // Critical alerts (severity 5 + negative/neutral)
   const criticalAlerts = useMemo(
-    () => signals.filter((s) => s.severity >= 5 && s.sentiment !== "positive").slice(0, 3),
-    []
+    () => mySignals.filter((s) => s.severity >= 5 && s.sentiment !== "positive").slice(0, 3),
+    [mySignals]
   );
 
   // Top prospects by score
   const topProspects = useMemo(
-    () => [...prospects].sort((a, b) => b.vigylScore - a.vigylScore).slice(0, 5),
-    []
+    () => [...myProspects].sort((a, b) => b.vigylScore - a.vigylScore).slice(0, 5),
+    [myProspects]
   );
 
-  // Industry movers — top improving & declining
+  // Industry movers — top improving & declining from user's industries
   const industryMovers = useMemo(() => {
-    const improving = [...industries].filter((i) => i.trendDirection === "improving").sort((a, b) => b.healthScore - a.healthScore).slice(0, 3);
-    const declining = [...industries].filter((i) => i.trendDirection === "declining").sort((a, b) => a.healthScore - b.healthScore).slice(0, 3);
+    const improving = [...myIndustries].filter((i) => i.trendDirection === "improving").sort((a, b) => b.healthScore - a.healthScore).slice(0, 3);
+    const declining = [...myIndustries].filter((i) => i.trendDirection === "declining").sort((a, b) => a.healthScore - b.healthScore).slice(0, 3);
     return { improving, declining };
-  }, []);
+  }, [myIndustries]);
 
-  // Filtered industries for the grid below
+  // Filtered industries for the search
   const filtered = useMemo(() => {
     if (!search) return [];
     return industries.filter((i) => i.name.toLowerCase().includes(search.toLowerCase()));
@@ -70,7 +80,7 @@ export default function IndustryDashboard() {
       <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Intelligence Briefing</h1>
-          <p className="mt-1 text-sm text-muted-foreground">{today} · {signals.length} signals tracked · {industries.length} industries monitored</p>
+          <p className="mt-1 text-sm text-muted-foreground">{today} · {mySignals.length} signals · {myIndustries.length} industries tracked</p>
         </div>
         <div className="relative max-w-xs w-full sm:w-auto">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -289,19 +299,19 @@ export default function IndustryDashboard() {
               </h2>
               <div className="grid grid-cols-2 gap-3">
                 <div className="rounded-md bg-secondary p-3 text-center">
-                  <p className="text-lg font-mono font-bold text-primary">{signals.filter((s) => s.severity >= 4).length}</p>
+                  <p className="text-lg font-mono font-bold text-primary">{mySignals.filter((s) => s.severity >= 4).length}</p>
                   <p className="text-[10px] text-muted-foreground mt-0.5">High-Impact Signals</p>
                 </div>
                 <div className="rounded-md bg-secondary p-3 text-center">
-                  <p className="text-lg font-mono font-bold text-primary">{prospects.filter((p) => p.vigylScore >= 80).length}</p>
+                  <p className="text-lg font-mono font-bold text-primary">{myProspects.filter((p) => p.vigylScore >= 80).length}</p>
                   <p className="text-[10px] text-muted-foreground mt-0.5">Hot Prospects</p>
                 </div>
                 <div className="rounded-md bg-secondary p-3 text-center">
-                  <p className="text-lg font-mono font-bold text-score-green">{industries.filter((i) => i.trendDirection === "improving").length}</p>
+                  <p className="text-lg font-mono font-bold text-score-green">{myIndustries.filter((i) => i.trendDirection === "improving").length}</p>
                   <p className="text-[10px] text-muted-foreground mt-0.5">Improving</p>
                 </div>
                 <div className="rounded-md bg-secondary p-3 text-center">
-                  <p className="text-lg font-mono font-bold text-score-red">{industries.filter((i) => i.trendDirection === "declining").length}</p>
+                  <p className="text-lg font-mono font-bold text-score-red">{myIndustries.filter((i) => i.trendDirection === "declining").length}</p>
                   <p className="text-[10px] text-muted-foreground mt-0.5">Declining</p>
                 </div>
               </div>
