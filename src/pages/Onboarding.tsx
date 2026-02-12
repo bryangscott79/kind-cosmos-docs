@@ -1,10 +1,16 @@
 import { useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
-import { Zap, Globe, Building2, MapPin, Users, Briefcase, ArrowRight, ArrowLeft, Loader2, Sparkles } from "lucide-react";
+import { Zap, Globe, Building2, MapPin, Users, Briefcase, ArrowRight, ArrowLeft, Loader2, Sparkles, Check, X, Target } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { industries } from "@/data/mockData";
+
+interface RecommendedIndustry {
+  name: string;
+  match_score: number;
+  reasoning: string;
+  accepted: boolean;
+}
 
 export default function Onboarding() {
   const { session, profile, refreshProfile } = useAuth();
@@ -14,6 +20,7 @@ export default function Onboarding() {
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
   const [scraping, setScraping] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
 
   // Step 1 fields
   const [companyName, setCompanyName] = useState(profile?.company_name || "");
@@ -26,7 +33,9 @@ export default function Onboarding() {
   // Step 2 fields
   const [businessSummary, setBusinessSummary] = useState(profile?.business_summary || "");
   const [aiSummary, setAiSummary] = useState(profile?.ai_summary || "");
-  const [selectedIndustries, setSelectedIndustries] = useState<string[]>(profile?.target_industries || []);
+  const [recommendedIndustries, setRecommendedIndustries] = useState<RecommendedIndustry[]>([]);
+  const [sellingAngles, setSellingAngles] = useState<string[]>([]);
+  const [hasAnalyzed, setHasAnalyzed] = useState(false);
 
   if (!session) return <Navigate to="/auth" replace />;
   if (profile?.onboarding_completed) return <Navigate to="/industries" replace />;
@@ -41,15 +50,12 @@ export default function Onboarding() {
       if (error) throw error;
 
       const summary = data?.data?.summary || data?.summary || "";
-      const markdown = data?.data?.markdown || data?.markdown || "";
-
       if (summary) {
         setAiSummary(summary);
         toast({ title: "Website analyzed", description: "We extracted insights from your website." });
       }
 
-      // Try to extract company info from markdown if not already set
-      if (!companyName && markdown) {
+      if (!companyName) {
         const titleMatch = data?.data?.metadata?.title || data?.metadata?.title;
         if (titleMatch) {
           const cleaned = titleMatch.split("|")[0].split("-")[0].trim();
@@ -64,15 +70,47 @@ export default function Onboarding() {
     }
   };
 
-  const toggleIndustry = (id: string) => {
-    setSelectedIndustries((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+  const handleAnalyzeIndustries = async () => {
+    const urlToAnalyze = websiteUrl.trim();
+    if (!urlToAnalyze && !businessSummary.trim()) {
+      toast({ title: "Need more context", description: "Enter your website URL or a business summary so we can recommend industries.", variant: "destructive" });
+      return;
+    }
+    setAnalyzing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("analyze-website", {
+        body: { url: urlToAnalyze || undefined, businessSummary: businessSummary || aiSummary || undefined },
+      });
+      if (error) throw error;
+
+      const analysis = data?.analysis;
+      if (analysis?.target_industries) {
+        setRecommendedIndustries(
+          analysis.target_industries.map((ind: any) => ({ ...ind, accepted: true }))
+        );
+      }
+      if (analysis?.selling_angles) setSellingAngles(analysis.selling_angles);
+      if (analysis?.company_summary && !aiSummary) setAiSummary(analysis.company_summary);
+      setHasAnalyzed(true);
+      toast({ title: "Analysis complete", description: "We've recommended industries based on your business." });
+    } catch (err: any) {
+      console.error("Analyze error:", err);
+      toast({ title: "Analysis failed", description: err.message || "Please try again.", variant: "destructive" });
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
+  const toggleIndustryAcceptance = (index: number) => {
+    setRecommendedIndustries((prev) =>
+      prev.map((ind, i) => (i === index ? { ...ind, accepted: !ind.accepted } : ind))
     );
   };
 
   const handleComplete = async () => {
-    if (selectedIndustries.length === 0) {
-      toast({ title: "Select at least one industry", description: "Choose the industries you want to monitor.", variant: "destructive" });
+    const accepted = recommendedIndustries.filter((i) => i.accepted).map((i) => i.name);
+    if (accepted.length === 0) {
+      toast({ title: "Select at least one industry", description: "Accept at least one recommended industry to continue.", variant: "destructive" });
       return;
     }
     setSaving(true);
@@ -88,7 +126,7 @@ export default function Onboarding() {
           location_state: state,
           business_summary: businessSummary,
           ai_summary: aiSummary,
-          target_industries: selectedIndustries,
+          target_industries: accepted,
           onboarding_completed: true,
         })
         .eq("user_id", session.user.id);
@@ -117,7 +155,6 @@ export default function Onboarding() {
           <p className="mt-1 text-sm text-muted-foreground">
             Help VIGYL.ai find the right signals and prospects for your business
           </p>
-          {/* Step indicator */}
           <div className="mt-4 flex items-center justify-center gap-2">
             {[1, 2].map((s) => (
               <div
@@ -134,7 +171,6 @@ export default function Onboarding() {
           <div className="space-y-4">
             <h2 className="text-sm font-semibold text-foreground">Company & Location</h2>
 
-            {/* Website URL with scrape */}
             <div>
               <label className="mb-1.5 flex items-center gap-1 text-xs font-medium text-foreground">
                 <Globe className="h-3 w-3" /> Website URL
@@ -246,7 +282,10 @@ export default function Onboarding() {
 
         {step === 2 && (
           <div className="space-y-4">
-            <h2 className="text-sm font-semibold text-foreground">Business Focus & Industries</h2>
+            <h2 className="text-sm font-semibold text-foreground">Your Business & Target Industries</h2>
+            <p className="text-xs text-muted-foreground -mt-2">
+              Tell us about your business and we'll identify the best industries for you to target.
+            </p>
 
             {aiSummary && (
               <div className="rounded-md border border-primary/20 bg-primary/5 p-3">
@@ -269,27 +308,91 @@ export default function Onboarding() {
               />
             </div>
 
-            <div>
-              <label className="mb-1.5 block text-xs font-medium text-foreground">
-                Target Industries <span className="text-muted-foreground font-normal">(select all that apply)</span>
-              </label>
-              <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto">
-                {industries.map((ind) => (
-                  <button
-                    key={ind.id}
-                    type="button"
-                    onClick={() => toggleIndustry(ind.id)}
-                    className={`rounded-md border px-3 py-2 text-left text-xs font-medium transition-colors ${
-                      selectedIndustries.includes(ind.id)
-                        ? "border-primary bg-primary/10 text-primary"
-                        : "border-border bg-card text-muted-foreground hover:border-primary/30 hover:text-foreground"
-                    }`}
-                  >
-                    {ind.name}
-                  </button>
-                ))}
+            {!hasAnalyzed && (
+              <button
+                type="button"
+                onClick={handleAnalyzeIndustries}
+                disabled={analyzing}
+                className="flex w-full items-center justify-center gap-2 rounded-md border border-primary/30 bg-primary/5 px-4 py-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/10 disabled:opacity-50"
+              >
+                {analyzing ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Analyzing your business…
+                  </>
+                ) : (
+                  <>
+                    <Target className="h-4 w-4" />
+                    Find My Target Industries
+                  </>
+                )}
+              </button>
+            )}
+
+            {hasAnalyzed && recommendedIndustries.length > 0 && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-medium text-foreground">Recommended Industries</label>
+                  <span className="text-[10px] text-muted-foreground">
+                    {recommendedIndustries.filter((i) => i.accepted).length} selected
+                  </span>
+                </div>
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {recommendedIndustries.map((ind, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => toggleIndustryAcceptance(idx)}
+                      className={`w-full rounded-md border p-3 text-left transition-colors ${
+                        ind.accepted
+                          ? "border-primary bg-primary/5"
+                          : "border-border bg-card opacity-60"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-semibold text-foreground">{ind.name}</span>
+                            <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                              {ind.match_score}% match
+                            </span>
+                          </div>
+                          <p className="mt-1 text-[11px] text-muted-foreground leading-relaxed">{ind.reasoning}</p>
+                        </div>
+                        <div className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full transition-colors ${
+                          ind.accepted ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
+                        }`}>
+                          {ind.accepted ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+
+                {sellingAngles.length > 0 && (
+                  <div className="rounded-md border border-border bg-card p-3">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Key Selling Angles</span>
+                    <ul className="mt-1.5 space-y-1">
+                      {sellingAngles.map((angle, i) => (
+                        <li key={i} className="flex items-start gap-1.5 text-[11px] text-muted-foreground">
+                          <ArrowRight className="mt-0.5 h-3 w-3 shrink-0 text-primary" />
+                          {angle}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={handleAnalyzeIndustries}
+                  disabled={analyzing}
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
+                >
+                  {analyzing ? "Re-analyzing…" : "Re-analyze"}
+                </button>
               </div>
-            </div>
+            )}
 
             <div className="flex gap-3">
               <button
@@ -302,7 +405,7 @@ export default function Onboarding() {
               <button
                 type="button"
                 onClick={handleComplete}
-                disabled={saving}
+                disabled={saving || !hasAnalyzed}
                 className="flex flex-1 items-center justify-center gap-2 rounded-md bg-gradient-to-r from-brand-blue to-brand-purple px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
               >
                 {saving ? (
