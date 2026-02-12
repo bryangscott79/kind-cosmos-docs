@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
 import { Users, Linkedin, MapPin, DollarSign, Building2, Radio } from "lucide-react";
-import { Prospect, industries, getPressureLabel, getScoreColorHsl, signals as allSignals } from "@/data/mockData";
+import { Prospect, getPressureLabel, getScoreColorHsl } from "@/data/mockData";
 import { useSavedSignals } from "@/hooks/useSavedSignals";
+import { useIntelligence } from "@/contexts/IntelligenceContext";
 
 interface ProspectCardProps {
   prospect: Prospect;
@@ -9,6 +10,9 @@ interface ProspectCardProps {
 
 export default function ProspectCard({ prospect }: ProspectCardProps) {
   const { getSavedForProspect } = useSavedSignals();
+  const { data } = useIntelligence();
+  const { industries, signals: allSignals } = data;
+
   const industry = industries.find((i) => i.id === prospect.industryId);
   const scoreColor = getScoreColorHsl(prospect.vigylScore);
   const linkedSignals = getSavedForProspect(prospect.id);
@@ -41,9 +45,7 @@ export default function ProspectCard({ prospect }: ProspectCardProps) {
           </div>
         </div>
         <div className="flex flex-col items-end gap-1.5">
-          <span className="font-mono text-xl font-bold" style={{ color: scoreColor }}>
-            {prospect.vigylScore}
-          </span>
+          <span className="font-mono text-xl font-bold" style={{ color: scoreColor }}>{prospect.vigylScore}</span>
           <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium border ${pressureStyles[prospect.pressureResponse]}`}>
             {getPressureLabel(prospect.pressureResponse)}
           </span>
@@ -52,9 +54,7 @@ export default function ProspectCard({ prospect }: ProspectCardProps) {
 
       <div className="mt-3 rounded-md bg-secondary p-3">
         <p className="text-xs font-medium text-foreground mb-1">Why Now</p>
-        <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">
-          {prospect.whyNow}
-        </p>
+        <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">{prospect.whyNow}</p>
       </div>
 
       {prospect.decisionMakers.length > 0 && (
@@ -75,7 +75,6 @@ export default function ProspectCard({ prospect }: ProspectCardProps) {
         </div>
       )}
 
-      {/* Linked saved signals */}
       {linkedSignals.length > 0 && (
         <div className="mt-3 border-t border-border pt-3">
           <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-1.5 flex items-center gap-1">
@@ -88,9 +87,7 @@ export default function ProspectCard({ prospect }: ProspectCardProps) {
               return (
                 <div key={saved.id} className="rounded-md bg-primary/5 border border-primary/10 px-2.5 py-1.5">
                   <p className="text-[11px] font-medium text-foreground leading-snug truncate">{sig.title}</p>
-                  {saved.notes && (
-                    <p className="text-[10px] text-muted-foreground mt-0.5 truncate">{saved.notes}</p>
-                  )}
+                  {saved.notes && <p className="text-[10px] text-muted-foreground mt-0.5 truncate">{saved.notes}</p>}
                 </div>
               );
             })}
@@ -99,10 +96,7 @@ export default function ProspectCard({ prospect }: ProspectCardProps) {
       )}
 
       <div className="mt-4 flex items-center gap-2">
-        <Link
-          to={`/outreach?prospect=${prospect.id}`}
-          className="flex-1 rounded-md bg-gradient-to-r from-brand-blue to-brand-purple px-3 py-1.5 text-center text-xs font-medium text-white transition-opacity hover:opacity-90"
-        >
+        <Link to={`/outreach?prospect=${prospect.id}`} className="flex-1 rounded-md bg-gradient-to-r from-brand-blue to-brand-purple px-3 py-1.5 text-center text-xs font-medium text-white transition-opacity hover:opacity-90">
           Generate Outreach
         </Link>
         <button className="rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent transition-colors">
