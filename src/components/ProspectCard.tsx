@@ -1,14 +1,17 @@
 import { Link } from "react-router-dom";
-import { Users, Linkedin, MapPin, DollarSign, Building2 } from "lucide-react";
-import { Prospect, industries, getPressureLabel, getScoreColorHsl } from "@/data/mockData";
+import { Users, Linkedin, MapPin, DollarSign, Building2, Radio } from "lucide-react";
+import { Prospect, industries, getPressureLabel, getScoreColorHsl, signals as allSignals } from "@/data/mockData";
+import { useSavedSignals } from "@/hooks/useSavedSignals";
 
 interface ProspectCardProps {
   prospect: Prospect;
 }
 
 export default function ProspectCard({ prospect }: ProspectCardProps) {
+  const { getSavedForProspect } = useSavedSignals();
   const industry = industries.find((i) => i.id === prospect.industryId);
   const scoreColor = getScoreColorHsl(prospect.vigylScore);
+  const linkedSignals = getSavedForProspect(prospect.id);
 
   const pressureStyles: Record<string, string> = {
     growth_mode: "bg-green-50 text-green-700 border-green-200",
@@ -68,6 +71,29 @@ export default function ProspectCard({ prospect }: ProspectCardProps) {
                 <Linkedin className="h-3 w-3 text-muted-foreground hover:text-primary cursor-pointer" />
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Linked saved signals */}
+      {linkedSignals.length > 0 && (
+        <div className="mt-3 border-t border-border pt-3">
+          <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-1.5 flex items-center gap-1">
+            <Radio className="h-3 w-3" /> Saved Signals
+          </p>
+          <div className="space-y-1">
+            {linkedSignals.map((saved) => {
+              const sig = allSignals.find((s) => s.id === saved.signal_id);
+              if (!sig) return null;
+              return (
+                <div key={saved.id} className="rounded-md bg-primary/5 border border-primary/10 px-2.5 py-1.5">
+                  <p className="text-[11px] font-medium text-foreground leading-snug truncate">{sig.title}</p>
+                  {saved.notes && (
+                    <p className="text-[10px] text-muted-foreground mt-0.5 truncate">{saved.notes}</p>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
