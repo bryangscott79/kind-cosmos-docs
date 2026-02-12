@@ -6,49 +6,56 @@
 
 @layer base {
   :root {
-    --background: 228 15% 7%;
-    --foreground: 220 13% 91%;
+    --background: 220 20% 97%;
+    --foreground: 224 30% 12%;
 
-    --card: 228 14% 11%;
-    --card-foreground: 220 13% 91%;
+    --card: 0 0% 100%;
+    --card-foreground: 224 30% 12%;
 
-    --popover: 228 14% 11%;
-    --popover-foreground: 220 13% 91%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 224 30% 12%;
 
-    --primary: 15 82% 50%;
+    --primary: 245 58% 51%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 228 12% 16%;
-    --secondary-foreground: 220 13% 91%;
+    --secondary: 220 18% 93%;
+    --secondary-foreground: 224 30% 12%;
 
-    --muted: 228 10% 18%;
-    --muted-foreground: 220 9% 64%;
+    --muted: 220 16% 93%;
+    --muted-foreground: 220 10% 46%;
 
-    --accent: 228 12% 16%;
-    --accent-foreground: 220 13% 91%;
+    --accent: 220 18% 93%;
+    --accent-foreground: 224 30% 12%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 228 10% 20%;
-    --input: 228 10% 20%;
-    --ring: 15 82% 50%;
+    --border: 220 16% 88%;
+    --input: 220 16% 88%;
+    --ring: 245 58% 51%;
 
     --radius: 0.5rem;
 
-    --score-green: 142 71% 45%;
-    --score-yellow: 48 96% 53%;
-    --score-red: 0 84% 60%;
-    --info-blue: 217 91% 60%;
+    --score-green: 142 71% 40%;
+    --score-yellow: 38 92% 50%;
+    --score-red: 0 72% 51%;
+    --info-blue: 217 91% 55%;
 
-    --sidebar-background: 228 14% 9%;
-    --sidebar-foreground: 220 9% 64%;
-    --sidebar-primary: 15 82% 50%;
+    --brand-blue: 217 91% 55%;
+    --brand-purple: 245 58% 51%;
+    --brand-teal: 173 58% 39%;
+    --gradient-brand: linear-gradient(135deg, hsl(217 91% 55%), hsl(245 58% 51%));
+    --gradient-brand-soft: linear-gradient(135deg, hsl(217 91% 55% / 0.08), hsl(245 58% 51% / 0.08));
+    --gradient-accent: linear-gradient(135deg, hsl(245 58% 51%), hsl(280 60% 55%));
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 220 10% 46%;
+    --sidebar-primary: 245 58% 51%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 228 12% 14%;
-    --sidebar-accent-foreground: 220 13% 91%;
-    --sidebar-border: 228 10% 17%;
-    --sidebar-ring: 15 82% 50%;
+    --sidebar-accent: 220 18% 95%;
+    --sidebar-accent-foreground: 224 30% 12%;
+    --sidebar-border: 220 16% 90%;
+    --sidebar-ring: 245 58% 51%;
 
     --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
     --font-mono: 'JetBrains Mono', monospace;
