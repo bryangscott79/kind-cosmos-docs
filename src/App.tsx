@@ -5,9 +5,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import TierGate from "@/components/TierGate";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import Onboarding from "./pages/Onboarding";
+import Pricing from "./pages/Pricing";
 import IndustryDashboard from "./pages/IndustryDashboard";
 import IndustryDetail from "./pages/IndustryDetail";
 import SignalFeed from "./pages/SignalFeed";
@@ -30,12 +32,13 @@ const App = () => (
             <Route path="/" element={<Landing />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/pricing" element={<Pricing />} />
             <Route path="/industries" element={<ProtectedRoute><IndustryDashboard /></ProtectedRoute>} />
             <Route path="/industries/:slug" element={<ProtectedRoute><IndustryDetail /></ProtectedRoute>} />
             <Route path="/signals" element={<ProtectedRoute><SignalFeed /></ProtectedRoute>} />
-            <Route path="/prospects" element={<ProtectedRoute><Prospects /></ProtectedRoute>} />
-            <Route path="/pipeline" element={<ProtectedRoute><Pipeline /></ProtectedRoute>} />
-            <Route path="/outreach" element={<ProtectedRoute><Outreach /></ProtectedRoute>} />
+            <Route path="/prospects" element={<ProtectedRoute><TierGate requiredTier="starter" featureName="Prospect Engine"><Prospects /></TierGate></ProtectedRoute>} />
+            <Route path="/pipeline" element={<ProtectedRoute><TierGate requiredTier="pro" featureName="Pipeline"><Pipeline /></TierGate></ProtectedRoute>} />
+            <Route path="/outreach" element={<ProtectedRoute><TierGate requiredTier="pro" featureName="Outreach"><Outreach /></TierGate></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>

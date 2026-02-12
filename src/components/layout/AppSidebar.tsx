@@ -1,17 +1,21 @@
 import { Link, useLocation } from "react-router-dom";
-import { BarChart3, Compass, Radio, Users, Kanban, PenTool, Settings, Zap } from "lucide-react";
+import { BarChart3, Radio, Users, Kanban, PenTool, Settings, Zap, LogOut, CreditCard, Lock } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { TIERS, hasAccess, FEATURE_ACCESS, TierKey } from "@/lib/tiers";
 
 const navItems = [
-  { label: "Dashboard", path: "/industries", icon: BarChart3 },
-  { label: "Signals", path: "/signals", icon: Radio },
-  { label: "Prospects", path: "/prospects", icon: Users },
-  { label: "Pipeline", path: "/pipeline", icon: Kanban },
-  { label: "Outreach", path: "/outreach", icon: PenTool },
-  { label: "Settings", path: "/settings", icon: Settings },
+  { label: "Dashboard", path: "/industries", icon: BarChart3, feature: "industries" },
+  { label: "Signals", path: "/signals", icon: Radio, feature: "signals" },
+  { label: "Prospects", path: "/prospects", icon: Users, feature: "prospects" },
+  { label: "Pipeline", path: "/pipeline", icon: Kanban, feature: "pipeline" },
+  { label: "Outreach", path: "/outreach", icon: PenTool, feature: "outreach" },
+  { label: "Settings", path: "/settings", icon: Settings, feature: "settings" },
 ];
 
 export default function AppSidebar() {
   const location = useLocation();
+  const { tier, profile, signOut } = useAuth();
+  const currentTierInfo = TIERS[tier];
 
   return (
     <aside className="fixed left-0 top-0 z-40 flex h-screen w-60 flex-col border-r border-border bg-sidebar">
@@ -23,9 +27,22 @@ export default function AppSidebar() {
         <span className="text-xs font-medium text-brand-purple">.ai</span>
       </Link>
 
+      {/* User info */}
+      {profile?.company_name && (
+        <div className="border-b border-border px-5 py-3">
+          <p className="text-xs font-semibold text-foreground truncate">{profile.company_name}</p>
+          {profile.role_title && (
+            <p className="text-[10px] text-muted-foreground truncate">{profile.role_title}</p>
+          )}
+        </div>
+      )}
+
       <nav className="flex-1 space-y-1 px-3 py-4">
         {navItems.map((item) => {
           const isActive = location.pathname.startsWith(item.path);
+          const requiredTier = FEATURE_ACCESS[item.feature] as TierKey;
+          const locked = !hasAccess(tier, requiredTier);
+
           return (
             <Link
               key={item.path}
@@ -38,19 +55,36 @@ export default function AppSidebar() {
             >
               <item.icon className={`h-4 w-4 ${isActive ? "text-primary" : ""}`} />
               {item.label}
+              {locked && <Lock className="ml-auto h-3 w-3 text-muted-foreground" />}
             </Link>
           );
         })}
       </nav>
 
-      <div className="border-t border-border p-4">
+      <div className="border-t border-border p-4 space-y-3">
         <div className="rounded-md bg-secondary p-3">
-          <p className="text-xs font-medium text-foreground">Free Tier</p>
-          <p className="mt-1 text-xs text-muted-foreground">Upgrade for full prospect access</p>
-          <button className="mt-2 w-full rounded-md bg-gradient-to-r from-brand-blue to-brand-purple px-3 py-1.5 text-xs font-medium text-white transition-opacity hover:opacity-90">
-            Upgrade to Pro
-          </button>
+          <p className="text-xs font-medium text-foreground">{currentTierInfo.name} Plan</p>
+          {tier === "free" ? (
+            <>
+              <p className="mt-1 text-xs text-muted-foreground">Upgrade for full access</p>
+              <Link
+                to="/pricing"
+                className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-md bg-gradient-to-r from-brand-blue to-brand-purple px-3 py-1.5 text-xs font-medium text-white transition-opacity hover:opacity-90"
+              >
+                <CreditCard className="h-3 w-3" /> View Plans
+              </Link>
+            </>
+          ) : (
+            <p className="mt-1 text-xs text-muted-foreground">${currentTierInfo.price}/mo</p>
+          )}
         </div>
+
+        <button
+          onClick={signOut}
+          className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-sidebar-accent transition-colors"
+        >
+          <LogOut className="h-3.5 w-3.5" /> Sign Out
+        </button>
       </div>
     </aside>
   );
