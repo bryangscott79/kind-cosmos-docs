@@ -53,6 +53,9 @@ serve(async (req) => {
     if (markdown) contentParts.push(`Content (first 3000 chars):\n${markdown.slice(0, 3000)}`);
     const content = contentParts.join("\n");
 
+    const lovableKey = Deno.env.get("LOVABLE_API_KEY");
+    if (!lovableKey) throw new Error("LOVABLE_API_KEY not configured");
+
     const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: { Authorization: `Bearer ${lovableKey}`, "Content-Type": "application/json" },
