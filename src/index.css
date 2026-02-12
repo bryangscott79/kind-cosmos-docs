@@ -5,7 +5,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 @layer base {
-  :root {
+  :root, .dark {
     --background: 220 20% 97%;
     --foreground: 224 30% 12%;
 
