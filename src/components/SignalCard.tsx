@@ -1,6 +1,6 @@
-import { Badge } from "@/components/ui/badge";
-import { Bookmark, ExternalLink } from "lucide-react";
 import { Signal, getSignalTypeLabel, industries as allIndustries } from "@/data/mockData";
+import { Badge } from "@/components/ui/badge";
+import { Bookmark } from "lucide-react";
 
 interface SignalCardProps {
   signal: Signal;
@@ -18,7 +18,7 @@ export default function SignalCard({ signal }: SignalCardProps) {
     .filter(Boolean);
 
   return (
-    <div className="rounded-lg border border-border bg-card p-4 transition-colors hover:border-primary/20">
+    <div className="rounded-lg border border-border bg-card p-4 transition-colors hover:border-primary/30">
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
@@ -51,7 +51,7 @@ export default function SignalCard({ signal }: SignalCardProps) {
         </button>
       </div>
 
-      <div className="mt-3 rounded-md bg-primary/5 border border-primary/10 px-3 py-2">
+      <div className="mt-3 rounded-md border border-primary/10 px-3 py-2" style={{ background: "linear-gradient(135deg, hsl(217 91% 55% / 0.04), hsl(245 58% 51% / 0.04))" }}>
         <p className="text-xs text-primary font-medium">
           💡 {signal.salesImplication}
         </p>

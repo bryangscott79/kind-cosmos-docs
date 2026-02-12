@@ -3,9 +3,8 @@ import { ArrowLeft } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import HealthScoreGauge from "@/components/HealthScoreGauge";
 import SignalCard from "@/components/SignalCard";
-import Sparkline from "@/components/Sparkline";
 import { industries, signals, getScoreColor, getTrendIcon } from "@/data/mockData";
-import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, Area, AreaChart } from "recharts";
+import { XAxis, YAxis, ResponsiveContainer, Tooltip, Area, AreaChart } from "recharts";
 
 const scoreFactors = [
   { label: "News Sentiment", weight: 25 },
@@ -25,9 +24,7 @@ export default function IndustryDetail() {
       <DashboardLayout>
         <div className="flex flex-col items-center py-20 text-center">
           <p className="text-lg text-muted-foreground">Industry not found</p>
-          <Link to="/industries" className="mt-4 text-sm text-primary hover:underline">
-            Back to dashboard
-          </Link>
+          <Link to="/industries" className="mt-4 text-sm text-primary hover:underline">Back to dashboard</Link>
         </div>
       </DashboardLayout>
     );
@@ -36,7 +33,6 @@ export default function IndustryDetail() {
   const relatedSignals = signals.filter((s) => s.industryTags.includes(industry.id));
   const scoreColor = getScoreColor(industry.healthScore);
 
-  // Generate mock factor scores based on health score
   const factorScores = scoreFactors.map((f) => ({
     ...f,
     score: Math.max(10, Math.min(100, industry.healthScore + Math.round((Math.random() - 0.5) * 30))),
@@ -49,7 +45,6 @@ export default function IndustryDetail() {
       </Link>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* Main Info */}
         <div className="lg:col-span-2 space-y-6">
           <div className="rounded-lg border border-border bg-card p-6">
             <div className="flex items-start justify-between">
@@ -65,7 +60,6 @@ export default function IndustryDetail() {
               <HealthScoreGauge score={industry.healthScore} />
             </div>
 
-            {/* Score History Chart */}
             <div className="mt-6">
               <h3 className="text-sm font-semibold text-foreground mb-3">30-Day Score History</h3>
               <div className="h-40">
@@ -73,8 +67,8 @@ export default function IndustryDetail() {
                   <AreaChart data={industry.scoreHistory}>
                     <defs>
                       <linearGradient id="scoreGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor={`hsl(var(--${scoreColor.replace('score-', 'score-')}))`} stopOpacity={0.2} />
-                        <stop offset="95%" stopColor={`hsl(var(--${scoreColor.replace('score-', 'score-')}))`} stopOpacity={0} />
+                        <stop offset="5%" stopColor="hsl(var(--brand-blue))" stopOpacity={0.15} />
+                        <stop offset="95%" stopColor="hsl(var(--brand-blue))" stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <XAxis dataKey="date" tick={false} axisLine={false} />
@@ -83,14 +77,13 @@ export default function IndustryDetail() {
                       contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}
                       labelStyle={{ color: "hsl(var(--muted-foreground))" }}
                     />
-                    <Area type="monotone" dataKey="score" stroke={`hsl(var(--${scoreColor.replace('score-', 'score-')}))`} fill="url(#scoreGradient)" strokeWidth={2} />
+                    <Area type="monotone" dataKey="score" stroke="hsl(var(--brand-blue))" fill="url(#scoreGradient)" strokeWidth={2} />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
             </div>
           </div>
 
-          {/* Score Breakdown */}
           <div className="rounded-lg border border-border bg-card p-6">
             <h3 className="text-sm font-semibold text-foreground mb-4">Score Composition</h3>
             <div className="space-y-3">
@@ -109,7 +102,6 @@ export default function IndustryDetail() {
             </div>
           </div>
 
-          {/* Signals */}
           <div>
             <h3 className="text-sm font-semibold text-foreground mb-4">Recent Signals</h3>
             <div className="space-y-3">
@@ -122,7 +114,6 @@ export default function IndustryDetail() {
           </div>
         </div>
 
-        {/* Sidebar */}
         <div className="space-y-6">
           <div className="rounded-lg border border-border bg-card p-5">
             <h3 className="text-sm font-semibold text-foreground mb-3">Top Signals</h3>
@@ -149,7 +140,7 @@ export default function IndustryDetail() {
 
           <Link
             to="/prospects"
-            className="block w-full rounded-md bg-primary px-4 py-2.5 text-center text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            className="block w-full rounded-md bg-gradient-to-r from-brand-blue to-brand-purple px-4 py-2.5 text-center text-sm font-medium text-white transition-opacity hover:opacity-90"
           >
             Find Prospects in {industry.name}
           </Link>

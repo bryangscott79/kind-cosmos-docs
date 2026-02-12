@@ -16,11 +16,11 @@ export default function AppSidebar() {
   return (
     <aside className="fixed left-0 top-0 z-40 flex h-screen w-60 flex-col border-r border-border bg-sidebar">
       <Link to="/" className="flex items-center gap-2.5 px-5 py-5 border-b border-border">
-        <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary">
-          <Zap className="h-4 w-4 text-primary-foreground" />
+        <div className="flex h-8 w-8 items-center justify-center rounded-md bg-gradient-to-br from-brand-blue to-brand-purple">
+          <Zap className="h-4 w-4 text-white" />
         </div>
         <span className="text-lg font-bold tracking-tight text-foreground">VIGYL</span>
-        <span className="text-xs font-medium text-primary">.ai</span>
+        <span className="text-xs font-medium text-brand-purple">.ai</span>
       </Link>
 
       <nav className="flex-1 space-y-1 px-3 py-4">
@@ -47,7 +47,7 @@ export default function AppSidebar() {
         <div className="rounded-md bg-secondary p-3">
           <p className="text-xs font-medium text-foreground">Free Tier</p>
           <p className="mt-1 text-xs text-muted-foreground">Upgrade for full prospect access</p>
-          <button className="mt-2 w-full rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90">
+          <button className="mt-2 w-full rounded-md bg-gradient-to-r from-brand-blue to-brand-purple px-3 py-1.5 text-xs font-medium text-white transition-opacity hover:opacity-90">
             Upgrade to Pro
           </button>
         </div>

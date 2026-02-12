@@ -7,7 +7,7 @@ export default function GlobalSignalBanner() {
   if (dismissed) return null;
 
   return (
-    <div className="flex items-center gap-3 rounded-lg border border-primary/20 bg-primary/5 px-4 py-2.5">
+    <div className="flex items-center gap-3 rounded-lg border border-primary/20 px-4 py-2.5" style={{ background: "linear-gradient(135deg, hsl(217 91% 55% / 0.06), hsl(245 58% 51% / 0.06))" }}>
       <AlertTriangle className="h-4 w-4 shrink-0 text-primary" />
       <p className="flex-1 text-xs text-foreground">
         <span className="font-semibold">Macro Alert:</span>{" "}

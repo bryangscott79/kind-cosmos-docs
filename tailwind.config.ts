@@ -67,6 +67,11 @@ export default {
           red: "hsl(var(--score-red))",
         },
         info: "hsl(var(--info-blue))",
+        brand: {
+          blue: "hsl(var(--brand-blue))",
+          purple: "hsl(var(--brand-purple))",
+          teal: "hsl(var(--brand-teal))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
