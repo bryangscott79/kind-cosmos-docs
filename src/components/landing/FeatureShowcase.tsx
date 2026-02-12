@@ -1,4 +1,5 @@
 import { BarChart3, Radio, Users, Shield, TrendingUp, Zap, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { useScrollReveal } from "@/hooks/useScrollReveal";
 
 function MiniHealthScore({ label, score, color }: { label: string; score: number; color: string }) {
   return (
@@ -146,24 +147,83 @@ const features = [
   { icon: Zap, title: "AI Outreach", description: "Generate signal-aware cold emails, LinkedIn messages, and meeting briefs that reference what's actually happening.", preview: FeatureAIOutreach },
 ];
 
+function FeatureCard({ feature, index }: { feature: typeof features[0]; index: number }) {
+  const { ref, isVisible } = useScrollReveal({ threshold: 0.1 });
+  const Icon = feature.icon;
+
+  return (
+    <div
+      ref={ref}
+      className="rounded-xl border border-border bg-card p-5 transition-all hover:shadow-lg hover:border-primary/20"
+      style={{
+        opacity: isVisible ? 1 : 0,
+        transform: isVisible ? "translateY(0)" : "translateY(32px)",
+        transition: `opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1) ${index * 0.1}s, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1) ${index * 0.1}s`,
+      }}
+    >
+      <div
+        className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10"
+        style={{
+          opacity: isVisible ? 1 : 0,
+          transform: isVisible ? "scale(1)" : "scale(0.5)",
+          transition: `opacity 0.4s ease ${index * 0.1 + 0.2}s, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) ${index * 0.1 + 0.2}s`,
+        }}
+      >
+        <Icon className="h-4.5 w-4.5 text-primary" />
+      </div>
+      <h3
+        className="mt-3 text-sm font-semibold text-foreground"
+        style={{
+          opacity: isVisible ? 1 : 0,
+          transform: isVisible ? "translateX(0)" : "translateX(-12px)",
+          transition: `opacity 0.5s ease ${index * 0.1 + 0.25}s, transform 0.5s ease ${index * 0.1 + 0.25}s`,
+        }}
+      >
+        {feature.title}
+      </h3>
+      <p
+        className="mt-1 text-xs text-muted-foreground leading-relaxed"
+        style={{
+          opacity: isVisible ? 1 : 0,
+          transition: `opacity 0.5s ease ${index * 0.1 + 0.35}s`,
+        }}
+      >
+        {feature.description}
+      </p>
+      <div
+        style={{
+          opacity: isVisible ? 1 : 0,
+          transform: isVisible ? "translateY(0)" : "translateY(16px)",
+          transition: `opacity 0.5s ease ${index * 0.1 + 0.4}s, transform 0.5s ease ${index * 0.1 + 0.4}s`,
+        }}
+      >
+        <feature.preview />
+      </div>
+    </div>
+  );
+}
+
 export default function FeatureShowcase() {
+  const { ref: headingRef, isVisible: headingVisible } = useScrollReveal();
+
   return (
     <section className="border-t border-border bg-muted/50">
       <div className="mx-auto max-w-6xl px-6 py-20">
-        <div className="text-center mb-12">
+        <div
+          ref={headingRef}
+          className="text-center mb-12"
+          style={{
+            opacity: headingVisible ? 1 : 0,
+            transform: headingVisible ? "translateY(0)" : "translateY(20px)",
+            transition: "opacity 0.6s ease, transform 0.6s ease",
+          }}
+        >
           <h2 className="text-2xl font-bold text-foreground">Intelligence-driven selling</h2>
           <p className="mt-2 text-sm text-muted-foreground">Every feature designed to help you sell smarter, not harder</p>
         </div>
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {features.map((f) => (
-            <div key={f.title} className="rounded-xl border border-border bg-card p-5 transition-all hover:shadow-lg hover:border-primary/20">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
-                <f.icon className="h-4.5 w-4.5 text-primary" />
-              </div>
-              <h3 className="mt-3 text-sm font-semibold text-foreground">{f.title}</h3>
-              <p className="mt-1 text-xs text-muted-foreground leading-relaxed">{f.description}</p>
-              <f.preview />
-            </div>
+          {features.map((f, i) => (
+            <FeatureCard key={f.title} feature={f} index={i} />
           ))}
         </div>
       </div>
