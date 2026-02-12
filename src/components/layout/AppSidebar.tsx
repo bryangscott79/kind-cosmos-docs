@@ -1,5 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
-import { BarChart3, Radio, Users, Kanban, PenTool, Settings, Zap, LogOut, CreditCard, Lock, Shield, Menu, X } from "lucide-react";
+import { BarChart3, Radio, Users, Kanban, PenTool, Settings, LogOut, CreditCard, Lock, Shield, Menu, X } from "lucide-react";
+import vigylLogo from "@/assets/vigyl-logo.png";
 import { useAuth } from "@/contexts/AuthContext";
 import { TIERS, hasAccess, FEATURE_ACCESS, TierKey } from "@/lib/tiers";
 import { useState, useEffect } from "react";
@@ -26,12 +27,8 @@ export default function AppSidebar() {
 
   const sidebarContent = (
     <>
-      <Link to="/" className="flex items-center gap-2.5 px-5 py-5 border-b border-border">
-        <div className="flex h-8 w-8 items-center justify-center rounded-md bg-gradient-to-br from-brand-blue to-brand-purple">
-          <Zap className="h-4 w-4 text-white" />
-        </div>
-        <span className="text-lg font-bold tracking-tight text-foreground">VIGYL</span>
-        <span className="text-xs font-medium text-brand-purple">.ai</span>
+      <Link to="/" className="flex items-center px-5 py-5 border-b border-border">
+        <img src={vigylLogo} alt="VIGYL" className="h-7" />
       </Link>
 
       {profile?.company_name && (
@@ -112,12 +109,8 @@ export default function AppSidebar() {
     <>
       {/* Mobile top bar */}
       <div className="fixed left-0 right-0 top-0 z-50 flex items-center justify-between border-b border-border bg-background px-4 py-3 md:hidden">
-        <Link to="/" className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-gradient-to-br from-brand-blue to-brand-purple">
-            <Zap className="h-3.5 w-3.5 text-white" />
-          </div>
-          <span className="text-base font-bold tracking-tight text-foreground">VIGYL</span>
-          <span className="text-xs font-medium text-brand-purple">.ai</span>
+        <Link to="/" className="flex items-center">
+          <img src={vigylLogo} alt="VIGYL" className="h-6" />
         </Link>
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
