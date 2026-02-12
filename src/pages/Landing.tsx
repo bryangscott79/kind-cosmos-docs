@@ -1,0 +1,131 @@
+import { Link } from "react-router-dom";
+import { ArrowRight, BarChart3, Radio, Users, Zap, Shield, TrendingUp } from "lucide-react";
+import IndustryCard from "@/components/IndustryCard";
+import { industries } from "@/data/mockData";
+
+const features = [
+  { icon: BarChart3, title: "Industry Health Scores", description: "Real-time composite scoring across 6 signal categories. Know which markets are thriving before your competitors do." },
+  { icon: Radio, title: "Signal Intelligence", description: "AI-processed geopolitical, economic, and regulatory signals with direct sales implications for your business." },
+  { icon: Users, title: "Prospect Engine", description: "Scored prospects with 'Why Now' rationale — know exactly when and why to reach out." },
+  { icon: Shield, title: "Pressure Response", description: "Understand if a company is contracting, investing strategically, or in growth mode. Target the right ones." },
+  { icon: TrendingUp, title: "VIGYL Score", description: "Composite prospect scoring: industry health, service alignment, spending signals, timing, and accessibility." },
+  { icon: Zap, title: "AI Outreach", description: "Generate signal-aware cold emails, LinkedIn messages, and meeting briefs that reference what's actually happening." },
+];
+
+export default function Landing() {
+  const previewIndustries = industries.slice(0, 6);
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Nav */}
+      <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-md">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+          <Link to="/" className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary">
+              <Zap className="h-4 w-4 text-primary-foreground" />
+            </div>
+            <span className="text-lg font-bold tracking-tight text-foreground">VIGYL</span>
+            <span className="text-xs font-medium text-primary">.ai</span>
+          </Link>
+          <div className="flex items-center gap-4">
+            <Link to="/industries" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              Dashboard
+            </Link>
+            <Link
+              to="/industries"
+              className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              Get Started
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      {/* Hero */}
+      <section className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent" />
+        <div className="relative mx-auto max-w-6xl px-6 py-24 text-center">
+          <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-medium text-primary mb-6">
+            <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse-glow" />
+            Market Intelligence Platform
+          </div>
+          <h1 className="mx-auto max-w-3xl text-4xl font-bold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
+            See the market{" "}
+            <span className="text-primary">before</span>{" "}
+            your competitors do
+          </h1>
+          <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground leading-relaxed">
+            VIGYL.ai transforms geopolitical, economic, and regulatory signals into actionable sales intelligence.
+            Know who to sell to, when, and why.
+          </p>
+          <div className="mt-8 flex items-center justify-center gap-4">
+            <Link
+              to="/industries"
+              className="inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              Explore Industries <ArrowRight className="h-4 w-4" />
+            </Link>
+            <Link
+              to="/industries"
+              className="inline-flex items-center gap-2 rounded-md border border-border bg-secondary px-6 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-accent"
+            >
+              Get Started
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Industry Preview */}
+      <section className="mx-auto max-w-6xl px-6 pb-16">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-xl font-bold text-foreground">Industry Health Monitor</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Real-time scores across tracked industries</p>
+          </div>
+          <Link to="/industries" className="flex items-center gap-1 text-sm font-medium text-primary hover:text-primary/80 transition-colors">
+            View all <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {previewIndustries.map((industry) => (
+            <IndustryCard key={industry.id} industry={industry} />
+          ))}
+        </div>
+      </section>
+
+      {/* Features */}
+      <section className="border-t border-border bg-card/50">
+        <div className="mx-auto max-w-6xl px-6 py-20">
+          <div className="text-center mb-12">
+            <h2 className="text-2xl font-bold text-foreground">Intelligence-driven selling</h2>
+            <p className="mt-2 text-sm text-muted-foreground">Every feature designed to help you sell smarter, not harder</p>
+          </div>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {features.map((f) => (
+              <div key={f.title} className="rounded-lg border border-border bg-card p-5">
+                <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary/10">
+                  <f.icon className="h-4.5 w-4.5 text-primary" />
+                </div>
+                <h3 className="mt-3 text-sm font-semibold text-foreground">{f.title}</h3>
+                <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed">{f.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t border-border">
+        <div className="mx-auto max-w-6xl px-6 py-8 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="flex h-6 w-6 items-center justify-center rounded bg-primary">
+              <Zap className="h-3 w-3 text-primary-foreground" />
+            </div>
+            <span className="text-sm font-bold text-foreground">VIGYL.ai</span>
+          </div>
+          <p className="text-xs text-muted-foreground">© 2026 VIGYL.ai — Market intelligence for modern sellers</p>
+        </div>
+      </footer>
+    </div>
+  );
+}
