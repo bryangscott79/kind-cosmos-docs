@@ -66,7 +66,9 @@ serve(async (req) => {
     let subscriptionEnd = null;
 
     if (hasActiveSub && activeSub) {
-      subscriptionEnd = new Date(activeSub.current_period_end * 1000).toISOString();
+      if (activeSub.current_period_end) {
+        subscriptionEnd = new Date(activeSub.current_period_end * 1000).toISOString();
+      }
       productId = activeSub.items.data[0].price.product;
       logStep("Active subscription", { productId, subscriptionEnd, status: activeSub.status });
     }
