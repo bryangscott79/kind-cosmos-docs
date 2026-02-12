@@ -9,40 +9,49 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { url } = await req.json();
-    if (!url) throw new Error("URL is required");
+    const { url, businessSummary } = await req.json();
+    if (!url && !businessSummary) throw new Error("URL or business summary is required");
 
-    // Step 1: Scrape the website
-    const firecrawlKey = Deno.env.get("FIRECRAWL_API_KEY");
-    if (!firecrawlKey) throw new Error("FIRECRAWL_API_KEY not configured");
+    let summary = "";
+    let markdown = "";
+    let pageTitle = "";
+    let formattedUrl = "";
 
-    let formattedUrl = url.trim();
-    if (!formattedUrl.startsWith("http://") && !formattedUrl.startsWith("https://")) {
-      formattedUrl = `https://${formattedUrl}`;
+    if (url) {
+      // Step 1: Scrape the website
+      const firecrawlKey = Deno.env.get("FIRECRAWL_API_KEY");
+      if (!firecrawlKey) throw new Error("FIRECRAWL_API_KEY not configured");
+
+      formattedUrl = url.trim();
+      if (!formattedUrl.startsWith("http://") && !formattedUrl.startsWith("https://")) {
+        formattedUrl = `https://${formattedUrl}`;
+      }
+
+      console.log("Scraping:", formattedUrl);
+      const scrapeRes = await fetch("https://api.firecrawl.dev/v1/scrape", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${firecrawlKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ url: formattedUrl, formats: ["markdown", "summary"], onlyMainContent: true }),
+      });
+
+      const scrapeData = await scrapeRes.json();
+      if (!scrapeRes.ok) {
+        console.error("Scrape error:", scrapeData);
+        throw new Error("Failed to scrape website");
+      }
+
+      summary = scrapeData?.data?.summary || scrapeData?.summary || "";
+      markdown = scrapeData?.data?.markdown || scrapeData?.markdown || "";
+      pageTitle = scrapeData?.data?.metadata?.title || scrapeData?.metadata?.title || "";
     }
 
-    console.log("Scraping:", formattedUrl);
-    const scrapeRes = await fetch("https://api.firecrawl.dev/v1/scrape", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${firecrawlKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ url: formattedUrl, formats: ["markdown", "summary"], onlyMainContent: true }),
-    });
-
-    const scrapeData = await scrapeRes.json();
-    if (!scrapeRes.ok) {
-      console.error("Scrape error:", scrapeData);
-      throw new Error("Failed to scrape website");
-    }
-
-    const summary = scrapeData?.data?.summary || scrapeData?.summary || "";
-    const markdown = scrapeData?.data?.markdown || scrapeData?.markdown || "";
-    const pageTitle = scrapeData?.data?.metadata?.title || scrapeData?.metadata?.title || "";
-
-    // Step 2: AI analysis to determine target industries
-    const lovableKey = Deno.env.get("LOVABLE_API_KEY");
-    if (!lovableKey) throw new Error("LOVABLE_API_KEY not configured");
-
-    const content = `Website: ${formattedUrl}\nTitle: ${pageTitle}\nSummary: ${summary}\n\nContent (first 3000 chars):\n${markdown.slice(0, 3000)}`;
+    const contentParts = [];
+    if (formattedUrl) contentParts.push(`Website: ${formattedUrl}`);
+    if (pageTitle) contentParts.push(`Title: ${pageTitle}`);
+    if (summary) contentParts.push(`Summary: ${summary}`);
+    if (businessSummary) contentParts.push(`Business Description: ${businessSummary}`);
+    if (markdown) contentParts.push(`Content (first 3000 chars):\n${markdown.slice(0, 3000)}`);
+    const content = contentParts.join("\n");
 
     const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
