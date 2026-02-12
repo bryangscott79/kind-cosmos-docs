@@ -19,7 +19,7 @@ interface AdminUser {
 }
 
 export default function Admin() {
-  const { session, isAdmin } = useAuth();
+  const { session, isAdmin, refreshSubscription, user } = useAuth();
   const { toast } = useToast();
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,6 +57,10 @@ export default function Admin() {
       });
       if (error) throw error;
       toast({ title: "Tier updated", description: `${userEmail} set to ${tierConfig.name}` });
+      // If updating own user, refresh subscription state
+      if (user?.email === userEmail) {
+        await refreshSubscription();
+      }
     } catch (err: any) {
       toast({ title: "Error updating tier", description: err.message, variant: "destructive" });
     } finally {
