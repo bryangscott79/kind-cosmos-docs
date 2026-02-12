@@ -68,6 +68,36 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_signals: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          opportunity_name: string
+          prospect_id: string | null
+          signal_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          opportunity_name: string
+          prospect_id?: string | null
+          signal_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          opportunity_name?: string
+          prospect_id?: string | null
+          signal_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
