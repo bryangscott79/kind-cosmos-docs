@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { BarChart3, Radio, Users, Kanban, PenTool, Settings, Zap, LogOut, CreditCard, Lock } from "lucide-react";
+import { BarChart3, Radio, Users, Kanban, PenTool, Settings, Zap, LogOut, CreditCard, Lock, Shield } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { TIERS, hasAccess, FEATURE_ACCESS, TierKey } from "@/lib/tiers";
 
@@ -14,7 +14,7 @@ const navItems = [
 
 export default function AppSidebar() {
   const location = useLocation();
-  const { tier, profile, signOut } = useAuth();
+  const { tier, profile, signOut, isAdmin } = useAuth();
   const currentTierInfo = TIERS[tier];
 
   return (
@@ -59,6 +59,19 @@ export default function AppSidebar() {
             </Link>
           );
         })}
+        {isAdmin && (
+          <Link
+            to="/admin"
+            className={`flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${
+              location.pathname === "/admin"
+                ? "bg-sidebar-accent text-foreground"
+                : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-foreground"
+            }`}
+          >
+            <Shield className={`h-4 w-4 ${location.pathname === "/admin" ? "text-primary" : ""}`} />
+            Admin
+          </Link>
+        )}
       </nav>
 
       <div className="border-t border-border p-4 space-y-3">
