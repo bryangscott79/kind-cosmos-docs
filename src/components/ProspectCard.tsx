@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
-import { Users, Linkedin, ArrowUpRight } from "lucide-react";
-import { Prospect, industries, getPressureLabel, getPressureColor, getScoreColor } from "@/data/mockData";
+import { Users, Linkedin, MapPin, DollarSign, Building2 } from "lucide-react";
+import { Prospect, industries, getPressureLabel, getScoreColorHsl } from "@/data/mockData";
 
 interface ProspectCardProps {
   prospect: Prospect;
@@ -8,8 +8,13 @@ interface ProspectCardProps {
 
 export default function ProspectCard({ prospect }: ProspectCardProps) {
   const industry = industries.find((i) => i.id === prospect.industryId);
-  const scoreColor = getScoreColor(prospect.vigylScore);
-  const pressureColor = getPressureColor(prospect.pressureResponse);
+  const scoreColor = getScoreColorHsl(prospect.vigylScore);
+
+  const pressureStyles: Record<string, string> = {
+    growth_mode: "bg-green-50 text-green-700 border-green-200",
+    strategic_investment: "bg-yellow-50 text-yellow-700 border-yellow-200",
+    contracting: "bg-red-50 text-red-700 border-red-200",
+  };
 
   return (
     <div className="rounded-lg border border-border bg-card p-5 transition-colors hover:border-primary/30">
@@ -17,12 +22,26 @@ export default function ProspectCard({ prospect }: ProspectCardProps) {
         <div className="flex-1 min-w-0">
           <h3 className="text-sm font-semibold text-foreground">{prospect.companyName}</h3>
           <p className="mt-0.5 text-xs text-muted-foreground">{industry?.name}</p>
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+            <div className="flex items-center gap-1">
+              <MapPin className="h-3 w-3 text-muted-foreground" />
+              <span className="text-[10px] text-muted-foreground">{prospect.location.city}, {prospect.location.state}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <DollarSign className="h-3 w-3 text-muted-foreground" />
+              <span className="text-[10px] text-muted-foreground">{prospect.annualRevenue}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Building2 className="h-3 w-3 text-muted-foreground" />
+              <span className="text-[10px] text-muted-foreground">{prospect.employeeCount.toLocaleString()} employees</span>
+            </div>
+          </div>
         </div>
         <div className="flex flex-col items-end gap-1.5">
-          <span className={`font-mono text-xl font-bold text-${scoreColor}`}>
+          <span className="font-mono text-xl font-bold" style={{ color: scoreColor }}>
             {prospect.vigylScore}
           </span>
-          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium bg-${pressureColor}/10 text-${pressureColor} border border-${pressureColor}/20`}>
+          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium border ${pressureStyles[prospect.pressureResponse]}`}>
             {getPressureLabel(prospect.pressureResponse)}
           </span>
         </div>
