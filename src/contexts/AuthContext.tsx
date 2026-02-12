@@ -1,6 +1,7 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { TierKey, getTierFromProductId } from "@/lib/tiers";
 
 interface Profile {
   id: string;
@@ -23,8 +24,11 @@ interface AuthContextType {
   user: User | null;
   profile: Profile | null;
   loading: boolean;
+  tier: TierKey;
+  subscriptionEnd: string | null;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  refreshSubscription: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -34,6 +38,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [tier, setTier] = useState<TierKey>("free");
+  const [subscriptionEnd, setSubscriptionEnd] = useState<string | null>(null);
 
   const fetchProfile = async (userId: string) => {
     const { data } = await supabase
@@ -48,16 +54,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (user) await fetchProfile(user.id);
   };
 
+  const refreshSubscription = useCallback(async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke("check-subscription");
+      if (error) {
+        console.error("Subscription check error:", error);
+        return;
+      }
+      if (data?.subscribed) {
+        setTier(getTierFromProductId(data.product_id));
+        setSubscriptionEnd(data.subscription_end);
+      } else {
+        setTier("free");
+        setSubscriptionEnd(null);
+      }
+    } catch (err) {
+      console.error("Subscription check failed:", err);
+    }
+  }, []);
+
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
-          // Use setTimeout to avoid Supabase auth deadlock
-          setTimeout(() => fetchProfile(session.user.id), 0);
+          setTimeout(() => {
+            fetchProfile(session.user.id);
+            refreshSubscription();
+          }, 0);
         } else {
           setProfile(null);
+          setTier("free");
+          setSubscriptionEnd(null);
         }
         setLoading(false);
       }
@@ -68,6 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(session?.user ?? null);
       if (session?.user) {
         fetchProfile(session.user.id);
+        refreshSubscription();
       }
       setLoading(false);
     });
@@ -75,13 +105,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Periodic refresh every 60s
+  useEffect(() => {
+    if (!session) return;
+    const interval = setInterval(refreshSubscription, 60000);
+    return () => clearInterval(interval);
+  }, [session, refreshSubscription]);
+
   const signOut = async () => {
     await supabase.auth.signOut();
     setProfile(null);
+    setTier("free");
+    setSubscriptionEnd(null);
   };
 
   return (
-    <AuthContext.Provider value={{ session, user, profile, loading, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{ session, user, profile, loading, tier, subscriptionEnd, signOut, refreshProfile, refreshSubscription }}>
       {children}
     </AuthContext.Provider>
   );
