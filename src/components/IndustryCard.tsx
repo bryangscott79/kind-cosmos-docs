@@ -45,12 +45,14 @@ export default function IndustryCard({ industry }: IndustryCardProps) {
           <span className={`font-mono text-xl font-bold text-${scoreColor}`}>
             {industry.healthScore}
           </span>
-          <Sparkline
-            data={industry.scoreHistory}
-            healthScore={industry.healthScore}
-            width={72}
-            height={24}
-          />
+          {industry.scoreHistory && (
+            <Sparkline
+              data={industry.scoreHistory}
+              healthScore={industry.healthScore}
+              width={72}
+              height={24}
+            />
+          )}
         </div>
       </div>
 
