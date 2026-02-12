@@ -1,16 +1,8 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, BarChart3, Radio, Users, Zap, Shield, TrendingUp } from "lucide-react";
+import { ArrowRight, Zap } from "lucide-react";
 import IndustryCard from "@/components/IndustryCard";
+import FeatureShowcase from "@/components/landing/FeatureShowcase";
 import { industries } from "@/data/mockData";
-
-const features = [
-  { icon: BarChart3, title: "Industry Health Scores", description: "Real-time composite scoring across 6 signal categories. Know which markets are thriving before your competitors do." },
-  { icon: Radio, title: "Signal Intelligence", description: "AI-processed geopolitical, economic, and regulatory signals with direct sales implications for your business." },
-  { icon: Users, title: "Prospect Engine", description: "Scored prospects with 'Why Now' rationale — know exactly when and why to reach out." },
-  { icon: Shield, title: "Pressure Response", description: "Understand if a company is contracting, investing strategically, or in growth mode. Target the right ones." },
-  { icon: TrendingUp, title: "VIGYL Score", description: "Composite prospect scoring: industry health, service alignment, spending signals, timing, and accessibility." },
-  { icon: Zap, title: "AI Outreach", description: "Generate signal-aware cold emails, LinkedIn messages, and meeting briefs that reference what's actually happening." },
-];
 
 export default function Landing() {
   const previewIndustries = industries.slice(0, 6);
@@ -94,25 +86,7 @@ export default function Landing() {
       </section>
 
       {/* Features */}
-      <section className="border-t border-border" style={{ background: "linear-gradient(180deg, hsl(220 20% 97%), hsl(220 20% 95%))" }}>
-        <div className="mx-auto max-w-6xl px-6 py-20">
-          <div className="text-center mb-12">
-            <h2 className="text-2xl font-bold text-foreground">Intelligence-driven selling</h2>
-            <p className="mt-2 text-sm text-muted-foreground">Every feature designed to help you sell smarter, not harder</p>
-          </div>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {features.map((f) => (
-              <div key={f.title} className="rounded-lg border border-border bg-card p-5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary/10">
-                  <f.icon className="h-4.5 w-4.5 text-primary" />
-                </div>
-                <h3 className="mt-3 text-sm font-semibold text-foreground">{f.title}</h3>
-                <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed">{f.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <FeatureShowcase />
 
       {/* Footer */}
       <footer className="border-t border-border bg-card">
