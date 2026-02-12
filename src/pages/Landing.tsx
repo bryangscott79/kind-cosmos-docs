@@ -56,7 +56,7 @@ export default function Landing() {
               to="/auth"
               className="inline-flex items-center gap-2 rounded-md bg-gradient-to-r from-brand-blue to-brand-purple px-6 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"
             >
-              Get Started Free <ArrowRight className="h-4 w-4" />
+              Create your account <ArrowRight className="h-4 w-4" />
             </Link>
             <a
               href="#analyze"
