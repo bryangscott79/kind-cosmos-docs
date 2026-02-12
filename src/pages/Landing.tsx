@@ -4,9 +4,13 @@ import IndustryCard from "@/components/IndustryCard";
 import FeatureShowcase from "@/components/landing/FeatureShowcase";
 import UrlAnalyzer from "@/components/landing/UrlAnalyzer";
 import { industries } from "@/data/mockData";
+import { useScrollReveal } from "@/hooks/useScrollReveal";
 
 export default function Landing() {
   const previewIndustries = industries.slice(0, 6);
+  const { ref: heroRef, isVisible: heroVisible } = useScrollReveal({ threshold: 0.05 });
+  const { ref: industryHeadingRef, isVisible: industryHeadingVisible } = useScrollReveal();
+  const { ref: analyzerRef, isVisible: analyzerVisible } = useScrollReveal({ threshold: 0.1 });
 
   return (
     <div className="min-h-screen bg-background">
@@ -35,23 +39,51 @@ export default function Landing() {
       </header>
 
       {/* Hero */}
-      <section className="relative overflow-hidden">
+      <section ref={heroRef} className="relative overflow-hidden">
         <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, hsl(217 91% 55% / 0.06), hsl(245 58% 51% / 0.06), transparent)" }} />
         <div className="relative mx-auto max-w-6xl px-6 py-24 text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-medium text-primary mb-6">
+          <div
+            className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-medium text-primary mb-6"
+            style={{
+              opacity: heroVisible ? 1 : 0,
+              transform: heroVisible ? "translateY(0) scale(1)" : "translateY(-10px) scale(0.95)",
+              transition: "opacity 0.5s ease, transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)",
+            }}
+          >
             <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse-glow" />
             Market Intelligence Platform
           </div>
-          <h1 className="mx-auto max-w-3xl text-4xl font-bold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
+          <h1
+            className="mx-auto max-w-3xl text-4xl font-bold tracking-tight text-foreground sm:text-5xl lg:text-6xl"
+            style={{
+              opacity: heroVisible ? 1 : 0,
+              transform: heroVisible ? "translateY(0)" : "translateY(24px)",
+              transition: "opacity 0.7s ease 0.1s, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.1s",
+            }}
+          >
             See the market{" "}
             <span className="bg-gradient-to-r from-brand-blue to-brand-purple bg-clip-text text-transparent">before</span>{" "}
             your competitors do
           </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground leading-relaxed">
+          <p
+            className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground leading-relaxed"
+            style={{
+              opacity: heroVisible ? 1 : 0,
+              transform: heroVisible ? "translateY(0)" : "translateY(20px)",
+              transition: "opacity 0.7s ease 0.25s, transform 0.7s ease 0.25s",
+            }}
+          >
             VIGYL.ai transforms geopolitical, economic, and regulatory signals into actionable sales intelligence.
             Know who to sell to, when, and why.
           </p>
-          <div className="mt-8 flex items-center justify-center gap-4">
+          <div
+            className="mt-8 flex items-center justify-center gap-4"
+            style={{
+              opacity: heroVisible ? 1 : 0,
+              transform: heroVisible ? "translateY(0)" : "translateY(16px)",
+              transition: "opacity 0.6s ease 0.4s, transform 0.6s ease 0.4s",
+            }}
+          >
             <Link
               to="/auth"
               className="inline-flex items-center gap-2 rounded-md bg-gradient-to-r from-brand-blue to-brand-purple px-6 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90"
@@ -68,12 +100,20 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Features first (was second) */}
+      {/* Features */}
       <FeatureShowcase />
 
-      {/* Industry Preview second (was first) — now centered heading */}
+      {/* Industry Preview */}
       <section className="mx-auto max-w-6xl px-6 py-16">
-        <div className="text-center mb-8">
+        <div
+          ref={industryHeadingRef}
+          className="text-center mb-8"
+          style={{
+            opacity: industryHeadingVisible ? 1 : 0,
+            transform: industryHeadingVisible ? "translateY(0)" : "translateY(20px)",
+            transition: "opacity 0.6s ease, transform 0.6s ease",
+          }}
+        >
           <h2 className="text-2xl font-bold text-foreground">Industry Health Monitor</h2>
           <p className="mt-2 text-sm text-muted-foreground">Real-time scores across tracked industries</p>
           <Link to="/industries" className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-primary hover:text-primary/80 transition-colors">
@@ -81,14 +121,22 @@ export default function Landing() {
           </Link>
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {previewIndustries.map((industry) => (
-            <IndustryCard key={industry.id} industry={industry} />
+          {previewIndustries.map((industry, i) => (
+            <IndustryCardAnimated key={industry.id} industry={industry} index={i} />
           ))}
         </div>
       </section>
 
       {/* URL Analyzer */}
-      <div id="analyze">
+      <div
+        id="analyze"
+        ref={analyzerRef}
+        style={{
+          opacity: analyzerVisible ? 1 : 0,
+          transform: analyzerVisible ? "translateY(0)" : "translateY(24px)",
+          transition: "opacity 0.6s ease, transform 0.6s ease",
+        }}
+      >
         <UrlAnalyzer />
       </div>
 
@@ -104,6 +152,22 @@ export default function Landing() {
           <p className="text-xs text-muted-foreground text-center">© 2026 VIGYL.ai — Market intelligence for modern sellers</p>
         </div>
       </footer>
+    </div>
+  );
+}
+
+function IndustryCardAnimated({ industry, index }: { industry: any; index: number }) {
+  const { ref, isVisible } = useScrollReveal({ threshold: 0.1 });
+  return (
+    <div
+      ref={ref}
+      style={{
+        opacity: isVisible ? 1 : 0,
+        transform: isVisible ? "translateY(0)" : "translateY(24px)",
+        transition: `opacity 0.5s ease ${index * 0.08}s, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1) ${index * 0.08}s`,
+      }}
+    >
+      <IndustryCard industry={industry} />
     </div>
   );
 }
