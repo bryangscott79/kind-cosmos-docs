@@ -7,7 +7,10 @@ import Landing from "./pages/Landing";
 import IndustryDashboard from "./pages/IndustryDashboard";
 import IndustryDetail from "./pages/IndustryDetail";
 import SignalFeed from "./pages/SignalFeed";
-import ComingSoon from "./pages/ComingSoon";
+import Prospects from "./pages/Prospects";
+import Pipeline from "./pages/Pipeline";
+import Outreach from "./pages/Outreach";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,10 +26,10 @@ const App = () => (
           <Route path="/industries" element={<IndustryDashboard />} />
           <Route path="/industries/:slug" element={<IndustryDetail />} />
           <Route path="/signals" element={<SignalFeed />} />
-          <Route path="/prospects" element={<ComingSoon title="Prospect Engine" />} />
-          <Route path="/pipeline" element={<ComingSoon title="Pipeline & CRM" />} />
-          <Route path="/outreach" element={<ComingSoon title="Outreach Studio" />} />
-          <Route path="/settings" element={<ComingSoon title="Settings" />} />
+          <Route path="/prospects" element={<Prospects />} />
+          <Route path="/pipeline" element={<Pipeline />} />
+          <Route path="/outreach" element={<Outreach />} />
+          <Route path="/settings" element={<Settings />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
