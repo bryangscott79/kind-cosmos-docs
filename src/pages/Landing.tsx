@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, Zap } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import vigylLogo from "@/assets/vigyl-logo.png";
 import IndustryCard from "@/components/IndustryCard";
 import FeatureShowcase from "@/components/landing/FeatureShowcase";
 import UrlAnalyzer from "@/components/landing/UrlAnalyzer";
@@ -17,12 +18,8 @@ export default function Landing() {
       {/* Nav */}
       <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-gradient-to-br from-brand-blue to-brand-purple">
-              <Zap className="h-4 w-4 text-white" />
-            </div>
-            <span className="text-lg font-bold tracking-tight text-foreground">VIGYL</span>
-            <span className="text-xs font-medium text-brand-purple">.ai</span>
+          <Link to="/" className="flex items-center">
+            <img src={vigylLogo} alt="VIGYL" className="h-8" />
           </Link>
           <div className="flex items-center gap-4">
             <Link to="/auth" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
@@ -143,11 +140,8 @@ export default function Landing() {
       {/* Footer */}
       <footer className="border-t border-border bg-card">
         <div className="mx-auto max-w-6xl px-6 py-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
-          <div className="flex items-center gap-2">
-            <div className="flex h-6 w-6 items-center justify-center rounded bg-gradient-to-br from-brand-blue to-brand-purple">
-              <Zap className="h-3 w-3 text-white" />
-            </div>
-            <span className="text-sm font-bold text-foreground">VIGYL.ai</span>
+          <div className="flex items-center">
+            <img src={vigylLogo} alt="VIGYL" className="h-6" />
           </div>
           <p className="text-xs text-muted-foreground text-center">© 2026 VIGYL.ai — Market intelligence for modern sellers</p>
         </div>
