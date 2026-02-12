@@ -14,7 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          ai_summary: string | null
+          business_summary: string | null
+          company_name: string | null
+          company_size: string | null
+          created_at: string
+          id: string
+          location_city: string | null
+          location_country: string | null
+          location_state: string | null
+          onboarding_completed: boolean
+          role_title: string | null
+          target_industries: string[] | null
+          updated_at: string
+          user_id: string
+          website_url: string | null
+        }
+        Insert: {
+          ai_summary?: string | null
+          business_summary?: string | null
+          company_name?: string | null
+          company_size?: string | null
+          created_at?: string
+          id?: string
+          location_city?: string | null
+          location_country?: string | null
+          location_state?: string | null
+          onboarding_completed?: boolean
+          role_title?: string | null
+          target_industries?: string[] | null
+          updated_at?: string
+          user_id: string
+          website_url?: string | null
+        }
+        Update: {
+          ai_summary?: string | null
+          business_summary?: string | null
+          company_name?: string | null
+          company_size?: string | null
+          created_at?: string
+          id?: string
+          location_city?: string | null
+          location_country?: string | null
+          location_state?: string | null
+          onboarding_completed?: boolean
+          role_title?: string | null
+          target_industries?: string[] | null
+          updated_at?: string
+          user_id?: string
+          website_url?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
