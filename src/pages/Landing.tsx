@@ -77,7 +77,7 @@ export default function Landing() {
             Know who to sell to, when, and why.
           </p>
           <div
-            className="mt-8 flex items-center justify-center gap-4"
+            className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4"
             style={{
               opacity: heroVisible ? 1 : 0,
               transform: heroVisible ? "translateY(0)" : "translateY(16px)",
