@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
-import { Save, Bell, CreditCard, Building2, Globe, Loader2, Sparkles, MapPin, Users, Briefcase, Target, Check, X, ArrowRight } from "lucide-react";
+import { Save, Bell, CreditCard, Building2, Globe, Loader2, Sparkles, MapPin, Users, Briefcase, Target, Check, X, ArrowRight, LogOut } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { TIERS, hasAccess } from "@/lib/tiers";
+import { useNavigate, Link } from "react-router-dom";
 
 const tabs = [
   { id: "profile", label: "Business Profile", icon: Building2 },
@@ -21,7 +23,9 @@ interface RecommendedIndustry {
 }
 
 export default function Settings() {
-  const { profile, user, refreshProfile } = useAuth();
+  const { profile, user, refreshProfile, tier, subscriptionEnd, signOut } = useAuth();
+  const navigate = useNavigate();
+  const currentTierInfo = TIERS[tier];
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("profile");
   const [saving, setSaving] = useState(false);
@@ -480,30 +484,53 @@ export default function Settings() {
                 <h3 className="text-sm font-semibold text-foreground mb-4">Current Plan</h3>
                 <div className="flex items-center justify-between rounded-md border border-border p-4">
                   <div>
-                    <p className="text-sm font-semibold text-foreground">Free Tier</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">Limited to industry dashboard and 5 signal views per day</p>
+                    <p className="text-sm font-semibold text-foreground">{currentTierInfo.name} Plan</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {tier === "free"
+                        ? "Limited to industry dashboard and basic signals"
+                        : `$${currentTierInfo.price}/mo${subscriptionEnd ? ` · Renews ${new Date(subscriptionEnd).toLocaleDateString()}` : ""}`}
+                    </p>
                   </div>
-                  <button className="rounded-md bg-gradient-to-r from-brand-blue to-brand-purple px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90">
-                    Upgrade to Pro
-                  </button>
+                  {tier === "free" ? (
+                    <Link
+                      to="/pricing"
+                      className="rounded-md bg-gradient-to-r from-brand-blue to-brand-purple px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
+                    >
+                      Upgrade
+                    </Link>
+                  ) : (
+                    <button
+                      onClick={async () => {
+                        try {
+                          const { data, error } = await supabase.functions.invoke("customer-portal");
+                          if (error) throw error;
+                          if (data?.url) window.open(data.url, "_blank");
+                        } catch {}
+                      }}
+                      className="rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-accent transition-colors"
+                    >
+                      Manage Subscription
+                    </button>
+                  )}
                 </div>
-                <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {[
-                    { name: "Pro", price: "$49/mo", features: ["Unlimited signals", "Prospect engine", "10 outreach/day"] },
-                    { name: "Team", price: "$149/mo", features: ["Everything in Pro", "5 team members", "Shared pipeline"] },
-                    { name: "Enterprise", price: "Custom", features: ["Unlimited everything", "SSO & API access", "Dedicated support"] },
-                  ].map((plan) => (
-                    <div key={plan.name} className="rounded-md border border-border p-4">
-                      <p className="text-sm font-semibold text-foreground">{plan.name}</p>
-                      <p className="text-lg font-bold text-foreground mt-1">{plan.price}</p>
-                      <ul className="mt-3 space-y-1.5">
-                        {plan.features.map((f) => (
-                          <li key={f} className="text-xs text-muted-foreground">✓ {f}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
-                </div>
+                {tier === "free" && (
+                  <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {(["starter", "pro", "enterprise"] as const).map((key) => {
+                      const plan = TIERS[key];
+                      return (
+                        <div key={key} className="rounded-md border border-border p-4">
+                          <p className="text-sm font-semibold text-foreground">{plan.name}</p>
+                          <p className="text-lg font-bold text-foreground mt-1">${plan.price}/mo</p>
+                          <ul className="mt-3 space-y-1.5">
+                            {plan.features.map((f) => (
+                              <li key={f} className="text-xs text-muted-foreground">✓ {f}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               <div className="rounded-lg border border-border bg-card p-6">
@@ -518,6 +545,15 @@ export default function Settings() {
                       className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground opacity-60 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                     />
                   </div>
+                  <button
+                    onClick={async () => {
+                      await signOut();
+                      navigate("/auth");
+                    }}
+                    className="flex items-center gap-2 rounded-md border border-destructive/30 px-4 py-2 text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors"
+                  >
+                    <LogOut className="h-4 w-4" /> Sign Out
+                  </button>
                 </div>
               </div>
             </div>
