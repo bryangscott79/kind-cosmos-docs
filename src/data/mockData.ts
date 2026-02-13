@@ -14,6 +14,14 @@ export interface SignalSource {
   publishedAt: string;
 }
 
+export interface SignalImpact {
+  name: string;
+  type: "industry" | "company";
+  impact: "positive" | "negative";
+  action: "engage" | "avoid" | "monitor";
+  reason: string;
+}
+
 export interface Signal {
   id: string;
   title: string;
@@ -26,6 +34,7 @@ export interface Signal {
   sourceUrl: string;
   publishedAt: string;
   sources: SignalSource[];
+  impactedEntities?: SignalImpact[];
 }
 
 function generateScoreHistory(base: number): { date: string; score: number }[] {
