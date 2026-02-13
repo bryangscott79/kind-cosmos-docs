@@ -47,8 +47,12 @@ Generate:
    - Located in ${locationStr} and surrounding regions (within reasonable sales territory)
    - In the user's target industries
    - Real-seeming companies with plausible names, revenue, employee counts
-   - Each with a compelling "Why Now" reason linked to current market signals
+   - Each with a compelling "Why Now" reason linked to current market signals (reference signal IDs)
    - Include realistic decision maker names and titles
+   - For each prospect, include 2-4 **recommended services** the user could sell them. Each service must have:
+     - A clear service name (e.g. "Cybersecurity Compliance Audit", "AI Integration Consulting")
+     - A rationale explaining why the prospect needs this service NOW based on their situation and signals
+     - A linked signal ID that creates the need (if applicable)
 
 Make everything specific to the user's business and geography. No generic examples.`;
 
@@ -135,6 +139,19 @@ Make everything specific to the user's business and geography. No generic exampl
                       },
                     },
                     relatedSignals: { type: "array", items: { type: "string" } },
+                    recommendedServices: {
+                      type: "array",
+                      items: {
+                        type: "object",
+                        properties: {
+                          service: { type: "string" },
+                          rationale: { type: "string" },
+                          linkedSignalId: { type: "string" },
+                        },
+                        required: ["service", "rationale"],
+                        additionalProperties: false,
+                      },
+                    },
                     pipelineStage: { type: "string", enum: ["researching", "contacted", "meeting_scheduled", "proposal_sent", "won", "lost"] },
                     lastContacted: { type: "string" },
                     notes: { type: "string" },
@@ -220,6 +237,7 @@ Make everything specific to the user's business and geography. No generic exampl
       pipelineStage: p.pipelineStage || "researching",
       lastContacted: p.lastContacted || null,
       notes: p.notes || "",
+      recommendedServices: p.recommendedServices || [],
     }));
 
     console.log(
