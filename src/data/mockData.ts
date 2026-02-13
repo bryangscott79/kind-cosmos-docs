@@ -112,6 +112,8 @@ export interface RecommendedService {
   linkedSignalId: string | null;
 }
 
+export type ProspectScope = "local" | "national" | "international";
+
 export interface Prospect {
   id: string;
   companyName: string;
@@ -128,6 +130,8 @@ export interface Prospect {
   location: { city: string; state: string; country: string };
   annualRevenue: string;
   employeeCount: number;
+  scope?: ProspectScope;
+  isDreamClient?: boolean;
 }
 
 export interface OutreachContent {
