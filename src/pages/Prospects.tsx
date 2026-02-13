@@ -9,29 +9,64 @@ import { Prospect, PressureResponse, ProspectScope } from "@/data/mockData";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { Slider } from "@/components/ui/slider";
 
 type SortBy = "score" | "name" | "revenue" | "employees";
 
 const PROSPECTS_PER_PAGE = 9;
 
-const US_STATES = ["GA", "AL", "FL", "SC", "NC", "TN", "VA", "NY", "CA", "TX", "IL", "WA", "CO", "AZ", "OH", "PA", "MI", "MA", "NJ", "OR"];
+// Neighboring states by state code for "local" radius expansion
+const NEIGHBORING_STATES: Record<string, string[]> = {
+  GA: ["AL", "FL", "SC", "NC", "TN"],
+  FL: ["GA", "AL"],
+  AL: ["GA", "FL", "TN", "MS"],
+  SC: ["GA", "NC"],
+  NC: ["GA", "SC", "TN", "VA"],
+  TN: ["GA", "AL", "NC", "VA", "KY", "MS", "AR", "MO"],
+  CA: ["OR", "NV", "AZ"],
+  TX: ["NM", "OK", "AR", "LA"],
+  NY: ["NJ", "CT", "PA", "MA", "VT"],
+  IL: ["WI", "IN", "MO", "IA", "KY"],
+  WA: ["OR", "ID"],
+  CO: ["WY", "NE", "KS", "NM", "UT"],
+  VA: ["NC", "TN", "KY", "WV", "MD", "DC"],
+  PA: ["NY", "NJ", "DE", "MD", "OH", "WV"],
+  OH: ["PA", "WV", "KY", "IN", "MI"],
+};
 
-// Simple state-proximity check (same state = local)
-function inferScope(prospect: Prospect, userState: string, userCountry: string): ProspectScope {
-  if (prospect.scope) return prospect.scope;
+function inferScope(prospect: Prospect, userState: string, userCountry: string, localRadius: number): ProspectScope {
+  if (prospect.scope) {
+    // Re-evaluate local vs national based on radius
+    if (prospect.scope === "international") return "international";
+    const pState = (prospect.location?.state || "").trim().toUpperCase();
+    const uState = userState.toUpperCase();
+    if (pState === uState) return "local";
+    // If radius >= 100 miles, include neighboring states as local
+    if (localRadius >= 100) {
+      const neighbors = NEIGHBORING_STATES[uState] || [];
+      if (neighbors.includes(pState)) return "local";
+    }
+    return "national";
+  }
+  
   const pCountry = (prospect.location?.country || "").trim();
-  const pState = (prospect.location?.state || "").trim();
+  const pState = (prospect.location?.state || "").trim().toUpperCase();
+  const uState = userState.toUpperCase();
   
   const isUserUS = !userCountry || userCountry === "US" || userCountry === "United States";
   const isProspectUS = !pCountry || pCountry === "US" || pCountry === "United States";
   
   if (!isProspectUS && isUserUS) return "international";
   if (isProspectUS && isUserUS) {
-    if (pState === userState) return "local";
+    if (pState === uState) return "local";
+    if (localRadius >= 100) {
+      const neighbors = NEIGHBORING_STATES[uState] || [];
+      if (neighbors.includes(pState)) return "local";
+    }
     return "national";
   }
   if (pCountry === userCountry) {
-    if (pState === userState) return "local";
+    if (pState === uState) return "local";
     return "national";
   }
   return "international";
@@ -118,6 +153,7 @@ export default function Prospects() {
   const [industryFilter, setIndustryFilter] = useState(industryParam);
   const [locationFilter, setLocationFilter] = useState("all");
   const [scopeFilter, setScopeFilter] = useState<ProspectScope | "all">("all");
+  const [localRadius, setLocalRadius] = useState(100);
 
   // Dream client state
   const [dreamInput, setDreamInput] = useState("");
@@ -133,9 +169,9 @@ export default function Prospects() {
   const enrichedProspects = useMemo(() => 
     prospects.map(p => ({
       ...p,
-      scope: inferScope(p, userState, userCountry),
+      scope: inferScope(p, userState, userCountry, localRadius),
     })),
-    [prospects, userState, userCountry]
+    [prospects, userState, userCountry, localRadius]
   );
 
   const states = useMemo(() => [...new Set(enrichedProspects.map(p => p.location.state))].sort(), [enrichedProspects]);
@@ -207,13 +243,30 @@ export default function Prospects() {
           </p>
         </div>
 
-        {/* Local context banner */}
+        {/* Local context banner with radius slider */}
         {userCity && (
-          <div className="mt-4 flex items-center gap-2 rounded-md bg-secondary px-3 py-2">
-            <Navigation className="h-3.5 w-3.5 text-primary" />
-            <span className="text-xs text-muted-foreground">
-              Your location: <span className="font-medium text-foreground">{userCity}{userState ? `, ${userState}` : ""}</span> — local prospects are within your state/metro area
-            </span>
+          <div className="mt-4 rounded-md bg-secondary px-4 py-3 space-y-2">
+            <div className="flex items-center gap-2">
+              <Navigation className="h-3.5 w-3.5 text-primary" />
+              <span className="text-xs text-muted-foreground">
+                Your location: <span className="font-medium text-foreground">{userCity}{userState ? `, ${userState}` : ""}</span>
+              </span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-muted-foreground whitespace-nowrap">Local radius:</span>
+              <Slider
+                value={[localRadius]}
+                onValueChange={(v) => setLocalRadius(v[0])}
+                min={10}
+                max={200}
+                step={10}
+                className="flex-1 max-w-[200px]"
+              />
+              <span className="text-xs font-medium text-foreground whitespace-nowrap w-16">{localRadius} miles</span>
+              <span className="text-[10px] text-muted-foreground">
+                {localRadius < 50 ? "Same metro only" : localRadius < 100 ? "Extended metro" : localRadius < 150 ? "Includes neighboring states" : "Wide regional"}
+              </span>
+            </div>
           </div>
         )}
 

@@ -113,22 +113,35 @@ Generate a LARGE volume of diverse prospects. The more the better.
    
    Each signal needs a clear sales implication. Use recent dates near ${today}. Include REAL publication sources with realistic URLs.
 
-3. **20-30 prospect companies** that would be ideal customers. CRITICAL REQUIREMENTS:
-    - Include a MIX of company sizes: small brands ($1M-$50M), mid-market ($50M-$500M), large enterprises ($500M-$5B), and major corporations ($5B+)
-    - CRITICAL GEOGRAPHIC DISTRIBUTION — you MUST include all three scopes:
-      - "local" (~30-40%): Companies in or near ${location_city || "the user's city"}, ${location_state || "the user's state"} — same metro area or neighboring cities within ~100 miles
-      - "national" (~30-35%): Companies elsewhere in ${location_country || "the United States"} — different states/regions like New York, California, Texas, Illinois, etc.
-      - "international" (~25-30%): Companies in OTHER COUNTRIES — UK, Germany, Japan, Canada, Australia, Brazil, Singapore, UAE, etc.
-    - Each prospect MUST have a "scope" field set to exactly one of: "local", "national", or "international"
-    - DO NOT make all prospects local. Spread them across the three scopes as specified above.
-    - For international prospects, use the actual country name (e.g., "United Kingdom", "Germany", "Japan") — NOT "US" or "United States"
+3. **30-45 prospect companies** that would be ideal customers. You MUST generate prospects in THREE SEPARATE BATCHES:
+
+   **BATCH A — LOCAL (8-12 prospects, scope: "local"):**
+   Companies physically located near ${location_city || "the user's city"}, ${location_state || "the user's state"}.
+   Include cities within ~150 miles. For Georgia that means Atlanta, Athens, Marietta, Savannah, Augusta, Chattanooga TN, Greenville SC, etc.
+   These MUST have location.state set to "${location_state || "GA"}" or neighboring states (SC, TN, AL, NC).
+   
+   **BATCH B — NATIONAL (10-15 prospects, scope: "national"):**
+   Companies in OTHER US states far from ${location_state || "GA"}. Use states like: California, New York, Texas, Illinois, Washington, Colorado, Massachusetts, Florida, Oregon, Minnesota, Arizona.
+   These MUST have location.country = "United States" and location.state != "${location_state || "GA"}".
+   Examples: a company in San Francisco CA, one in Austin TX, one in Chicago IL, one in Seattle WA, one in Boston MA, one in Miami FL, etc.
+   
+   **BATCH C — INTERNATIONAL (8-12 prospects, scope: "international"):**
+   Companies in OTHER COUNTRIES. Use: United Kingdom, Germany, Japan, Canada, Australia, Brazil, Singapore, UAE, France, South Korea, Netherlands, India.
+   These MUST have location.country set to the FULL country name (NOT "US" or "United States").
+   Examples: a company in London, United Kingdom; one in Tokyo, Japan; one in Toronto, Canada; one in Munich, Germany.
+
+   CRITICAL RULES FOR ALL PROSPECTS:
+    - Each prospect MUST have a "scope" field set to exactly "local", "national", or "international" matching the batch above
+    - Verify: national prospects MUST have a US state different from ${location_state || "GA"}
+    - Verify: international prospects MUST have a non-US country
+    - Include a MIX of company sizes: small ($1M-$50M), mid ($50M-$500M), large ($500M-$5B), major ($5B+)
     - Industry diversity: spread across at least 8 different industries
-    - Include companies from sectors like food & beverage, automotive, airlines, electronics, hospitality, agriculture — not just tech!
+    - Include food & beverage, automotive, airlines, electronics, hospitality, agriculture — not just tech!
     - Real-seeming companies with plausible names, revenue figures, employee counts
     - Each with a compelling "Why Now" reason linked to current market signals
     - Include realistic decision maker names and titles
-    - For each prospect, include 2-4 **recommended services** the user could sell them based on their specific situation
-    - Annual revenue should use realistic formats: "$2.3M", "$145M", "$3.8B", etc.
+    - For each prospect, include 2-4 **recommended services** the user could sell
+    - Annual revenue formats: "$2.3M", "$145M", "$3.8B", etc.
 
 Make everything specific to the user's business capabilities and geography. No generic examples. Think about what this specific company could ACTUALLY sell to each prospect.`;
 
