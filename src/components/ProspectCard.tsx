@@ -1,9 +1,12 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Users, Linkedin, MapPin, DollarSign, Building2, Radio, ChevronDown, ChevronUp, ExternalLink, Briefcase, Zap } from "lucide-react";
+import { Users, Linkedin, MapPin, DollarSign, Building2, Radio, ChevronDown, ChevronUp, ExternalLink, Briefcase, Zap, ThumbsUp, ThumbsDown, Loader2 } from "lucide-react";
 import { Prospect, getPressureLabel, getScoreColorHsl } from "@/data/mockData";
 import { useSavedSignals } from "@/hooks/useSavedSignals";
 import { useIntelligence } from "@/contexts/IntelligenceContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 interface ProspectCardProps {
   prospect: Prospect;
@@ -11,9 +14,33 @@ interface ProspectCardProps {
 
 export default function ProspectCard({ prospect }: ProspectCardProps) {
   const [expanded, setExpanded] = useState(false);
+  const [feedbackSending, setFeedbackSending] = useState<string | null>(null);
+  const [feedbackGiven, setFeedbackGiven] = useState<string | null>(null);
   const { getSavedForProspect } = useSavedSignals();
   const { data } = useIntelligence();
   const { industries, signals: allSignals } = data;
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  const sendFeedback = async (type: "more" | "less") => {
+    if (!user) return;
+    setFeedbackSending(type);
+    try {
+      await supabase.from("prospect_feedback" as any).insert({
+        user_id: user.id,
+        prospect_company_name: prospect.companyName,
+        prospect_industry: industries.find(i => i.id === prospect.industryId)?.name || prospect.industryId,
+        feedback_type: type,
+        prospect_data: { vigylScore: prospect.vigylScore, pressureResponse: prospect.pressureResponse, location: prospect.location, annualRevenue: prospect.annualRevenue },
+      });
+      setFeedbackGiven(type);
+      toast({ title: type === "more" ? "👍 Got it!" : "👎 Noted!", description: type === "more" ? "We'll find more prospects like this." : "We'll show fewer like this." });
+    } catch {
+      toast({ title: "Couldn't save feedback", variant: "destructive" });
+    } finally {
+      setFeedbackSending(null);
+    }
+  };
 
   const industry = industries.find((i) => i.id === prospect.industryId);
   const scoreColor = getScoreColorHsl(prospect.vigylScore);
@@ -206,7 +233,36 @@ export default function ProspectCard({ prospect }: ProspectCardProps) {
         </div>
       )}
 
-      <div className="mt-4 flex items-center gap-2">
+      {/* Feedback buttons */}
+      <div className="mt-3 flex items-center gap-2 border-t border-border pt-3">
+        <span className="text-[10px] text-muted-foreground mr-auto">Prospect quality?</span>
+        <button
+          onClick={() => sendFeedback("more")}
+          disabled={!!feedbackGiven || !!feedbackSending}
+          className={`flex items-center gap-1 rounded-md px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
+            feedbackGiven === "more"
+              ? "bg-green-100 text-green-700 border border-green-200"
+              : "border border-border bg-card text-muted-foreground hover:text-green-700 hover:border-green-200 hover:bg-green-50"
+          } disabled:opacity-50`}
+        >
+          {feedbackSending === "more" ? <Loader2 className="h-3 w-3 animate-spin" /> : <ThumbsUp className="h-3 w-3" />}
+          More like this
+        </button>
+        <button
+          onClick={() => sendFeedback("less")}
+          disabled={!!feedbackGiven || !!feedbackSending}
+          className={`flex items-center gap-1 rounded-md px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
+            feedbackGiven === "less"
+              ? "bg-red-100 text-red-700 border border-red-200"
+              : "border border-border bg-card text-muted-foreground hover:text-red-700 hover:border-red-200 hover:bg-red-50"
+          } disabled:opacity-50`}
+        >
+          {feedbackSending === "less" ? <Loader2 className="h-3 w-3 animate-spin" /> : <ThumbsDown className="h-3 w-3" />}
+          Less like this
+        </button>
+      </div>
+
+      <div className="mt-3 flex items-center gap-2">
         <Link to={`/outreach?prospect=${prospect.id}`} className="flex-1 rounded-md bg-gradient-to-r from-brand-blue to-brand-purple px-3 py-1.5 text-center text-xs font-medium text-white transition-opacity hover:opacity-90">
           Generate Outreach
         </Link>
