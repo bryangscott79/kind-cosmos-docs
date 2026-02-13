@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Search, MapPin, DollarSign, Building2, Globe2, Star, Loader2, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
+import { Search, MapPin, Building2, Globe2, Star, Loader2, ChevronLeft, ChevronRight, Sparkles, Navigation } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import ProspectCard from "@/components/ProspectCard";
 import IntelligenceLoader from "@/components/IntelligenceLoader";
@@ -13,6 +13,29 @@ import { useToast } from "@/hooks/use-toast";
 type SortBy = "score" | "name" | "revenue" | "employees";
 
 const PROSPECTS_PER_PAGE = 9;
+
+const US_STATES = ["GA", "AL", "FL", "SC", "NC", "TN", "VA", "NY", "CA", "TX", "IL", "WA", "CO", "AZ", "OH", "PA", "MI", "MA", "NJ", "OR"];
+
+// Simple state-proximity check (same state = local)
+function inferScope(prospect: Prospect, userState: string, userCountry: string): ProspectScope {
+  if (prospect.scope) return prospect.scope;
+  const pCountry = (prospect.location?.country || "").trim();
+  const pState = (prospect.location?.state || "").trim();
+  
+  const isUserUS = !userCountry || userCountry === "US" || userCountry === "United States";
+  const isProspectUS = !pCountry || pCountry === "US" || pCountry === "United States";
+  
+  if (!isProspectUS && isUserUS) return "international";
+  if (isProspectUS && isUserUS) {
+    if (pState === userState) return "local";
+    return "national";
+  }
+  if (pCountry === userCountry) {
+    if (pState === userState) return "local";
+    return "national";
+  }
+  return "international";
+}
 
 function ProspectSection({
   title,
@@ -102,11 +125,24 @@ export default function Prospects() {
   const [dreamProspects, setDreamProspects] = useState<Prospect[]>([]);
   const [dreamOverview, setDreamOverview] = useState<string | null>(null);
 
-  const states = useMemo(() => [...new Set(prospects.map(p => p.location.state))].sort(), [prospects]);
+  const userState = (profile?.location_state || "").trim();
+  const userCity = (profile?.location_city || "").trim();
+  const userCountry = (profile?.location_country || "US").trim();
+
+  // Enrich prospects with inferred scope
+  const enrichedProspects = useMemo(() => 
+    prospects.map(p => ({
+      ...p,
+      scope: inferScope(p, userState, userCountry),
+    })),
+    [prospects, userState, userCountry]
+  );
+
+  const states = useMemo(() => [...new Set(enrichedProspects.map(p => p.location.state))].sort(), [enrichedProspects]);
   const industriesWithProspects = useMemo(() => {
-    const ids = [...new Set(prospects.map(p => p.industryId))];
+    const ids = [...new Set(enrichedProspects.map(p => p.industryId))];
     return industries.filter(i => ids.includes(i.id));
-  }, [prospects, industries]);
+  }, [enrichedProspects, industries]);
 
   const parseRevenue = (rev: string): number => {
     const num = parseFloat(rev.replace(/[^0-9.]/g, ""));
@@ -115,7 +151,7 @@ export default function Prospects() {
   };
 
   const filtered = useMemo(() => {
-    let result = prospects
+    let result = enrichedProspects
       .filter(p => p.companyName.toLowerCase().includes(search.toLowerCase()))
       .filter(p => pressureFilter === "all" || p.pressureResponse === pressureFilter)
       .filter(p => industryFilter === "all" || p.industryId === industryFilter)
@@ -128,13 +164,12 @@ export default function Prospects() {
     else if (sortBy === "employees") result.sort((a, b) => b.employeeCount - a.employeeCount);
 
     return result;
-  }, [search, sortBy, pressureFilter, industryFilter, locationFilter, scopeFilter, prospects]);
+  }, [search, sortBy, pressureFilter, industryFilter, locationFilter, scopeFilter, enrichedProspects]);
 
   // Group by scope
   const localProspects = useMemo(() => filtered.filter(p => p.scope === "local"), [filtered]);
   const nationalProspects = useMemo(() => filtered.filter(p => p.scope === "national"), [filtered]);
   const internationalProspects = useMemo(() => filtered.filter(p => p.scope === "international"), [filtered]);
-  const unscopedProspects = useMemo(() => filtered.filter(p => !p.scope), [filtered]);
 
   const activeIndustry = industries.find(i => i.id === industryFilter);
 
@@ -172,14 +207,24 @@ export default function Prospects() {
           </p>
         </div>
 
+        {/* Local context banner */}
+        {userCity && (
+          <div className="mt-4 flex items-center gap-2 rounded-md bg-secondary px-3 py-2">
+            <Navigation className="h-3.5 w-3.5 text-primary" />
+            <span className="text-xs text-muted-foreground">
+              Your location: <span className="font-medium text-foreground">{userCity}{userState ? `, ${userState}` : ""}</span> — local prospects are within your state/metro area
+            </span>
+          </div>
+        )}
+
         {/* Dream Client */}
-        <div className="mt-5 rounded-lg border border-primary/20 bg-primary/5 p-4">
+        <div className="mt-4 rounded-lg border border-primary/20 bg-primary/5 p-4">
           <div className="flex items-center gap-2 mb-2">
             <Star className="h-4 w-4 text-primary" />
             <h3 className="text-sm font-semibold text-foreground">Dream Client Analyzer</h3>
           </div>
           <p className="text-xs text-muted-foreground mb-3">
-            Enter a company name to discover divisions and opportunities within it.
+            Enter any company name to discover divisions and opportunities within it.
           </p>
           <div className="flex gap-2">
             <input
@@ -212,7 +257,7 @@ export default function Prospects() {
             )}
             <ProspectSection
               title={`Dream Client: ${dreamInput}`}
-              icon={<Star className="h-5 w-5 text-yellow-500" />}
+              icon={<Star className="h-5 w-5 text-primary" />}
               prospects={dreamProspects}
               emptyMessage="No opportunities found."
             />
@@ -221,7 +266,7 @@ export default function Prospects() {
 
         {/* Filters */}
         <div className="mt-5 space-y-3">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center flex-wrap">
             <div className="relative max-w-xs flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <input type="text" placeholder="Search prospects..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full rounded-md border border-border bg-card pl-9 pr-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
@@ -244,8 +289,8 @@ export default function Prospects() {
               <Globe2 className="h-3.5 w-3.5 text-muted-foreground" />
               <select value={scopeFilter} onChange={(e) => setScopeFilter(e.target.value as ProspectScope | "all")} className="rounded-md border border-border bg-card px-2 py-1.5 text-xs text-foreground focus:border-primary focus:outline-none">
                 <option value="all">All Regions</option>
-                <option value="local">Local</option>
-                <option value="national">National</option>
+                <option value="local">Local ({userCity || "nearby"})</option>
+                <option value="national">National ({userCountry || "US"})</option>
                 <option value="international">International</option>
               </select>
             </div>
@@ -275,46 +320,39 @@ export default function Prospects() {
           {scopeFilter === "all" ? (
             <>
               <ProspectSection
-                title="Local Prospects"
-                icon={<MapPin className="h-5 w-5 text-green-500" />}
+                title={`Local Prospects — ${userCity || "Your Area"}${userState ? `, ${userState}` : ""}`}
+                icon={<MapPin className="h-5 w-5 text-emerald-500" />}
                 prospects={localProspects}
-                emptyMessage="No local prospects match your filters."
+                emptyMessage="No local prospects found. Try refreshing your intelligence data."
               />
               <ProspectSection
-                title="National Prospects"
+                title={`National Prospects — ${userCountry || "United States"}`}
                 icon={<Building2 className="h-5 w-5 text-blue-500" />}
                 prospects={nationalProspects}
-                emptyMessage="No national prospects match your filters."
+                emptyMessage="No national prospects found. Try refreshing your intelligence data."
               />
               <ProspectSection
                 title="International Prospects"
-                icon={<Globe2 className="h-5 w-5 text-purple-500" />}
+                icon={<Globe2 className="h-5 w-5 text-violet-500" />}
                 prospects={internationalProspects}
-                emptyMessage="No international prospects match your filters."
+                emptyMessage="No international prospects found. Try refreshing your intelligence data."
               />
-              {unscopedProspects.length > 0 && (
-                <ProspectSection
-                  title="Other Prospects"
-                  icon={<Building2 className="h-5 w-5 text-muted-foreground" />}
-                  prospects={unscopedProspects}
-                  emptyMessage=""
-                />
-              )}
             </>
           ) : (
             <ProspectSection
-              title={`${scopeFilter.charAt(0).toUpperCase() + scopeFilter.slice(1)} Prospects`}
+              title={
+                scopeFilter === "local" ? `Local Prospects — ${userCity || "Your Area"}` :
+                scopeFilter === "national" ? `National Prospects — ${userCountry || "United States"}` :
+                "International Prospects"
+              }
               icon={
-                scopeFilter === "local" ? <MapPin className="h-5 w-5 text-green-500" /> :
+                scopeFilter === "local" ? <MapPin className="h-5 w-5 text-emerald-500" /> :
                 scopeFilter === "national" ? <Building2 className="h-5 w-5 text-blue-500" /> :
-                <Globe2 className="h-5 w-5 text-purple-500" />
+                <Globe2 className="h-5 w-5 text-violet-500" />
               }
               prospects={filtered}
               emptyMessage="No prospects match your filters."
             />
-          )}
-          {filtered.length === 0 && scopeFilter !== "all" && (
-            <div className="py-16 text-center text-sm text-muted-foreground">No prospects match your filters.</div>
           )}
         </div>
       </DashboardLayout>
