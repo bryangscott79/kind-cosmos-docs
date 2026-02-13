@@ -338,7 +338,7 @@ export default function Settings() {
 
                 {targetIndustries.length > 0 && (
                   <div className="flex flex-wrap gap-2 mb-4">
-                    {targetIndustries.map((name) => (
+                    {targetIndustries.filter(name => name && !/^\d+$/.test(name)).map((name) => (
                       <span
                         key={name}
                         className="inline-flex items-center gap-1 rounded-full border border-primary/20 bg-primary/5 px-2.5 py-1 text-xs font-medium text-primary"

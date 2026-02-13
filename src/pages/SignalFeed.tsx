@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Search, ChevronDown, ChevronRight, Globe, Scale, DollarSign, Users, Cpu, Truck, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { Search, ChevronDown, ChevronRight, Globe, Scale, DollarSign, Users, Cpu, Truck, TrendingUp, TrendingDown, Minus, MessageCircle, Swords, Leaf } from "lucide-react";
 import { Link } from "react-router-dom";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import SignalCard from "@/components/SignalCard";
@@ -17,9 +17,12 @@ const categoryConfig: Record<Signal["signalType"], { icon: typeof Globe; label: 
   hiring: { icon: Users, label: "Hiring & Talent", description: "Hiring surges and freezes, key executive movements, talent wars, and workforce shifts", color: "hsl(var(--brand-blue))" },
   tech: { icon: Cpu, label: "Technology", description: "Platform shifts, AI adoption milestones, infrastructure investments, and breakthrough innovations", color: "hsl(var(--brand-teal))" },
   supply_chain: { icon: Truck, label: "Supply Chain", description: "Disruptions, reshoring trends, inventory shifts, and logistics cost changes", color: "hsl(var(--score-green))" },
+  social: { icon: MessageCircle, label: "Social & Media", description: "Brand sentiment shifts, viral trends, influencer moves, and public perception changes", color: "hsl(var(--brand-purple))" },
+  competitive: { icon: Swords, label: "Competitive", description: "Competitor launches, M&A activity, market share shifts, and strategic pivots", color: "hsl(var(--score-yellow))" },
+  environmental: { icon: Leaf, label: "Environmental", description: "Climate policy, sustainability mandates, ESG requirements, and green transitions", color: "hsl(var(--score-green))" },
 };
 
-const categoryOrder: Signal["signalType"][] = ["political", "regulatory", "economic", "hiring", "tech", "supply_chain"];
+const categoryOrder: Signal["signalType"][] = ["political", "regulatory", "economic", "hiring", "tech", "supply_chain", "social", "competitive", "environmental"];
 
 function SentimentSummary({ signals }: { signals: Signal[] }) {
   const positive = signals.filter(s => s.sentiment === "positive").length;

@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -13,8 +14,38 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
+    const authHeader = req.headers.get("authorization");
     const { profile } = await req.json();
     if (!profile) throw new Error("Profile required");
+
+    // Fetch user's prospect feedback to personalize results
+    let feedbackContext = "";
+    try {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const supabase = createClient(supabaseUrl, supabaseKey);
+      
+      const { data: feedback } = await supabase
+        .from("prospect_feedback")
+        .select("*")
+        .eq("user_id", profile.user_id)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      
+      if (feedback && feedback.length > 0) {
+        const moreCompanies = feedback.filter((f: any) => f.feedback_type === "more").map((f: any) => `${f.prospect_company_name} (${f.prospect_industry})`);
+        const lessCompanies = feedback.filter((f: any) => f.feedback_type === "less").map((f: any) => `${f.prospect_company_name} (${f.prospect_industry})`);
+        
+        if (moreCompanies.length > 0) {
+          feedbackContext += `\n\nIMPORTANT - The user has indicated they want MORE prospects similar to these companies: ${moreCompanies.join(", ")}. Generate prospects with similar characteristics (industry, size, revenue range, location type).`;
+        }
+        if (lessCompanies.length > 0) {
+          feedbackContext += `\n\nIMPORTANT - The user has indicated they want FEWER prospects like these companies: ${lessCompanies.join(", ")}. Avoid generating prospects with similar characteristics.`;
+        }
+      }
+    } catch (e) {
+      console.log("Could not fetch feedback, continuing without it:", e);
+    }
 
     const {
       company_name,
@@ -30,31 +61,70 @@ serve(async (req) => {
     const today = new Date().toISOString().split("T")[0];
     const locationStr = [location_city, location_state, location_country].filter(Boolean).join(", ") || "United States";
 
-    const systemPrompt = `You are a B2B sales intelligence analyst. Generate realistic, actionable market intelligence for a sales professional. All data must be realistic and grounded — use real-seeming company names, plausible financials, and current market dynamics. Today is ${today}.`;
+    const systemPrompt = `You are an elite B2B sales intelligence analyst with deep knowledge of EVERY industry globally. You track companies of all sizes from Fortune 500 to emerging startups across every sector. You generate realistic, actionable market intelligence. All data must be grounded in real market dynamics and plausible. Today is ${today}.`;
 
-    const userPrompt = `Generate personalized sales intelligence for this user:
+    const userPrompt = `Generate comprehensive, personalized sales intelligence for this user:
 
 Company: ${company_name || "Unknown"}
 Website: ${website_url || "Not provided"}
 Business Summary: ${business_summary || ai_summary || "Not provided"}
-Target Industries: ${target_industries?.join(", ") || "General"}
+Target Industries: ${target_industries?.join(", ") || "All industries - cast a wide net"}
 Location: ${locationStr}
+${feedbackContext}
+
+Generate intelligence across a WIDE range of industries. Think globally and across ALL major sectors including but NOT limited to:
+- Technology & SaaS
+- Healthcare & Life Sciences
+- Financial Services & Banking
+- Food & Beverage
+- Automotive & Transportation
+- Airlines & Aviation
+- Electronics & Consumer Tech
+- Retail & E-Commerce
+- Manufacturing & Industrial
+- Energy & Utilities
+- Real Estate & Construction
+- Media & Entertainment
+- Telecommunications
+- Agriculture & AgTech
+- Hospitality & Tourism
+- Education & EdTech
+- Defense & Aerospace
+- Pharmaceuticals
+- Insurance
+- Professional Services
+- Logistics & Supply Chain
+- Mining & Natural Resources
 
 Generate:
-1. **6-8 industries** relevant to this user's target market. Include health scores (0-100), trend direction, and top market signals.
-2. **15-20 market signals** across these industries. Include real-seeming regulatory changes, economic shifts, hiring trends, tech disruptions, political developments, and supply chain events. Each signal needs a clear sales implication explaining how it creates an opportunity for the user's business. Use recent dates near ${today}.
-3. **10-15 prospect companies** that would be ideal customers for this user. Companies should be:
-   - Located in ${locationStr} and surrounding regions (within reasonable sales territory)
-   - In the user's target industries
-   - Real-seeming companies with plausible names, revenue, employee counts
-   - Each with a compelling "Why Now" reason linked to current market signals (reference signal IDs)
-   - Include realistic decision maker names and titles
-   - For each prospect, include 2-4 **recommended services** the user could sell them. Each service must have:
-     - A clear service name (e.g. "Cybersecurity Compliance Audit", "AI Integration Consulting")
-     - A rationale explaining why the prospect needs this service NOW based on their situation and signals
-     - A linked signal ID that creates the need (if applicable)
 
-Make everything specific to the user's business and geography. No generic examples.`;
+1. **10-14 industries** most relevant to this user's sales targets. Include DIVERSE industries - don't just pick obvious ones. Include both the user's stated targets AND adjacent/unexpected industries where they could sell. Include health scores (0-100), trend direction, and top market signals for each.
+
+2. **25-35 market signals** across ALL these industries. Signal types MUST include:
+   - political: government policy, trade deals, sanctions, elections
+   - regulatory: compliance mandates, new laws, enforcement actions
+   - economic: spending trends, market shifts, rate changes, M&A
+   - hiring: talent wars, layoffs, executive moves, workforce shifts
+   - tech: platform shifts, AI adoption, infrastructure investments
+   - supply_chain: disruptions, reshoring, logistics changes
+   - social: brand sentiment changes, viral trends, social media shifts, influencer impacts, PR crises, consumer behavior changes
+   - competitive: competitor launches, market share shifts, strategic pivots, acquisitions
+   - environmental: climate policy, ESG mandates, sustainability shifts, green transitions
+   
+   Each signal needs a clear sales implication. Use recent dates near ${today}. Include REAL publication sources with realistic URLs.
+
+3. **20-30 prospect companies** that would be ideal customers. CRITICAL REQUIREMENTS:
+   - Include a MIX of company sizes: small brands ($1M-$50M), mid-market ($50M-$500M), large enterprises ($500M-$5B), and major corporations ($5B+)
+   - Geographic diversity: ~40% local/regional (near ${locationStr}), ~35% national, ~25% international
+   - Industry diversity: spread across at least 8 different industries
+   - Include companies from sectors like food & beverage, automotive, airlines, electronics, hospitality, agriculture — not just tech!
+   - Real-seeming companies with plausible names, revenue figures, employee counts
+   - Each with a compelling "Why Now" reason linked to current market signals
+   - Include realistic decision maker names and titles
+   - For each prospect, include 2-4 **recommended services** the user could sell them based on their specific situation
+   - Annual revenue should use realistic formats: "$2.3M", "$145M", "$3.8B", etc.
+
+Make everything specific to the user's business capabilities and geography. No generic examples. Think about what this specific company could ACTUALLY sell to each prospect.`;
 
     const tools = [
       {
@@ -90,7 +160,7 @@ Make everything specific to the user's business and geography. No generic exampl
                     title: { type: "string" },
                     summary: { type: "string" },
                     industryTags: { type: "array", items: { type: "string" } },
-                    signalType: { type: "string", enum: ["political", "regulatory", "economic", "hiring", "tech", "supply_chain"] },
+                    signalType: { type: "string", enum: ["political", "regulatory", "economic", "hiring", "tech", "supply_chain", "social", "competitive", "environmental"] },
                     sentiment: { type: "string", enum: ["positive", "negative", "neutral"] },
                     severity: { type: "number" },
                     salesImplication: { type: "string" },

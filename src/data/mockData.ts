@@ -19,7 +19,7 @@ export interface Signal {
   title: string;
   summary: string;
   industryTags: string[];
-  signalType: "political" | "regulatory" | "economic" | "hiring" | "tech" | "supply_chain";
+  signalType: "political" | "regulatory" | "economic" | "hiring" | "tech" | "supply_chain" | "social" | "competitive" | "environmental";
   sentiment: "positive" | "negative" | "neutral";
   severity: number;
   salesImplication: string;
@@ -208,6 +208,9 @@ export function getSignalTypeLabel(type: Signal["signalType"]): string {
     hiring: "Hiring",
     tech: "Technology",
     supply_chain: "Supply Chain",
+    social: "Social & Media",
+    competitive: "Competitive",
+    environmental: "Environmental",
   };
   return labels[type];
 }

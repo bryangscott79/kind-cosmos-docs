@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Search, MapPin, DollarSign, Building2 } from "lucide-react";
+import { Search, MapPin, DollarSign, Building2, Globe2 } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import ProspectCard from "@/components/ProspectCard";
 import IntelligenceLoader from "@/components/IntelligenceLoader";
@@ -8,6 +8,7 @@ import { useIntelligence } from "@/contexts/IntelligenceContext";
 import { PressureResponse } from "@/data/mockData";
 
 type SortBy = "score" | "name" | "revenue" | "employees";
+type Scope = "all" | "local" | "national" | "international";
 
 export default function Prospects() {
   const [searchParams] = useSearchParams();
@@ -20,6 +21,7 @@ export default function Prospects() {
   const [pressureFilter, setPressureFilter] = useState<PressureResponse | "all">("all");
   const [industryFilter, setIndustryFilter] = useState(industryParam);
   const [locationFilter, setLocationFilter] = useState("all");
+  const [scopeFilter, setScopeFilter] = useState<Scope>("all");
 
   const states = useMemo(() => [...new Set(prospects.map(p => p.location.state))].sort(), [prospects]);
   const industriesWithProspects = useMemo(() => {
@@ -38,7 +40,13 @@ export default function Prospects() {
       .filter(p => p.companyName.toLowerCase().includes(search.toLowerCase()))
       .filter(p => pressureFilter === "all" || p.pressureResponse === pressureFilter)
       .filter(p => industryFilter === "all" || p.industryId === industryFilter)
-      .filter(p => locationFilter === "all" || p.location.state === locationFilter);
+      .filter(p => locationFilter === "all" || p.location.state === locationFilter)
+      .filter(p => {
+        if (scopeFilter === "all") return true;
+        if (scopeFilter === "local") return p.location.country === "US" || p.location.country === "United States";
+        if (scopeFilter === "national") return p.location.country === "US" || p.location.country === "United States";
+        return p.location.country !== "US" && p.location.country !== "United States";
+      });
 
     if (sortBy === "score") result.sort((a, b) => b.vigylScore - a.vigylScore);
     else if (sortBy === "name") result.sort((a, b) => a.companyName.localeCompare(b.companyName));
@@ -46,7 +54,7 @@ export default function Prospects() {
     else if (sortBy === "employees") result.sort((a, b) => b.employeeCount - a.employeeCount);
 
     return result;
-  }, [search, sortBy, pressureFilter, industryFilter, locationFilter, prospects]);
+  }, [search, sortBy, pressureFilter, industryFilter, locationFilter, scopeFilter, prospects]);
 
   const activeIndustry = industries.find(i => i.id === industryFilter);
 
@@ -81,6 +89,15 @@ export default function Prospects() {
               <select value={locationFilter} onChange={(e) => setLocationFilter(e.target.value)} className="rounded-md border border-border bg-card px-2 py-1.5 text-xs text-foreground focus:border-primary focus:outline-none">
                 <option value="all">All Locations</option>
                 {states.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Globe2 className="h-3.5 w-3.5 text-muted-foreground" />
+              <select value={scopeFilter} onChange={(e) => setScopeFilter(e.target.value as Scope)} className="rounded-md border border-border bg-card px-2 py-1.5 text-xs text-foreground focus:border-primary focus:outline-none">
+                <option value="all">All Regions</option>
+                <option value="local">Local</option>
+                <option value="national">National</option>
+                <option value="international">International</option>
               </select>
             </div>
           </div>
