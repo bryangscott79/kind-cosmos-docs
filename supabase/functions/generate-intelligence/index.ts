@@ -354,7 +354,7 @@ Make everything specific to the user's business capabilities and geography. No g
       throw new Error("Could not generate intelligence after multiple attempts. Please try again.");
     }
 
-    const intelligence = JSON.parse(toolCall.function.arguments);
+    // intelligence already parsed above
 
     // Post-process: add score history to industries
     intelligence.industries = intelligence.industries.map((ind: any) => ({
