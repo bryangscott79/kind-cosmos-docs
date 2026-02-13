@@ -96,7 +96,7 @@ Generate intelligence across a WIDE range of industries. Think globally and acro
 - Logistics & Supply Chain
 - Mining & Natural Resources
 
-Generate:
+Generate a LARGE volume of diverse prospects. The more the better.
 
 1. **10-14 industries** most relevant to this user's sales targets. Include DIVERSE industries - don't just pick obvious ones. Include both the user's stated targets AND adjacent/unexpected industries where they could sell. Include health scores (0-100), trend direction, and top market signals for each.
 
@@ -115,11 +115,13 @@ Generate:
 
 3. **20-30 prospect companies** that would be ideal customers. CRITICAL REQUIREMENTS:
     - Include a MIX of company sizes: small brands ($1M-$50M), mid-market ($50M-$500M), large enterprises ($500M-$5B), and major corporations ($5B+)
-    - Geographic diversity: ~40% local/regional (near ${locationStr}), ~35% national (same country but different regions), ~25% international (other countries)
-    - IMPORTANT: Each prospect MUST have a "scope" field set to exactly one of: "local", "national", or "international"
-      - "local" = same city/state/region as the user
-      - "national" = same country but different region
-      - "international" = different country entirely
+    - CRITICAL GEOGRAPHIC DISTRIBUTION — you MUST include all three scopes:
+      - "local" (~30-40%): Companies in or near ${location_city || "the user's city"}, ${location_state || "the user's state"} — same metro area or neighboring cities within ~100 miles
+      - "national" (~30-35%): Companies elsewhere in ${location_country || "the United States"} — different states/regions like New York, California, Texas, Illinois, etc.
+      - "international" (~25-30%): Companies in OTHER COUNTRIES — UK, Germany, Japan, Canada, Australia, Brazil, Singapore, UAE, etc.
+    - Each prospect MUST have a "scope" field set to exactly one of: "local", "national", or "international"
+    - DO NOT make all prospects local. Spread them across the three scopes as specified above.
+    - For international prospects, use the actual country name (e.g., "United Kingdom", "Germany", "Japan") — NOT "US" or "United States"
     - Industry diversity: spread across at least 8 different industries
     - Include companies from sectors like food & beverage, automotive, airlines, electronics, hospitality, agriculture — not just tech!
     - Real-seeming companies with plausible names, revenue figures, employee counts
@@ -306,14 +308,34 @@ Make everything specific to the user's business capabilities and geography. No g
       scoreHistory: generateScoreHistory(ind.healthScore),
     }));
 
-    // Ensure all prospects default to "researching" pipeline stage
-    intelligence.prospects = intelligence.prospects.map((p: any) => ({
-      ...p,
-      pipelineStage: p.pipelineStage || "researching",
-      lastContacted: p.lastContacted || null,
-      notes: p.notes || "",
-      recommendedServices: p.recommendedServices || [],
-    }));
+    // Ensure all prospects have proper defaults and infer scope if missing
+    const userState = (location_state || "").trim().toUpperCase();
+    const userCity = (location_city || "").trim().toLowerCase();
+    const userCountry = (location_country || "US").trim().toUpperCase();
+
+    intelligence.prospects = intelligence.prospects.map((p: any) => {
+      let scope = p.scope;
+      if (!scope) {
+        const pCountry = (p.location?.country || "").trim().toUpperCase();
+        const pState = (p.location?.state || "").trim().toUpperCase();
+        const pCity = (p.location?.city || "").trim().toLowerCase();
+        if (pCountry && pCountry !== userCountry && pCountry !== "US" && pCountry !== "UNITED STATES") {
+          scope = "international";
+        } else if (pState && pState !== userState) {
+          scope = "national";
+        } else {
+          scope = "local";
+        }
+      }
+      return {
+        ...p,
+        scope,
+        pipelineStage: p.pipelineStage || "researching",
+        lastContacted: p.lastContacted || null,
+        notes: p.notes || "",
+        recommendedServices: p.recommendedServices || [],
+      };
+    });
 
     console.log(
       "Generated:",
