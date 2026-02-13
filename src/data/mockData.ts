@@ -106,6 +106,12 @@ export const signals: Signal[] = [
 export type PressureResponse = "contracting" | "strategic_investment" | "growth_mode";
 export type PipelineStage = "researching" | "contacted" | "meeting_scheduled" | "proposal_sent" | "won" | "lost";
 
+export interface RecommendedService {
+  service: string;
+  rationale: string;
+  linkedSignalId: string | null;
+}
+
 export interface Prospect {
   id: string;
   companyName: string;
@@ -115,6 +121,7 @@ export interface Prospect {
   whyNow: string;
   decisionMakers: { name: string; title: string; linkedinUrl: string }[];
   relatedSignals: string[];
+  recommendedServices?: RecommendedService[];
   pipelineStage: PipelineStage;
   lastContacted: string | null;
   notes: string;
