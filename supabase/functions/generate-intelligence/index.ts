@@ -113,6 +113,13 @@ Generate a LARGE volume of diverse prospects. The more the better.
    
    Each signal needs a clear sales implication. Use recent dates near ${today}. Include REAL publication sources with realistic URLs.
 
+   **CRITICAL: For each signal, include 2-5 "impactedEntities"** — specific industries or companies that are impacted. Each entity must have:
+   - "name": the industry or company name (e.g. "Solar Panel Manufacturers", "Delta Airlines", "Cloud Infrastructure Providers")
+   - "type": "industry" or "company"
+   - "impact": "positive" or "negative"
+   - "action": "engage" (actively pursue — they need solutions), "avoid" (they're contracting/risky), or "monitor" (watch for the right moment)
+   - "reason": one sentence explaining WHY this entity is impacted and what the user should do about it
+
 3. **30-45 prospect companies** that would be ideal customers. You MUST generate prospects in THREE SEPARATE BATCHES:
 
    **BATCH A — LOCAL (8-12 prospects, scope: "local"):**
@@ -198,8 +205,23 @@ Make everything specific to the user's business capabilities and geography. No g
                         additionalProperties: false,
                       },
                     },
+                    impactedEntities: {
+                      type: "array",
+                      items: {
+                        type: "object",
+                        properties: {
+                          name: { type: "string" },
+                          type: { type: "string", enum: ["industry", "company"] },
+                          impact: { type: "string", enum: ["positive", "negative"] },
+                          action: { type: "string", enum: ["engage", "avoid", "monitor"] },
+                          reason: { type: "string" },
+                        },
+                        required: ["name", "type", "impact", "action", "reason"],
+                        additionalProperties: false,
+                      },
+                    },
                   },
-                  required: ["id", "title", "summary", "industryTags", "signalType", "sentiment", "severity", "salesImplication", "sourceUrl", "publishedAt", "sources"],
+                  required: ["id", "title", "summary", "industryTags", "signalType", "sentiment", "severity", "salesImplication", "sourceUrl", "publishedAt", "sources", "impactedEntities"],
                   additionalProperties: false,
                 },
               },
