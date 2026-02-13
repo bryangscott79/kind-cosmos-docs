@@ -1,9 +1,17 @@
+import { useState, useEffect } from "react";
 import { Loader2, RefreshCw, AlertCircle } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useIntelligence } from "@/contexts/IntelligenceContext";
 
 export default function IntelligenceLoader({ children }: { children: React.ReactNode }) {
   const { loading, error, hasData, refresh } = useIntelligence();
+  const [elapsed, setElapsed] = useState(0);
+
+  useEffect(() => {
+    if (!loading) { setElapsed(0); return; }
+    const t = setInterval(() => setElapsed(s => s + 1), 1000);
+    return () => clearInterval(t);
+  }, [loading]);
 
   if (loading && !hasData) {
     return (
@@ -20,7 +28,9 @@ export default function IntelligenceLoader({ children }: { children: React.React
           </div>
           <div className="flex items-center gap-2 mt-4">
             <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
-            <span className="text-xs text-muted-foreground">This may take 15-30 seconds</span>
+            <span className="text-xs text-muted-foreground">
+              {elapsed < 20 ? "This may take 15-30 seconds" : elapsed < 45 ? "Still working… generating a large dataset" : "Almost there… finalizing your intelligence"}
+            </span>
           </div>
         </div>
       </DashboardLayout>
