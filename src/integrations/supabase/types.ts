@@ -68,6 +68,36 @@ export type Database = {
         }
         Relationships: []
       }
+      prospect_feedback: {
+        Row: {
+          created_at: string
+          feedback_type: string
+          id: string
+          prospect_company_name: string
+          prospect_data: Json | null
+          prospect_industry: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          feedback_type: string
+          id?: string
+          prospect_company_name: string
+          prospect_data?: Json | null
+          prospect_industry: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          feedback_type?: string
+          id?: string
+          prospect_company_name?: string
+          prospect_data?: Json | null
+          prospect_industry?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       saved_signals: {
         Row: {
           created_at: string
