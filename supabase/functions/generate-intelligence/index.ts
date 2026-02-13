@@ -114,15 +114,19 @@ Generate:
    Each signal needs a clear sales implication. Use recent dates near ${today}. Include REAL publication sources with realistic URLs.
 
 3. **20-30 prospect companies** that would be ideal customers. CRITICAL REQUIREMENTS:
-   - Include a MIX of company sizes: small brands ($1M-$50M), mid-market ($50M-$500M), large enterprises ($500M-$5B), and major corporations ($5B+)
-   - Geographic diversity: ~40% local/regional (near ${locationStr}), ~35% national, ~25% international
-   - Industry diversity: spread across at least 8 different industries
-   - Include companies from sectors like food & beverage, automotive, airlines, electronics, hospitality, agriculture — not just tech!
-   - Real-seeming companies with plausible names, revenue figures, employee counts
-   - Each with a compelling "Why Now" reason linked to current market signals
-   - Include realistic decision maker names and titles
-   - For each prospect, include 2-4 **recommended services** the user could sell them based on their specific situation
-   - Annual revenue should use realistic formats: "$2.3M", "$145M", "$3.8B", etc.
+    - Include a MIX of company sizes: small brands ($1M-$50M), mid-market ($50M-$500M), large enterprises ($500M-$5B), and major corporations ($5B+)
+    - Geographic diversity: ~40% local/regional (near ${locationStr}), ~35% national (same country but different regions), ~25% international (other countries)
+    - IMPORTANT: Each prospect MUST have a "scope" field set to exactly one of: "local", "national", or "international"
+      - "local" = same city/state/region as the user
+      - "national" = same country but different region
+      - "international" = different country entirely
+    - Industry diversity: spread across at least 8 different industries
+    - Include companies from sectors like food & beverage, automotive, airlines, electronics, hospitality, agriculture — not just tech!
+    - Real-seeming companies with plausible names, revenue figures, employee counts
+    - Each with a compelling "Why Now" reason linked to current market signals
+    - Include realistic decision maker names and titles
+    - For each prospect, include 2-4 **recommended services** the user could sell them based on their specific situation
+    - Annual revenue should use realistic formats: "$2.3M", "$145M", "$3.8B", etc.
 
 Make everything specific to the user's business capabilities and geography. No generic examples. Think about what this specific company could ACTUALLY sell to each prospect.`;
 
@@ -237,8 +241,9 @@ Make everything specific to the user's business capabilities and geography. No g
                     },
                     annualRevenue: { type: "string" },
                     employeeCount: { type: "number" },
+                    scope: { type: "string", enum: ["local", "national", "international"] },
                   },
-                  required: ["id", "companyName", "industryId", "vigylScore", "pressureResponse", "whyNow", "decisionMakers", "relatedSignals", "pipelineStage", "lastContacted", "notes", "location", "annualRevenue", "employeeCount"],
+                  required: ["id", "companyName", "industryId", "vigylScore", "pressureResponse", "whyNow", "decisionMakers", "relatedSignals", "pipelineStage", "lastContacted", "notes", "location", "annualRevenue", "employeeCount", "scope"],
                   additionalProperties: false,
                 },
               },
