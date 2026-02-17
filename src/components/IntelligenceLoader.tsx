@@ -4,15 +4,16 @@ import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useIntelligence } from "@/contexts/IntelligenceContext";
 
 export default function IntelligenceLoader({ children }: { children: React.ReactNode }) {
-  const { loading, error, hasData, refresh } = useIntelligence();
+  const { loading, error, hasData, refresh, isBackgroundRefreshing } = useIntelligence();
   const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
-    if (!loading) { setElapsed(0); return; }
+    if (!loading || hasData) { setElapsed(0); return; }
     const t = setInterval(() => setElapsed(s => s + 1), 1000);
     return () => clearInterval(t);
-  }, [loading]);
+  }, [loading, hasData]);
 
+  // Only show full-screen loader when loading AND no cached data
   if (loading && !hasData) {
     return (
       <DashboardLayout>

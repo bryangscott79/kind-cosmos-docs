@@ -15,6 +15,7 @@ interface IntelligenceContextType {
   error: string | null;
   refresh: () => Promise<void>;
   hasData: boolean;
+  isBackgroundRefreshing: boolean;
 }
 
 const emptyData: IntelligenceData = { industries: [], signals: [], prospects: [] };
@@ -25,6 +26,7 @@ const IntelligenceContext = createContext<IntelligenceContextType>({
   error: null,
   refresh: async () => {},
   hasData: false,
+  isBackgroundRefreshing: false,
 });
 
 export function IntelligenceProvider({ children }: { children: ReactNode }) {
@@ -32,14 +34,53 @@ export function IntelligenceProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState<IntelligenceData>(emptyData);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [generated, setGenerated] = useState(false);
+  const [initialized, setInitialized] = useState(false);
+  const [isBackgroundRefreshing, setIsBackgroundRefreshing] = useState(false);
 
-  const generate = useCallback(async () => {
+  // Load cached data from database on mount
+  const loadCachedData = useCallback(async () => {
+    if (!session?.user?.id) return false;
+    try {
+      const { data: cached, error: cacheError } = await supabase
+        .from("cached_intelligence")
+        .select("intelligence_data, updated_at")
+        .eq("user_id", session.user.id)
+        .maybeSingle();
+
+      if (cacheError) {
+        console.error("Error loading cached intelligence:", cacheError);
+        return false;
+      }
+
+      if (cached?.intelligence_data) {
+        const intelligenceData = cached.intelligence_data as any;
+        if (intelligenceData.industries?.length > 0) {
+          setData({
+            industries: intelligenceData.industries || [],
+            signals: intelligenceData.signals || [],
+            prospects: intelligenceData.prospects || [],
+          });
+          console.log("Loaded cached intelligence from", cached.updated_at);
+          return true;
+        }
+      }
+      return false;
+    } catch (err) {
+      console.error("Failed to load cached intelligence:", err);
+      return false;
+    }
+  }, [session?.user?.id]);
+
+  // Generate fresh intelligence from AI
+  const generateFresh = useCallback(async (isBackground: boolean) => {
     if (!profile || !session) return;
-    // Only generate if user has completed onboarding with some profile info
     if (!profile.target_industries?.length && !profile.business_summary && !profile.ai_summary) return;
 
-    setLoading(true);
+    if (isBackground) {
+      setIsBackgroundRefreshing(true);
+    } else {
+      setLoading(true);
+    }
     setError(null);
 
     try {
@@ -51,26 +92,49 @@ export function IntelligenceProvider({ children }: { children: ReactNode }) {
       if (!result?.success) throw new Error(result?.error || "Failed to generate intelligence");
 
       setData(result.data);
-      setGenerated(true);
     } catch (err: any) {
       console.error("Intelligence generation error:", err);
-      setError(err.message || "Failed to generate intelligence");
+      // Only set error if we don't already have cached data
+      if (!isBackground) {
+        setError(err.message || "Failed to generate intelligence");
+      }
     } finally {
-      setLoading(false);
+      if (isBackground) {
+        setIsBackgroundRefreshing(false);
+      } else {
+        setLoading(false);
+      }
     }
   }, [profile, session]);
 
-  // Auto-generate when profile is available and data hasn't been generated yet
+  // On mount: load cache first, then refresh in background
   useEffect(() => {
-    if (profile && session && !generated && !loading) {
-      generate();
-    }
-  }, [profile, session, generated, loading, generate]);
+    if (!profile || !session || initialized) return;
+
+    const init = async () => {
+      setInitialized(true);
+      setLoading(true);
+
+      const hasCached = await loadCachedData();
+
+      if (hasCached) {
+        // We have cached data — show it immediately, refresh in background
+        setLoading(false);
+        generateFresh(true);
+      } else {
+        // No cache — do a foreground generation
+        setLoading(false);
+        await generateFresh(false);
+      }
+    };
+
+    init();
+  }, [profile, session, initialized, loadCachedData, generateFresh]);
 
   const refresh = useCallback(async () => {
-    setGenerated(false);
-    await generate();
-  }, [generate]);
+    const hasExistingData = data.industries.length > 0;
+    await generateFresh(hasExistingData);
+  }, [generateFresh, data.industries.length]);
 
   return (
     <IntelligenceContext.Provider
@@ -80,6 +144,7 @@ export function IntelligenceProvider({ children }: { children: ReactNode }) {
         error,
         refresh,
         hasData: data.industries.length > 0,
+        isBackgroundRefreshing,
       }}
     >
       {children}

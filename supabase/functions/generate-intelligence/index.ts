@@ -420,6 +420,27 @@ Make everything specific to the user's business capabilities and geography. No g
       intelligence.prospects.length, "prospects"
     );
 
+    // Cache the intelligence data in the database
+    try {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const supabase = createClient(supabaseUrl, supabaseKey);
+
+      await supabase
+        .from("cached_intelligence")
+        .upsert(
+          {
+            user_id: profile.user_id,
+            intelligence_data: intelligence,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id" }
+        );
+      console.log("Intelligence cached successfully for user:", profile.user_id);
+    } catch (cacheErr) {
+      console.error("Failed to cache intelligence (non-fatal):", cacheErr);
+    }
+
     return new Response(JSON.stringify({ success: true, data: intelligence }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
