@@ -4,7 +4,7 @@ import {
   Search, ArrowRight, ArrowUpRight, ArrowDownRight, Radio, Users,
   BarChart3, TrendingUp, TrendingDown, Minus, AlertTriangle, Clock,
   RefreshCw, Loader2, Brain, Briefcase, MessageSquare, ExternalLink,
-  ChevronRight, Zap, Calendar, Building2
+  ChevronRight, Zap, Calendar, Building2, Mail, X as XIcon
 } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import IndustryCard from "@/components/IndustryCard";
@@ -43,6 +43,9 @@ const pipelineStageConfig: Record<string, { label: string; color: string; bg: st
 
 export default function IndustryDashboard() {
   const [search, setSearch] = useState("");
+  const [digestDismissed, setDigestDismissed] = useState(false);
+  const [digestEmail, setDigestEmail] = useState("");
+  const [digestSubmitted, setDigestSubmitted] = useState(false);
   const navigate = useNavigate();
   const { data, loading, refresh } = useIntelligence();
   const { industries, signals, prospects, aiImpact } = data;
@@ -180,6 +183,49 @@ export default function IndustryDashboard() {
             </div>
 
             {/* Main layout */}
+
+            {/* Email Digest CTA */}
+            {!digestDismissed && !digestSubmitted && (
+              <div className="mt-4 rounded-lg border border-primary/20 bg-gradient-to-r from-primary/[0.04] to-violet-500/[0.04] p-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                      <Mail className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">Get your daily intelligence briefing</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">High-impact signals, prospect alerts, and industry changes — delivered to your inbox every morning.</p>
+                    </div>
+                  </div>
+                  <button onClick={() => setDigestDismissed(true)} className="shrink-0 rounded-md p-1 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+                    <XIcon className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+                <div className="mt-3 flex items-center gap-2 ml-11">
+                  <input
+                    type="email"
+                    value={digestEmail}
+                    onChange={(e) => setDigestEmail(e.target.value)}
+                    placeholder="you@company.com"
+                    className="w-full max-w-xs rounded-md border border-border bg-card px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                  <button
+                    onClick={() => { if (digestEmail) setDigestSubmitted(true); }}
+                    disabled={!digestEmail}
+                    className="shrink-0 rounded-md bg-primary px-4 py-1.5 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+                  >
+                    Subscribe
+                  </button>
+                </div>
+              </div>
+            )}
+            {digestSubmitted && (
+              <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 p-4 flex items-center gap-3">
+                <Mail className="h-4 w-4 text-emerald-600 shrink-0" />
+                <p className="text-xs text-emerald-700"><span className="font-semibold">You're subscribed.</span> Your first daily briefing arrives tomorrow morning.</p>
+                <button onClick={() => setDigestSubmitted(false)} className="ml-auto text-emerald-600 hover:text-emerald-700"><XIcon className="h-3 w-3" /></button>
+              </div>
+            )}
             <div className="mt-6 grid gap-6 lg:grid-cols-3">
               {/* Left column — 2/3 width */}
               <div className="lg:col-span-2 space-y-6">

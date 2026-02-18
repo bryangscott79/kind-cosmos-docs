@@ -1,50 +1,40 @@
 import { Link, useLocation } from "react-router-dom";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { BarChart3, Radio, Brain, Users, Kanban } from "lucide-react";
 
-const pageOrder = [
-  { label: "Dashboard", path: "/industries" },
-  { label: "Signals", path: "/signals" },
-  { label: "Prospects", path: "/prospects" },
-  { label: "Pipeline", path: "/pipeline" },
-  { label: "Outreach", path: "/outreach" },
-  { label: "Settings", path: "/settings" },
+const tabs = [
+  { label: "Briefing", path: "/industries", icon: BarChart3 },
+  { label: "Signals", path: "/signals", icon: Radio },
+  { label: "AI Impact", path: "/ai-impact", icon: Brain },
+  { label: "Prospects", path: "/prospects", icon: Users },
+  { label: "Pipeline", path: "/pipeline", icon: Kanban },
 ];
 
 export default function MobilePageNav() {
   const location = useLocation();
-  const currentIndex = pageOrder.findIndex((p) =>
-    location.pathname.startsWith(p.path)
-  );
 
-  if (currentIndex === -1) return null;
-
-  const prev = currentIndex > 0 ? pageOrder[currentIndex - 1] : null;
-  const next = currentIndex < pageOrder.length - 1 ? pageOrder[currentIndex + 1] : null;
+  // Only show on dashboard pages
+  const isOnDashboard = tabs.some((t) => location.pathname.startsWith(t.path));
+  if (!isOnDashboard) return null;
 
   return (
-    <nav className="mt-8 flex items-center justify-between border-t border-border pt-4 pb-6 md:hidden">
-      {prev ? (
-        <Link
-          to={prev.path}
-          className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ChevronLeft className="h-4 w-4" />
-          {prev.label}
-        </Link>
-      ) : (
-        <span />
-      )}
-      {next ? (
-        <Link
-          to={next.path}
-          className="flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
-        >
-          {next.label}
-          <ChevronRight className="h-4 w-4" />
-        </Link>
-      ) : (
-        <span />
-      )}
+    <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background/95 backdrop-blur-sm px-2 pb-safe md:hidden">
+      <div className="flex items-center justify-around">
+        {tabs.map((tab) => {
+          const active = location.pathname.startsWith(tab.path);
+          return (
+            <Link
+              key={tab.path}
+              to={tab.path}
+              className={`flex flex-col items-center gap-0.5 px-2 py-2 text-[10px] font-medium transition-colors ${
+                active ? "text-primary" : "text-muted-foreground"
+              }`}
+            >
+              <tab.icon className="h-4 w-4" />
+              {tab.label}
+            </Link>
+          );
+        })}
+      </div>
     </nav>
   );
 }
