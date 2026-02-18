@@ -245,42 +245,47 @@ Make this specific and realistic. Use real AI tools and real job titles.`;
 
     console.log("Generated AI impact for:", industry.name);
 
-    // Optionally save to cache (on the last industry call)
-    if (saveToCache) {
-      try {
-        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-        const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-        const sb = createClient(supabaseUrl, supabaseKey);
+    // Always save this industry result incrementally to cache
+    try {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const sb = createClient(supabaseUrl, supabaseKey);
 
-        const authHeader = req.headers.get("authorization");
-        if (authHeader) {
-          const token = authHeader.replace("Bearer ", "");
-          const { data: { user } } = await sb.auth.getUser(token);
+      const authHeader = req.headers.get("authorization");
+      if (authHeader) {
+        const token = authHeader.replace("Bearer ", "");
+        const { data: { user } } = await sb.auth.getUser(token);
 
-          if (user) {
-            const { data: cached } = await sb
-              .from("cached_intelligence")
-              .select("intelligence_data")
-              .eq("user_id", user.id)
-              .maybeSingle();
+        if (user) {
+          const { data: cached } = await sb
+            .from("cached_intelligence")
+            .select("intelligence_data")
+            .eq("user_id", user.id)
+            .maybeSingle();
 
-            if (cached?.intelligence_data) {
-              const existing = cached.intelligence_data as any;
-              // saveToCache contains the full array
-              existing.aiImpact = saveToCache;
-              await sb
-                .from("cached_intelligence")
-                .upsert(
-                  { user_id: user.id, intelligence_data: existing, updated_at: new Date().toISOString() },
-                  { onConflict: "user_id" }
-                );
-              console.log("AI impact cached for user:", user.id);
+          if (cached?.intelligence_data) {
+            const existing = cached.intelligence_data as any;
+            const currentAiImpact: any[] = existing.aiImpact || [];
+            // Replace if this industry already exists, otherwise append
+            const idx = currentAiImpact.findIndex((a: any) => a.industryId === analysis.industryId);
+            if (idx >= 0) {
+              currentAiImpact[idx] = analysis;
+            } else {
+              currentAiImpact.push(analysis);
             }
+            existing.aiImpact = currentAiImpact;
+            await sb
+              .from("cached_intelligence")
+              .upsert(
+                { user_id: user.id, intelligence_data: existing, updated_at: new Date().toISOString() },
+                { onConflict: "user_id" }
+              );
+            console.log("AI impact cached incrementally for:", industry.name);
           }
         }
-      } catch (cacheErr) {
-        console.error("Cache error (non-fatal):", cacheErr);
       }
+    } catch (cacheErr) {
+      console.error("Cache error (non-fatal):", cacheErr);
     }
 
     return new Response(JSON.stringify({ success: true, data: analysis }), {
