@@ -1,8 +1,8 @@
 import { useState, useMemo, useCallback } from "react";
 import { Link } from "react-router-dom";
 import {
-  Users, Radio, Calendar, MessageSquare, MoreHorizontal,
-  ChevronRight, ChevronLeft, ChevronDown, ChevronUp,
+  Users, Radio, Calendar, MessageSquare, ExternalLink,
+  ChevronRight, ChevronLeft, ChevronDown,
   MapPin, DollarSign, Building2, Mail, Trophy, XCircle,
   Save, ExternalLink, TrendingUp, TrendingDown, Minus
 } from "lucide-react";
@@ -55,18 +55,19 @@ function PipelineCard({
 
   return (
     <div className={`rounded-lg border bg-card transition-all ${expanded ? "border-primary/30 shadow-sm" : "border-border hover:border-primary/20"}`}>
-      {/* Collapsed card */}
-      <div className="p-3">
+      {/* Clickable card header — whole area expands */}
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full text-left p-3 cursor-pointer"
+      >
         <div className="flex items-start justify-between gap-1">
-          <button onClick={() => setExpanded(!expanded)} className="flex-1 min-w-0 text-left">
+          <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-foreground truncate">{prospect.companyName}</p>
             <p className="text-[10px] text-muted-foreground">{industry?.name}</p>
-          </button>
-          <div className="flex items-center gap-1 shrink-0">
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0">
             <span className="font-mono text-sm font-bold text-primary">{prospect.vigylScore}</span>
-            <button onClick={() => setExpanded(!expanded)} className="rounded p-0.5 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
-              {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <MoreHorizontal className="h-3.5 w-3.5" />}
-            </button>
+            <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${expanded ? "rotate-180" : ""}`} />
           </div>
         </div>
 
@@ -107,24 +108,24 @@ function PipelineCard({
             {prospect.notes}
           </p>
         )}
+      </button>
 
-        {/* Quick move buttons (always visible) */}
-        {!isTerminal && !expanded && (
-          <div className="mt-2 flex items-center gap-1 border-t border-border pt-2">
-            {stageIdx > 0 && (
-              <button onClick={() => onMove(stageOrder[stageIdx - 1])} className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
-                <ChevronLeft className="h-2.5 w-2.5" /> {pipelineStageLabels[stageOrder[stageIdx - 1]]}
-              </button>
-            )}
-            <div className="flex-1" />
-            {stageIdx < stageOrder.length - 2 && (
-              <button onClick={() => onMove(stageOrder[stageIdx + 1])} className="inline-flex items-center gap-0.5 rounded bg-primary/10 border border-primary/20 px-1.5 py-0.5 text-[9px] font-medium text-primary hover:bg-primary/20 transition-colors">
-                {pipelineStageLabels[stageOrder[stageIdx + 1]]} <ChevronRight className="h-2.5 w-2.5" />
-              </button>
-            )}
-          </div>
-        )}
-      </div>
+      {/* Quick move buttons (collapsed) — outside the expand button to prevent bubbling */}
+      {!isTerminal && !expanded && (
+        <div className="px-3 pb-3 flex items-center gap-1 border-t border-border pt-2 mx-3">
+          {stageIdx > 0 && (
+            <button onClick={(e) => { e.stopPropagation(); onMove(stageOrder[stageIdx - 1]); }} className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+              <ChevronLeft className="h-2.5 w-2.5" /> {pipelineStageLabels[stageOrder[stageIdx - 1]]}
+            </button>
+          )}
+          <div className="flex-1" />
+          {stageIdx < stageOrder.length - 2 && (
+            <button onClick={(e) => { e.stopPropagation(); onMove(stageOrder[stageIdx + 1]); }} className="inline-flex items-center gap-0.5 rounded bg-primary/10 border border-primary/20 px-1.5 py-0.5 text-[9px] font-medium text-primary hover:bg-primary/20 transition-colors">
+              {pipelineStageLabels[stageOrder[stageIdx + 1]]} <ChevronRight className="h-2.5 w-2.5" />
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Expanded view */}
       {expanded && (
@@ -258,8 +259,8 @@ function PipelineCard({
             <Link to={`/outreach?prospect=${prospect.id}`} className="inline-flex items-center gap-1 rounded-md bg-primary px-2.5 py-1.5 text-[10px] font-medium text-primary-foreground hover:opacity-90 transition-opacity">
               <Mail className="h-3 w-3" /> Generate Outreach
             </Link>
-            <Link to="/signals" className="inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1.5 text-[10px] font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
-              <Radio className="h-3 w-3" /> View Signals
+            <Link to={`/prospects/${prospect.id}`} className="inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1.5 text-[10px] font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+              <ExternalLink className="h-3 w-3" /> Full Dossier
             </Link>
             <AskArgus
               compact
