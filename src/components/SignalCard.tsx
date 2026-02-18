@@ -1,7 +1,8 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Signal, SignalImpact, getSignalTypeLabel } from "@/data/mockData";
 import { Badge } from "@/components/ui/badge";
-import { Bookmark, BookmarkCheck, ChevronDown, ChevronRight, ExternalLink, Link2, TrendingUp, TrendingDown, Eye, ArrowRight, ShieldAlert } from "lucide-react";
+import { Bookmark, BookmarkCheck, ChevronDown, ChevronRight, ExternalLink, Link2, TrendingUp, TrendingDown, Eye, ArrowRight, ShieldAlert, Users, Sparkles, Target } from "lucide-react";
 import { useSavedSignals } from "@/hooks/useSavedSignals";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIntelligence } from "@/contexts/IntelligenceContext";
@@ -52,10 +53,23 @@ export default function SignalCard({ signal }: SignalCardProps) {
   const [selectedProspectId, setSelectedProspectId] = useState("");
   const [customName, setCustomName] = useState("");
   const [saveNotes, setSaveNotes] = useState("");
+  const navigate = useNavigate();
 
   const industryNames = signal.industryTags
     .map((id) => industries.find((i) => i.id === id)?.name)
     .filter(Boolean);
+
+  // Find prospects directly connected to this signal via relatedSignals
+  const directlyConnected = prospects.filter(
+    (p) => p.relatedSignals?.includes(signal.id)
+  );
+
+  // Find prospects in the same industries as this signal
+  const industryConnected = prospects.filter(
+    (p) => signal.industryTags.includes(p.industryId) && !directlyConnected.find((d) => d.id === p.id)
+  ).sort((a, b) => b.vigylScore - a.vigylScore).slice(0, 4);
+
+  const allConnected = [...directlyConnected, ...industryConnected];
 
   const saved = isSignalSaved(signal.id);
   const savedEntries = getSavedForSignal(signal.id);
@@ -165,6 +179,92 @@ export default function SignalCard({ signal }: SignalCardProps) {
                   );
                 })}
               </div>
+            </div>
+          )}
+
+          {/* Connected Prospects */}
+          {allConnected.length > 0 && (
+            <div>
+              <h5 className="text-xs font-semibold text-foreground mb-2 flex items-center gap-1.5">
+                <Users className="h-3 w-3 text-primary" />
+                Affected Prospects ({allConnected.length})
+              </h5>
+              <div className="space-y-1.5">
+                {directlyConnected.map((p) => (
+                  <div
+                    key={p.id}
+                    onClick={(e) => { e.stopPropagation(); navigate("/prospects"); }}
+                    className="flex items-center justify-between rounded-md border border-primary/20 bg-primary/[0.03] px-3 py-2 cursor-pointer hover:bg-primary/[0.06] transition-colors"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Target className="h-3 w-3 text-primary shrink-0" />
+                      <div className="min-w-0">
+                        <span className="text-xs font-semibold text-foreground">{p.companyName}</span>
+                        <span className="text-[10px] text-primary ml-1.5">directly linked</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${
+                        p.pressureResponse === "growth_mode" ? "bg-green-100 text-green-700" :
+                        p.pressureResponse === "contracting" ? "bg-red-100 text-red-700" :
+                        "bg-blue-100 text-blue-700"
+                      }`}>{p.pressureResponse.replace("_", " ")}</span>
+                      <span className="text-xs font-mono font-bold text-primary">{p.vigylScore}</span>
+                    </div>
+                  </div>
+                ))}
+                {industryConnected.map((p) => (
+                  <div
+                    key={p.id}
+                    onClick={(e) => { e.stopPropagation(); navigate("/prospects"); }}
+                    className="flex items-center justify-between rounded-md border border-border px-3 py-2 cursor-pointer hover:bg-accent/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="min-w-0">
+                        <span className="text-xs font-semibold text-foreground">{p.companyName}</span>
+                        <span className="text-[10px] text-muted-foreground ml-1.5">same industry</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${
+                        p.pressureResponse === "growth_mode" ? "bg-green-100 text-green-700" :
+                        p.pressureResponse === "contracting" ? "bg-red-100 text-red-700" :
+                        "bg-blue-100 text-blue-700"
+                      }`}>{p.pressureResponse.replace("_", " ")}</span>
+                      <span className="text-xs font-mono font-bold text-primary">{p.vigylScore}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* CTA: Find Opportunities */}
+          {signal.industryTags.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const firstIndustry = signal.industryTags[0];
+                  navigate(`/prospects?industry=${firstIndustry}`);
+                }}
+                className="inline-flex items-center gap-1.5 rounded-md bg-gradient-to-r from-brand-blue to-brand-purple px-4 py-2 text-xs font-semibold text-white hover:opacity-90 transition-opacity"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                Find Opportunities From This Signal
+              </button>
+              {signal.industryTags.length > 0 && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/ai-impact`);
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-md border border-border px-4 py-2 text-xs font-medium text-foreground hover:bg-accent transition-colors"
+                >
+                  <TrendingUp className="h-3.5 w-3.5" />
+                  View AI Impact on {industryNames[0] || "Industry"}
+                </button>
+              )}
             </div>
           )}
           {signal.sources?.length > 0 && (
