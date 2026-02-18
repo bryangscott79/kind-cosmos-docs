@@ -62,9 +62,7 @@ export default function ProspectCard({ prospect }: ProspectCardProps) {
       <div className="flex items-start justify-between">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <Link to={`/prospects/${prospect.id}`} className="text-sm font-semibold text-foreground hover:text-primary transition-colors">
-              {prospect.companyName}
-            </Link>
+            <h3 className="text-sm font-semibold text-foreground">{prospect.companyName}</h3>
             {prospect.websiteUrl && (
               <a
                 href={prospect.websiteUrl}
