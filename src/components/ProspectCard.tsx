@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Users, Linkedin, MapPin, DollarSign, Building2, Radio, ChevronDown, ChevronUp, ExternalLink, Briefcase, Zap, ThumbsUp, ThumbsDown, Loader2, Globe, Swords } from "lucide-react";
+import {
+  Users, Linkedin, MapPin, DollarSign, Building2, Radio,
+  ChevronDown, ExternalLink, ThumbsUp, ThumbsDown, Loader2,
+  Globe, Swords, Mail, ArrowRight
+} from "lucide-react";
 import { Prospect, getPressureLabel, getScoreColorHsl } from "@/data/mockData";
 import { useSavedSignals } from "@/hooks/useSavedSignals";
 import { useIntelligence } from "@/contexts/IntelligenceContext";
@@ -57,165 +61,109 @@ export default function ProspectCard({ prospect }: ProspectCardProps) {
   };
 
   return (
-    <div className="rounded-lg border border-border bg-card p-5 transition-colors hover:border-primary/30">
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold text-foreground">{prospect.companyName}</h3>
-            {prospect.websiteUrl && (
-              <a
-                href={prospect.websiteUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-muted-foreground hover:text-primary transition-colors"
-                title="Visit website"
-              >
-                <Globe className="h-3.5 w-3.5" />
-              </a>
-            )}
-          </div>
-          <p className="mt-0.5 text-xs text-muted-foreground">{industry?.name}</p>
-          <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
-            <div className="flex items-center gap-1">
-              <MapPin className="h-3 w-3 text-muted-foreground" />
-              <span className="text-[10px] text-muted-foreground">{prospect.location.city}, {prospect.location.state}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <DollarSign className="h-3 w-3 text-muted-foreground" />
-              <span className="text-[10px] text-muted-foreground">{prospect.annualRevenue}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <Building2 className="h-3 w-3 text-muted-foreground" />
-              <span className="text-[10px] text-muted-foreground">{prospect.employeeCount.toLocaleString()} employees</span>
-            </div>
-          </div>
-        </div>
-        <div className="flex flex-col items-end gap-1.5">
-          <span className="font-mono text-xl font-bold" style={{ color: scoreColor }}>{prospect.vigylScore}</span>
-          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium border ${pressureStyles[prospect.pressureResponse]}`}>
-            {getPressureLabel(prospect.pressureResponse)}
-          </span>
-        </div>
-      </div>
-
-      {/* Why Now */}
-      <div className="mt-3 rounded-md bg-secondary p-3">
-        <p className="text-xs font-medium text-foreground mb-1">Why Now</p>
-        <p className={`text-xs text-muted-foreground leading-relaxed ${!expanded ? "line-clamp-3" : ""}`}>
-          {prospect.whyNow}
-        </p>
-      </div>
-
-      {/* Expand toggle */}
+    <div className={`rounded-lg border bg-card transition-all ${expanded ? "border-primary/30 shadow-md" : "border-border hover:border-primary/20"}`}>
+      {/* ── CLICKABLE CARD BODY ── */}
       <button
         onClick={() => setExpanded(!expanded)}
-        className="mt-2 flex w-full items-center justify-center gap-1 rounded-md py-1.5 text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
+        className="w-full text-left p-5 cursor-pointer"
       >
-        {expanded ? (
-          <>Show Less <ChevronUp className="h-3 w-3" /></>
-        ) : (
-          <>Show More <ChevronDown className="h-3 w-3" /></>
+        {/* Header row */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-foreground truncate">{prospect.companyName}</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">{industry?.name}</p>
+            <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+              <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                <MapPin className="h-2.5 w-2.5" />{prospect.location.city}, {prospect.location.state}
+              </span>
+              <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                <DollarSign className="h-2.5 w-2.5" />{prospect.annualRevenue}
+              </span>
+              <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                <Building2 className="h-2.5 w-2.5" />{prospect.employeeCount.toLocaleString()}
+              </span>
+            </div>
+          </div>
+          <div className="flex flex-col items-end gap-1.5 shrink-0">
+            <span className="font-mono text-xl font-bold" style={{ color: scoreColor }}>{prospect.vigylScore}</span>
+            <span className={`inline-flex rounded-full px-2 py-0.5 text-[9px] font-medium border ${pressureStyles[prospect.pressureResponse]}`}>
+              {getPressureLabel(prospect.pressureResponse)}
+            </span>
+          </div>
+        </div>
+
+        {/* Why Now snippet */}
+        <div className="mt-3 rounded-md bg-secondary/60 p-2.5">
+          <p className={`text-xs text-muted-foreground leading-relaxed ${!expanded ? "line-clamp-2" : ""}`}>
+            {prospect.whyNow}
+          </p>
+        </div>
+
+        {/* Collapsed: quick preview */}
+        {!expanded && (
+          <div className="mt-3 flex items-center justify-between">
+            {prospect.decisionMakers.length > 0 && (
+              <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                <Users className="h-2.5 w-2.5" />
+                {prospect.decisionMakers.slice(0, 2).map(d => d.name.split(" ")[0]).join(", ")}
+                {prospect.decisionMakers.length > 2 ? ` +${prospect.decisionMakers.length - 2}` : ""}
+              </span>
+            )}
+            {relatedSignalObjects.length > 0 && (
+              <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                <Radio className="h-2.5 w-2.5" />{relatedSignalObjects.length} signal{relatedSignalObjects.length !== 1 ? "s" : ""}
+              </span>
+            )}
+          </div>
         )}
+
+        {/* Expand indicator */}
+        <div className="mt-2 flex items-center justify-center">
+          <ChevronDown className={`h-4 w-4 text-muted-foreground/50 transition-transform ${expanded ? "rotate-180" : ""}`} />
+        </div>
       </button>
 
-      {/* Expanded content */}
+      {/* ── EXPANDED CONTENT ── */}
       {expanded && (
-        <div className="mt-1 space-y-4">
-          {/* Competitors */}
-          {prospect.competitors && prospect.competitors.length > 0 && (
-            <div>
-              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1">
-                <Swords className="h-3 w-3" /> Competitive Landscape
-              </p>
+        <div className="px-5 pb-5 space-y-4 border-t border-border">
+          {/* Decision Makers */}
+          {prospect.decisionMakers.length > 0 && (
+            <div className="pt-3">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">Decision Makers</p>
               <div className="space-y-1.5">
-                {prospect.competitors.map((comp, i) => (
-                  <div key={i} className="rounded-md border border-orange-200/50 bg-orange-50/30 dark:border-orange-500/20 dark:bg-orange-500/5 p-2.5">
-                    <p className="text-xs font-semibold text-foreground">{comp.name}</p>
-                    <p className="mt-0.5 text-[11px] text-muted-foreground leading-relaxed">{comp.description}</p>
+                {prospect.decisionMakers.map((dm) => (
+                  <div key={dm.name} className="flex items-center justify-between rounded-md border border-border px-2.5 py-2">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <Users className="h-3 w-3 text-muted-foreground shrink-0" />
+                      <span className="text-xs font-medium text-foreground">{dm.name}</span>
+                      <span className="text-[10px] text-muted-foreground truncate">· {dm.title}</span>
+                    </div>
+                    <a href={dm.linkedinUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-muted-foreground hover:text-blue-600 transition-colors shrink-0">
+                      <Linkedin className="h-3.5 w-3.5" />
+                    </a>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Related Links & Articles */}
-          {prospect.relatedLinks && prospect.relatedLinks.length > 0 && (
-            <div>
-              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1">
-                <Globe className="h-3 w-3" /> Company Links & News
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {prospect.relatedLinks.map((link, i) => (
-                  <a
-                    key={i}
-                    href={link.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-0.5 rounded-full bg-background border border-border px-2 py-0.5 text-[10px] text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors"
-                  >
-                    {link.title}
-                    <ExternalLink className="h-2 w-2" />
-                  </a>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Recommended Services */}
-          {prospect.recommendedServices && prospect.recommendedServices.length > 0 && (
-            <div>
-              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1">
-                <Briefcase className="h-3 w-3" /> Services to Sell
-              </p>
-              <div className="space-y-2">
-                {prospect.recommendedServices.map((svc, i) => {
-                  const linkedSig = svc.linkedSignalId
-                    ? allSignals.find((s) => s.id === svc.linkedSignalId)
-                    : null;
-                  return (
-                    <div key={i} className="rounded-md border border-primary/15 bg-primary/5 p-2.5">
-                      <p className="text-xs font-semibold text-foreground">{svc.service}</p>
-                      <p className="mt-1 text-[11px] text-muted-foreground leading-relaxed">{svc.rationale}</p>
-                      {linkedSig && (
-                        <div className="mt-1.5 flex items-center gap-1 text-[10px] text-primary">
-                          <Zap className="h-2.5 w-2.5" />
-                          <span className="font-medium">Signal:</span>
-                          <span className="truncate">{linkedSig.title}</span>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Related Signals with Sources */}
+          {/* Related Signals */}
           {relatedSignalObjects.length > 0 && (
             <div>
-              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1">
-                <Radio className="h-3 w-3" /> Related Signals & Sources
-              </p>
-              <div className="space-y-2">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">Related Signals</p>
+              <div className="space-y-1.5">
                 {relatedSignalObjects.map((sig) => {
                   if (!sig) return null;
                   return (
-                    <div key={sig.id} className="rounded-md border border-border bg-secondary/50 p-2.5">
+                    <div key={sig.id} className="rounded-md border border-border bg-secondary/30 p-2.5">
                       <p className="text-xs font-semibold text-foreground">{sig.title}</p>
-                      <p className="mt-1 text-[11px] text-muted-foreground leading-relaxed">{sig.salesImplication}</p>
+                      <p className="mt-0.5 text-[11px] text-muted-foreground leading-relaxed line-clamp-2">{sig.salesImplication}</p>
                       {sig.sources && sig.sources.length > 0 && (
-                        <div className="mt-2 flex flex-wrap gap-1.5">
-                          {sig.sources.map((src, i) => (
-                            <a
-                              key={i}
-                              href={src.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-0.5 rounded-full bg-background border border-border px-2 py-0.5 text-[10px] text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors"
-                            >
-                              {src.name}
-                              <ExternalLink className="h-2 w-2" />
+                        <div className="mt-1.5 flex flex-wrap gap-1">
+                          {sig.sources.slice(0, 3).map((src, i) => (
+                            <a key={i} href={src.url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}
+                              className="inline-flex items-center gap-0.5 rounded-full bg-background border border-border px-1.5 py-0.5 text-[9px] text-muted-foreground hover:text-primary transition-colors">
+                              {src.name} <ExternalLink className="h-2 w-2" />
                             </a>
                           ))}
                         </div>
@@ -227,121 +175,101 @@ export default function ProspectCard({ prospect }: ProspectCardProps) {
             </div>
           )}
 
-          {/* Decision Makers */}
-          {prospect.decisionMakers.length > 0 && (
+          {/* Competitors */}
+          {prospect.competitors && prospect.competitors.length > 0 && (
             <div>
-              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-1.5">Decision Makers</p>
-              <div className="space-y-1">
-                {prospect.decisionMakers.map((dm) => (
-                  <div key={dm.name} className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5">
-                      <Users className="h-3 w-3 text-muted-foreground" />
-                      <span className="text-xs text-foreground">{dm.name}</span>
-                      <span className="text-[10px] text-muted-foreground">· {dm.title}</span>
-                    </div>
-                    <Linkedin className="h-3 w-3 text-muted-foreground hover:text-primary cursor-pointer" />
+              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1">
+                <Swords className="h-3 w-3" /> Competitive Landscape
+              </p>
+              <div className="space-y-1.5">
+                {prospect.competitors.map((comp, i) => (
+                  <div key={i} className="rounded-md border border-border p-2.5">
+                    <p className="text-xs font-semibold text-foreground">{comp.name}</p>
+                    <p className="mt-0.5 text-[11px] text-muted-foreground leading-relaxed">{comp.description}</p>
                   </div>
                 ))}
               </div>
             </div>
           )}
-        </div>
-      )}
 
-      {/* Collapsed decision makers */}
-      {!expanded && prospect.decisionMakers.length > 0 && (
-        <div className="mt-3">
-          <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-1.5">Decision Makers</p>
-          <div className="space-y-1">
-            {prospect.decisionMakers.slice(0, 2).map((dm) => (
-              <div key={dm.name} className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
-                  <Users className="h-3 w-3 text-muted-foreground" />
-                  <span className="text-xs text-foreground">{dm.name}</span>
-                  <span className="text-[10px] text-muted-foreground">· {dm.title}</span>
-                </div>
-                <Linkedin className="h-3 w-3 text-muted-foreground hover:text-primary cursor-pointer" />
+          {/* Related Links */}
+          {prospect.relatedLinks && prospect.relatedLinks.length > 0 && (
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">Links & News</p>
+              <div className="flex flex-wrap gap-1.5">
+                {prospect.relatedLinks.map((link, i) => (
+                  <a key={i} href={link.url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}
+                    className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-[10px] text-muted-foreground hover:text-primary transition-colors">
+                    {link.title} <ExternalLink className="h-2.5 w-2.5" />
+                  </a>
+                ))}
               </div>
-            ))}
+            </div>
+          )}
+
+          {/* Saved signals */}
+          {linkedSignals.length > 0 && (
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">Saved Signals</p>
+              <div className="space-y-1">
+                {linkedSignals.map((saved) => {
+                  const sig = allSignals.find((s) => s.id === saved.signal_id);
+                  if (!sig) return null;
+                  return (
+                    <div key={saved.id} className="rounded-md bg-primary/5 border border-primary/10 px-2.5 py-1.5">
+                      <p className="text-[11px] font-medium text-foreground truncate">{sig.title}</p>
+                      {saved.notes && <p className="text-[10px] text-muted-foreground mt-0.5 truncate">{saved.notes}</p>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Feedback */}
+          <div className="flex items-center gap-2 pt-1">
+            <span className="text-[10px] text-muted-foreground mr-auto">Prospect quality?</span>
+            <button onClick={(e) => { e.stopPropagation(); sendFeedback("more"); }} disabled={!!feedbackGiven || !!feedbackSending}
+              className={`flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-medium transition-colors ${
+                feedbackGiven === "more" ? "bg-green-100 text-green-700 border border-green-200"
+                : "border border-border text-muted-foreground hover:text-green-700 hover:border-green-200 hover:bg-green-50"
+              } disabled:opacity-50`}>
+              {feedbackSending === "more" ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <ThumbsUp className="h-2.5 w-2.5" />} More
+            </button>
+            <button onClick={(e) => { e.stopPropagation(); sendFeedback("less"); }} disabled={!!feedbackGiven || !!feedbackSending}
+              className={`flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-medium transition-colors ${
+                feedbackGiven === "less" ? "bg-red-100 text-red-700 border border-red-200"
+                : "border border-border text-muted-foreground hover:text-red-700 hover:border-red-200 hover:bg-red-50"
+              } disabled:opacity-50`}>
+              {feedbackSending === "less" ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <ThumbsDown className="h-2.5 w-2.5" />} Less
+            </button>
+          </div>
+
+          {/* ── ACTIONS (only in expanded view) ── */}
+          <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border">
+            <Link to={`/prospects/${prospect.id}`} onClick={(e) => e.stopPropagation()}
+              className="flex items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground transition-opacity hover:opacity-90">
+              View Dossier <ArrowRight className="h-3 w-3" />
+            </Link>
+            <Link to={`/outreach?prospect=${prospect.id}`} onClick={(e) => e.stopPropagation()}
+              className="flex items-center justify-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-medium text-foreground hover:bg-accent transition-colors">
+              <Mail className="h-3 w-3" /> Outreach
+            </Link>
+            <button onClick={(e) => { e.stopPropagation(); toast({ title: "Added to Pipeline", description: `${prospect.companyName} added to Researching stage.` }); }}
+              className="flex items-center justify-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-medium text-foreground hover:bg-accent transition-colors">
+              Add to Pipeline
+            </button>
+            <div onClick={(e) => e.stopPropagation()}>
+              <AskArgus
+                compact
+                context={`Prospect: ${prospect.companyName}\nIndustry: ${industry?.name || "Unknown"}\nVIGYL Score: ${prospect.vigylScore}/100\nRevenue: ${prospect.annualRevenue}\nEmployees: ${prospect.employeeCount.toLocaleString()}\nLocation: ${prospect.location.city}, ${prospect.location.state}\nPipeline Stage: ${prospect.pipelineStage}\nPressure Response: ${getPressureLabel(prospect.pressureResponse)}\nWhy Now: ${prospect.whyNow}\nDecision Makers: ${prospect.decisionMakers.map(d => `${d.name} (${d.title})`).join(", ")}\nNotes: ${prospect.notes || "None"}`}
+                label={prospect.companyName}
+                greeting={`I'm looking at ${prospect.companyName} (VIGYL Score: ${prospect.vigylScore}). They're a ${prospect.annualRevenue} company in ${industry?.name || "their industry"} with ${prospect.employeeCount.toLocaleString()} employees. What would you like to explore?`}
+              />
+            </div>
           </div>
         </div>
       )}
-
-      {linkedSignals.length > 0 && (
-        <div className="mt-3 border-t border-border pt-3">
-          <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-1.5 flex items-center gap-1">
-            <Radio className="h-3 w-3" /> Saved Signals
-          </p>
-          <div className="space-y-1">
-            {linkedSignals.map((saved) => {
-              const sig = allSignals.find((s) => s.id === saved.signal_id);
-              if (!sig) return null;
-              return (
-                <div key={saved.id} className="rounded-md bg-primary/5 border border-primary/10 px-2.5 py-1.5">
-                  <p className="text-[11px] font-medium text-foreground leading-snug truncate">{sig.title}</p>
-                  {saved.notes && <p className="text-[10px] text-muted-foreground mt-0.5 truncate">{saved.notes}</p>}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Feedback buttons */}
-      <div className="mt-3 flex items-center gap-2 border-t border-border pt-3">
-        <span className="text-[10px] text-muted-foreground mr-auto">Prospect quality?</span>
-        <button
-          onClick={() => sendFeedback("more")}
-          disabled={!!feedbackGiven || !!feedbackSending}
-          className={`flex items-center gap-1 rounded-md px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
-            feedbackGiven === "more"
-              ? "bg-green-100 text-green-700 border border-green-200"
-              : "border border-border bg-card text-muted-foreground hover:text-green-700 hover:border-green-200 hover:bg-green-50"
-          } disabled:opacity-50`}
-        >
-          {feedbackSending === "more" ? <Loader2 className="h-3 w-3 animate-spin" /> : <ThumbsUp className="h-3 w-3" />}
-          More like this
-        </button>
-        <button
-          onClick={() => sendFeedback("less")}
-          disabled={!!feedbackGiven || !!feedbackSending}
-          className={`flex items-center gap-1 rounded-md px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
-            feedbackGiven === "less"
-              ? "bg-red-100 text-red-700 border border-red-200"
-              : "border border-border bg-card text-muted-foreground hover:text-red-700 hover:border-red-200 hover:bg-red-50"
-          } disabled:opacity-50`}
-        >
-          {feedbackSending === "less" ? <Loader2 className="h-3 w-3 animate-spin" /> : <ThumbsDown className="h-3 w-3" />}
-          Less like this
-        </button>
-      </div>
-
-      <div className="mt-3 space-y-2">
-        <div className="flex items-center gap-2">
-          <Link to={`/prospects/${prospect.id}`} className="flex-1 rounded-md bg-primary px-3 py-2 text-center text-xs font-semibold text-primary-foreground transition-opacity hover:opacity-90">
-            View Full Dossier
-          </Link>
-          <Link to={`/outreach?prospect=${prospect.id}`} className="rounded-md border border-primary bg-primary/5 px-3 py-2 text-center text-xs font-medium text-primary transition-colors hover:bg-primary/10">
-            Generate Outreach
-          </Link>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => {
-              toast({ title: "Added to Pipeline", description: `${prospect.companyName} added to Researching stage.` });
-            }}
-            className="flex-1 rounded-md border border-border px-3 py-1.5 text-center text-xs font-medium text-foreground hover:bg-accent transition-colors"
-          >
-            Add to Pipeline
-          </button>
-          <AskArgus
-            compact
-            context={`Prospect: ${prospect.companyName}\nIndustry: ${industry?.name || "Unknown"}\nVIGYL Score: ${prospect.vigylScore}/100\nRevenue: ${prospect.annualRevenue}\nEmployees: ${prospect.employeeCount.toLocaleString()}\nLocation: ${prospect.location.city}, ${prospect.location.state}\nPipeline Stage: ${prospect.pipelineStage}\nPressure Response: ${getPressureLabel(prospect.pressureResponse)}\nWhy Now: ${prospect.whyNow}\nDecision Makers: ${prospect.decisionMakers.map(d => `${d.name} (${d.title})`).join(", ")}\nNotes: ${prospect.notes || "None"}`}
-            label={prospect.companyName}
-            greeting={`I'm looking at ${prospect.companyName} (VIGYL Score: ${prospect.vigylScore}). They're a ${prospect.annualRevenue} company in ${industry?.name || "their industry"} with ${prospect.employeeCount.toLocaleString()} employees. What would you like to explore — outreach strategy, competitive angles, decision maker research, or something else?`}
-          />
-        </div>
-      </div>
     </div>
   );
 }
