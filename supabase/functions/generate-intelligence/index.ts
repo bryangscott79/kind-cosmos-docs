@@ -145,8 +145,9 @@ Generate a LARGE volume of diverse prospects. The more the better.
    These MUST have location.country set to the FULL country name (NOT "US" or "United States").
    Examples: a company in London, United Kingdom; one in Tokyo, Japan; one in Toronto, Canada; one in Munich, Germany.
 
-   CRITICAL RULES FOR ALL PROSPECTS:
+    CRITICAL RULES FOR ALL PROSPECTS:
     - Each prospect MUST have a "scope" field set to exactly "local", "national", or "international" matching the batch above
+    - **INDUSTRY VALIDATION**: Each prospect's "industryId" MUST exactly match the "id" of one of the industries you generated above. Do NOT assign a prospect to an industry that doesn't exist in your industries list. An airline is NOT "Education & EdTech". A restaurant is NOT "Defense & Aerospace". Match the prospect's ACTUAL business to the correct industry.
     - Verify: national prospects MUST have a US state different from ${location_state || "GA"}
     - Verify: international prospects MUST have a non-US country
     - Include a MIX of company sizes: small ($1M-$50M), mid ($50M-$500M), large ($500M-$5B), major ($5B+)
@@ -157,6 +158,9 @@ Generate a LARGE volume of diverse prospects. The more the better.
     - Include realistic decision maker names and titles
     - For each prospect, include 2-4 **recommended services** the user could sell
     - Annual revenue formats: "$2.3M", "$145M", "$3.8B", etc.
+    - **websiteUrl**: Include a realistic company website URL (e.g., "https://www.companyname.com")
+    - **relatedLinks**: Include 2-4 related links (recent news articles, press releases, SEC filings, industry reports) with title and URL
+    - **competitors**: Include 2-3 competitors the prospect may already be working with or evaluating. Each with name and a brief description of what they provide that overlaps with the user's services
 
 Make everything specific to the user's business capabilities and geography. No generic examples. Think about what this specific company could ACTUALLY sell to each prospect.`;
 
@@ -288,6 +292,31 @@ Make everything specific to the user's business capabilities and geography. No g
                     annualRevenue: { type: "string" },
                     employeeCount: { type: "number" },
                     scope: { type: "string", enum: ["local", "national", "international"] },
+                    websiteUrl: { type: "string" },
+                    relatedLinks: {
+                      type: "array",
+                      items: {
+                        type: "object",
+                        properties: {
+                          title: { type: "string" },
+                          url: { type: "string" },
+                        },
+                        required: ["title", "url"],
+                        additionalProperties: false,
+                      },
+                    },
+                    competitors: {
+                      type: "array",
+                      items: {
+                        type: "object",
+                        properties: {
+                          name: { type: "string" },
+                          description: { type: "string" },
+                        },
+                        required: ["name", "description"],
+                        additionalProperties: false,
+                      },
+                    },
                   },
                   required: ["id", "companyName", "industryId", "vigylScore", "pressureResponse", "whyNow", "decisionMakers", "relatedSignals", "pipelineStage", "lastContacted", "notes", "location", "annualRevenue", "employeeCount", "scope"],
                   additionalProperties: false,
@@ -420,6 +449,9 @@ Make everything specific to the user's business capabilities and geography. No g
         lastContacted: p.lastContacted || null,
         notes: p.notes || "",
         recommendedServices: p.recommendedServices || [],
+        websiteUrl: p.websiteUrl || "",
+        relatedLinks: p.relatedLinks || [],
+        competitors: p.competitors || [],
       };
     });
 

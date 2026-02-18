@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Users, Linkedin, MapPin, DollarSign, Building2, Radio, ChevronDown, ChevronUp, ExternalLink, Briefcase, Zap, ThumbsUp, ThumbsDown, Loader2 } from "lucide-react";
+import { Users, Linkedin, MapPin, DollarSign, Building2, Radio, ChevronDown, ChevronUp, ExternalLink, Briefcase, Zap, ThumbsUp, ThumbsDown, Loader2, Globe, Swords } from "lucide-react";
 import { Prospect, getPressureLabel, getScoreColorHsl } from "@/data/mockData";
 import { useSavedSignals } from "@/hooks/useSavedSignals";
 import { useIntelligence } from "@/contexts/IntelligenceContext";
@@ -60,7 +60,20 @@ export default function ProspectCard({ prospect }: ProspectCardProps) {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-semibold text-foreground">{prospect.companyName}</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-foreground">{prospect.companyName}</h3>
+            {prospect.websiteUrl && (
+              <a
+                href={prospect.websiteUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-muted-foreground hover:text-primary transition-colors"
+                title="Visit website"
+              >
+                <Globe className="h-3.5 w-3.5" />
+              </a>
+            )}
+          </div>
           <p className="mt-0.5 text-xs text-muted-foreground">{industry?.name}</p>
           <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
             <div className="flex items-center gap-1">
@@ -108,6 +121,46 @@ export default function ProspectCard({ prospect }: ProspectCardProps) {
       {/* Expanded content */}
       {expanded && (
         <div className="mt-1 space-y-4">
+          {/* Competitors */}
+          {prospect.competitors && prospect.competitors.length > 0 && (
+            <div>
+              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1">
+                <Swords className="h-3 w-3" /> Competitive Landscape
+              </p>
+              <div className="space-y-1.5">
+                {prospect.competitors.map((comp, i) => (
+                  <div key={i} className="rounded-md border border-orange-200/50 bg-orange-50/30 dark:border-orange-500/20 dark:bg-orange-500/5 p-2.5">
+                    <p className="text-xs font-semibold text-foreground">{comp.name}</p>
+                    <p className="mt-0.5 text-[11px] text-muted-foreground leading-relaxed">{comp.description}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Related Links & Articles */}
+          {prospect.relatedLinks && prospect.relatedLinks.length > 0 && (
+            <div>
+              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1">
+                <Globe className="h-3 w-3" /> Company Links & News
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {prospect.relatedLinks.map((link, i) => (
+                  <a
+                    key={i}
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-0.5 rounded-full bg-background border border-border px-2 py-0.5 text-[10px] text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors"
+                  >
+                    {link.title}
+                    <ExternalLink className="h-2 w-2" />
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Recommended Services */}
           {prospect.recommendedServices && prospect.recommendedServices.length > 0 && (
             <div>
