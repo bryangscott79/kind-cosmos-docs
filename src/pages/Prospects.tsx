@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Search, MapPin, Building2, Globe2, Star, Loader2, ChevronLeft, ChevronRight, Sparkles, Navigation } from "lucide-react";
+import { Search, MapPin, Building2, Globe2, Star, Loader2, ChevronLeft, ChevronRight, Sparkles, Navigation, RefreshCw } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import ProspectCard from "@/components/ProspectCard";
 import IntelligenceLoader from "@/components/IntelligenceLoader";
@@ -34,16 +34,34 @@ const NEIGHBORING_STATES: Record<string, string[]> = {
   OH: ["PA", "WV", "KY", "IN", "MI"],
 };
 
+// US state name → abbreviation map
+const STATE_ABBREV: Record<string, string> = {
+  alabama: "AL", alaska: "AK", arizona: "AZ", arkansas: "AR", california: "CA",
+  colorado: "CO", connecticut: "CT", delaware: "DE", florida: "FL", georgia: "GA",
+  hawaii: "HI", idaho: "ID", illinois: "IL", indiana: "IN", iowa: "IA",
+  kansas: "KS", kentucky: "KY", louisiana: "LA", maine: "ME", maryland: "MD",
+  massachusetts: "MA", michigan: "MI", minnesota: "MN", mississippi: "MS", missouri: "MO",
+  montana: "MT", nebraska: "NE", nevada: "NV", "new hampshire": "NH", "new jersey": "NJ",
+  "new mexico": "NM", "new york": "NY", "north carolina": "NC", "north dakota": "ND",
+  ohio: "OH", oklahoma: "OK", oregon: "OR", pennsylvania: "PA", "rhode island": "RI",
+  "south carolina": "SC", "south dakota": "SD", tennessee: "TN", texas: "TX", utah: "UT",
+  vermont: "VT", virginia: "VA", washington: "WA", "west virginia": "WV",
+  wisconsin: "WI", wyoming: "WY", "district of columbia": "DC",
+};
+
+function normalizeState(raw: string): string {
+  const trimmed = raw.trim();
+  const upper = trimmed.toUpperCase();
+  if (upper.length === 2) return upper;
+  return STATE_ABBREV[trimmed.toLowerCase()] || upper;
+}
+
 function inferScope(prospect: Prospect, userState: string, userCountry: string, localRadius: number): ProspectScope {
-  // If the AI explicitly assigned a scope, TRUST IT — don't override
-  if (prospect.scope) {
-    return prospect.scope;
-  }
-  
-  // Only infer scope when the AI didn't provide one
+  // ALWAYS compute scope from geography — don't trust AI assignment
+  // because the user's radius setting changes what counts as "local"
   const pCountry = (prospect.location?.country || "").trim();
-  const pState = (prospect.location?.state || "").trim().toUpperCase();
-  const uState = userState.toUpperCase();
+  const pState = normalizeState(prospect.location?.state || "");
+  const uState = normalizeState(userState);
   
   const isUserUS = !userCountry || userCountry === "US" || userCountry === "United States";
   const isProspectUS = !pCountry || pCountry === "US" || pCountry === "United States";
@@ -69,11 +87,13 @@ function ProspectSection({
   icon,
   prospects,
   emptyMessage,
+  emptyAction,
 }: {
   title: string;
   icon: React.ReactNode;
   prospects: Prospect[];
   emptyMessage: string;
+  emptyAction?: React.ReactNode;
 }) {
   const [page, setPage] = useState(0);
   const totalPages = Math.ceil(prospects.length / PROSPECTS_PER_PAGE);
@@ -87,7 +107,10 @@ function ProspectSection({
           <h2 className="text-lg font-semibold text-foreground">{title}</h2>
           <span className="text-xs text-muted-foreground">(0)</span>
         </div>
-        <p className="text-sm text-muted-foreground py-8 text-center">{emptyMessage}</p>
+        <div className="py-8 text-center">
+          <p className="text-sm text-muted-foreground">{emptyMessage}</p>
+          {emptyAction && <div className="mt-3">{emptyAction}</div>}
+        </div>
       </div>
     );
   }
@@ -134,7 +157,7 @@ function ProspectSection({
 export default function Prospects() {
   const [searchParams] = useSearchParams();
   const industryParam = searchParams.get("industry") || "all";
-  const { data } = useIntelligence();
+  const { data, refresh } = useIntelligence();
   const { prospects, industries } = data;
   const { profile } = useAuth();
   const { toast } = useToast();
@@ -146,6 +169,27 @@ export default function Prospects() {
   const [locationFilter, setLocationFilter] = useState("all");
   const [scopeFilter, setScopeFilter] = useState<ProspectScope | "all">("all");
   const [localRadius, setLocalRadius] = useState(100);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refresh();
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const refreshCTA = (
+    <button
+      onClick={handleRefresh}
+      disabled={refreshing}
+      className="inline-flex items-center gap-1.5 rounded-md border border-primary/20 bg-primary/5 px-4 py-2 text-xs font-medium text-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
+    >
+      {refreshing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+      {refreshing ? "Generating..." : "Refresh Intelligence Data"}
+    </button>
+  );
 
   // Dream client state
   const [dreamInput, setDreamInput] = useState("");
@@ -368,19 +412,22 @@ export default function Prospects() {
                 title={`Local Prospects — ${userCity || "Your Area"}${userState ? `, ${userState}` : ""}`}
                 icon={<MapPin className="h-5 w-5 text-emerald-500" />}
                 prospects={localProspects}
-                emptyMessage="No local prospects found. Try refreshing your intelligence data."
+                emptyMessage="No local prospects found."
+                emptyAction={refreshCTA}
               />
               <ProspectSection
                 title={`National Prospects — ${userCountry || "United States"}`}
                 icon={<Building2 className="h-5 w-5 text-blue-500" />}
                 prospects={nationalProspects}
-                emptyMessage="No national prospects found. Try refreshing your intelligence data."
+                emptyMessage="No national prospects found."
+                emptyAction={refreshCTA}
               />
               <ProspectSection
                 title="International Prospects"
                 icon={<Globe2 className="h-5 w-5 text-violet-500" />}
                 prospects={internationalProspects}
-                emptyMessage="No international prospects found. Try refreshing your intelligence data."
+                emptyMessage="No international prospects found."
+                emptyAction={refreshCTA}
               />
             </>
           ) : (

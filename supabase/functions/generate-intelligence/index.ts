@@ -455,7 +455,32 @@ Make everything specific to the user's business capabilities and geography.`;
     }
 
     // Ensure all prospects have proper defaults and infer scope if missing
-    const userState = (location_state || "").trim().toUpperCase();
+    const STATE_ABBREV: Record<string, string> = {
+      alabama: "AL", alaska: "AK", arizona: "AZ", arkansas: "AR", california: "CA",
+      colorado: "CO", connecticut: "CT", delaware: "DE", florida: "FL", georgia: "GA",
+      hawaii: "HI", idaho: "ID", illinois: "IL", indiana: "IN", iowa: "IA",
+      kansas: "KS", kentucky: "KY", louisiana: "LA", maine: "ME", maryland: "MD",
+      massachusetts: "MA", michigan: "MI", minnesota: "MN", mississippi: "MS", missouri: "MO",
+      montana: "MT", nebraska: "NE", nevada: "NV", "new hampshire": "NH", "new jersey": "NJ",
+      "new mexico": "NM", "new york": "NY", "north carolina": "NC", "north dakota": "ND",
+      ohio: "OH", oklahoma: "OK", oregon: "OR", pennsylvania: "PA", "rhode island": "RI",
+      "south carolina": "SC", "south dakota": "SD", tennessee: "TN", texas: "TX", utah: "UT",
+      vermont: "VT", virginia: "VA", washington: "WA", "west virginia": "WV",
+      wisconsin: "WI", wyoming: "WY", "district of columbia": "DC",
+    };
+    function normState(raw: string): string {
+      const trimmed = raw.trim();
+      const upper = trimmed.toUpperCase();
+      if (upper.length === 2) return upper;
+      return STATE_ABBREV[trimmed.toLowerCase()] || upper;
+    }
+    const NEIGHBORING: Record<string, string[]> = {
+      GA: ["AL", "FL", "SC", "NC", "TN"], FL: ["GA", "AL"], AL: ["GA", "FL", "TN", "MS"],
+      SC: ["GA", "NC"], NC: ["GA", "SC", "TN", "VA"], TN: ["GA", "AL", "NC", "VA", "KY", "MS"],
+      CA: ["OR", "NV", "AZ"], TX: ["NM", "OK", "AR", "LA"], NY: ["NJ", "CT", "PA", "MA", "VT"],
+      VA: ["NC", "TN", "KY", "WV", "MD", "DC"], PA: ["NY", "NJ", "DE", "MD", "OH", "WV"],
+    };
+    const userStateNorm = normState(location_state || "");
     const userCity = (location_city || "").trim().toLowerCase();
     const userCountry = (location_country || "US").trim().toUpperCase();
 
@@ -504,14 +529,16 @@ Make everything specific to the user's business capabilities and geography.`;
       let scope = p.scope;
       if (!scope) {
         const pCountry = (p.location?.country || "").trim().toUpperCase();
-        const pState = (p.location?.state || "").trim().toUpperCase();
-        const pCity = (p.location?.city || "").trim().toLowerCase();
-        if (pCountry && pCountry !== userCountry && pCountry !== "US" && pCountry !== "UNITED STATES") {
+        const pState = normState(p.location?.state || "");
+        const isIntl = pCountry && pCountry !== userCountry && pCountry !== "US" && pCountry !== "UNITED STATES";
+        if (isIntl) {
           scope = "international";
-        } else if (pState && pState !== userState) {
-          scope = "national";
-        } else {
+        } else if (pState === userStateNorm) {
           scope = "local";
+        } else if (NEIGHBORING[userStateNorm]?.includes(pState)) {
+          scope = "local";
+        } else {
+          scope = "national";
         }
       }
       return {
