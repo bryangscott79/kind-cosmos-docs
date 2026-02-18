@@ -18,8 +18,10 @@ const actionConfig = {
   monitor: { label: "Monitor", icon: Eye, className: "bg-score-amber/10 text-score-amber border-score-amber/20" },
 };
 
+const defaultActionConfig = { label: "Monitor", icon: Eye, className: "bg-muted text-muted-foreground border-border" };
+
 function ImpactTag({ entity }: { entity: SignalImpact }) {
-  const config = actionConfig[entity.action];
+  const config = actionConfig[entity.action as keyof typeof actionConfig] ?? defaultActionConfig;
   const ActionIcon = config.icon;
   const ImpactIcon = entity.impact === "positive" ? TrendingUp : TrendingDown;
   
