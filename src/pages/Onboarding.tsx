@@ -31,9 +31,9 @@ export default function Onboarding() {
   const [state, setState] = useState(profile?.location_state || "");
 
   // Step 2 fields (AI Impact context)
-  const [entityType, setEntityType] = useState(profile?.entity_type || "");
-  const [userPersona, setUserPersona] = useState(profile?.user_persona || "");
-  const [aiMaturity, setAiMaturity] = useState(profile?.ai_maturity_self || "");
+  const [entityType, setEntityType] = useState("");
+  const [userPersona, setUserPersona] = useState("");
+  const [aiMaturity, setAiMaturity] = useState("");
 
   // Step 3 fields
   const [businessSummary, setBusinessSummary] = useState(profile?.business_summary || "");
@@ -132,9 +132,6 @@ export default function Onboarding() {
           business_summary: businessSummary,
           ai_summary: aiSummary,
           target_industries: accepted,
-          entity_type: entityType || null,
-          user_persona: userPersona || null,
-          ai_maturity_self: aiMaturity || null,
           onboarding_completed: true,
         })
         .eq("user_id", session.user.id);
