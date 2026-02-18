@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import type { Industry, Signal, Prospect, AIImpactAnalysis } from "@/data/mockData";
@@ -11,6 +11,12 @@ interface IntelligenceData {
   aiImpact: AIImpactAnalysis[];
 }
 
+interface AiImpactGenState {
+  generating: boolean;
+  progress: { current: number; total: number; industryName: string };
+  error: string | null;
+}
+
 interface IntelligenceContextType {
   data: IntelligenceData;
   loading: boolean;
@@ -19,6 +25,9 @@ interface IntelligenceContextType {
   hasData: boolean;
   isBackgroundRefreshing: boolean;
   isUsingSeedData: boolean;
+  // AI Impact generation (lives in context so it survives navigation)
+  aiImpactGen: AiImpactGenState;
+  generateAiImpact: (industriesToProcess?: { id: string; name: string }[]) => void;
 }
 
 const emptyData: IntelligenceData = { industries: [], signals: [], prospects: [], aiImpact: [] };
@@ -37,6 +46,8 @@ const IntelligenceContext = createContext<IntelligenceContextType>({
   hasData: false,
   isBackgroundRefreshing: false,
   isUsingSeedData: false,
+  aiImpactGen: { generating: false, progress: { current: 0, total: 0, industryName: "" }, error: null },
+  generateAiImpact: () => {},
 });
 
 export function IntelligenceProvider({ children }: { children: ReactNode }) {
@@ -47,6 +58,14 @@ export function IntelligenceProvider({ children }: { children: ReactNode }) {
   const [initialized, setInitialized] = useState(false);
   const [isBackgroundRefreshing, setIsBackgroundRefreshing] = useState(false);
   const [isUsingSeedData, setIsUsingSeedData] = useState(false);
+
+  // AI Impact generation state (persists across navigation)
+  const [aiImpactGen, setAiImpactGen] = useState<AiImpactGenState>({
+    generating: false,
+    progress: { current: 0, total: 0, industryName: "" },
+    error: null,
+  });
+  const genRunningRef = useRef(false);
 
   // Activate seed data fallback — ensures user always sees content
   const activateSeedFallback = useCallback(() => {
@@ -118,7 +137,6 @@ export function IntelligenceProvider({ children }: { children: ReactNode }) {
       console.error("Intelligence generation error:", err);
       if (!isBackground) {
         setError(err.message || "Failed to generate intelligence");
-        // Activate seed data so user always sees content
         activateSeedFallback();
       }
     } finally {
@@ -129,6 +147,61 @@ export function IntelligenceProvider({ children }: { children: ReactNode }) {
       }
     }
   }, [profile, session, activateSeedFallback]);
+
+  // AI Impact generation — runs in context, survives page navigation
+  const generateAiImpact = useCallback((industriesToProcess?: { id: string; name: string }[]) => {
+    if (genRunningRef.current) return; // already running
+
+    const run = async () => {
+      genRunningRef.current = true;
+
+      // Determine which industries to process
+      const allIndustries = data.industries.map((i) => ({ id: i.id, name: i.name }));
+      const industries = industriesToProcess || allIndustries;
+      if (industries.length === 0) { genRunningRef.current = false; return; }
+
+      // If doing a full refresh, clear existing AI impact; if resuming, keep them
+      const isResume = !!industriesToProcess;
+
+      setAiImpactGen({ generating: true, progress: { current: 0, total: industries.length, industryName: "" }, error: null });
+
+      const results: AIImpactAnalysis[] = isResume ? [...(data.aiImpact || [])] : [];
+
+      for (let idx = 0; idx < industries.length; idx++) {
+        const ind = industries[idx];
+        setAiImpactGen((prev) => ({ ...prev, progress: { current: idx + 1, total: industries.length, industryName: ind.name } }));
+
+        try {
+          const { data: result, error } = await supabase.functions.invoke("generate-ai-impact", {
+            body: { industry: ind, profile: profile || {} },
+          });
+
+          if (error) throw new Error(error.message);
+          if (!result?.success) throw new Error(result?.error || `Failed for ${ind.name}`);
+
+          const existingIdx = results.findIndex((r) => r.industryId === result.data.industryId);
+          if (existingIdx >= 0) {
+            results[existingIdx] = result.data;
+          } else {
+            results.push(result.data);
+          }
+          // Update data immediately so UI shows progressive results
+          setData((prev) => ({ ...prev, aiImpact: [...results] }));
+        } catch (err: any) {
+          console.error(`AI impact error for ${ind.name}:`, err);
+        }
+      }
+
+      if (results.length === 0) {
+        setAiImpactGen({ generating: false, progress: { current: 0, total: 0, industryName: "" }, error: "Failed to generate AI impact analysis. Please try again." });
+      } else {
+        setAiImpactGen({ generating: false, progress: { current: 0, total: 0, industryName: "" }, error: null });
+      }
+      genRunningRef.current = false;
+    };
+
+    run();
+  }, [data.industries, data.aiImpact, profile]);
 
   // On mount: load cache first, then refresh in background
   useEffect(() => {
@@ -141,13 +214,10 @@ export function IntelligenceProvider({ children }: { children: ReactNode }) {
       const hasCached = await loadCachedData();
 
       if (hasCached) {
-        // We have cached data — show it immediately, refresh in background
         setLoading(false);
         setIsUsingSeedData(false);
         generateFresh(true);
       } else {
-        // No cache — show seed data immediately so screen isn't blank,
-        // then try generating fresh data in foreground
         activateSeedFallback();
         setLoading(false);
         await generateFresh(false);
@@ -172,6 +242,8 @@ export function IntelligenceProvider({ children }: { children: ReactNode }) {
         hasData: data.industries.length > 0,
         isBackgroundRefreshing,
         isUsingSeedData,
+        aiImpactGen,
+        generateAiImpact,
       }}
     >
       {children}
