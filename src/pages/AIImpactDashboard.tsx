@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { Brain, Users, Zap, TrendingUp, TrendingDown, Minus, Lock, ArrowRight, ChevronDown, ChevronUp, Bot, User, Handshake, BarChart3, Sparkles, Loader2, RefreshCw, CheckCircle2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -200,29 +200,7 @@ export default function AIImpactDashboard() {
   const [aiImpactData, setAiImpactData] = useState<AIImpactAnalysis[]>([]);
   const [generating, setGenerating] = useState(false);
   const [genError, setGenError] = useState<string | null>(null);
-  const [genStep, setGenStep] = useState(0);
-  const stepTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const genSteps = [
-    { label: "Gathering data from 2,050+ digital intelligence data points", duration: 6000 },
-    { label: "Analyzing AI impact across industry functions & value chains", duration: 12000 },
-    { label: "Scoring impact & generating personalized insights", duration: 8000 },
-  ];
-
-  // Simulated step progression during generation
-  useEffect(() => {
-    if (!generating) {
-      setGenStep(0);
-      if (stepTimerRef.current) clearTimeout(stepTimerRef.current);
-      return;
-    }
-    if (genStep < genSteps.length - 1) {
-      stepTimerRef.current = setTimeout(() => {
-        setGenStep((s) => Math.min(s + 1, genSteps.length - 1));
-      }, genSteps[genStep].duration);
-    }
-    return () => { if (stepTimerRef.current) clearTimeout(stepTimerRef.current); };
-  }, [generating, genStep]);
+  const [genProgress, setGenProgress] = useState({ current: 0, total: 0, industryName: "" });
 
   // Use data from context if available, otherwise use local state
   const effectiveAiImpact = useMemo(() => {
@@ -235,25 +213,45 @@ export default function AIImpactDashboard() {
     if (data.industries.length === 0) return;
     setGenerating(true);
     setGenError(null);
+    setAiImpactData([]);
 
-    try {
-      const { data: result, error } = await supabase.functions.invoke("generate-ai-impact", {
-        body: {
-          industries: data.industries.map((i) => ({ id: i.id, name: i.name })),
-          profile: profile || {},
-        },
-      });
+    const industries = data.industries.map((i) => ({ id: i.id, name: i.name }));
+    const total = industries.length;
+    const results: AIImpactAnalysis[] = [];
 
-      if (error) throw new Error(error.message);
-      if (!result?.success) throw new Error(result?.error || "Failed to generate AI impact analysis");
+    for (let idx = 0; idx < total; idx++) {
+      const ind = industries[idx];
+      setGenProgress({ current: idx + 1, total, industryName: ind.name });
 
-      setAiImpactData(result.data);
-    } catch (err: any) {
-      console.error("AI impact generation error:", err);
-      setGenError(err.message || "Failed to generate AI impact analysis");
-    } finally {
-      setGenerating(false);
+      try {
+        // On the last industry, pass all results so the edge function caches them
+        const isLast = idx === total - 1;
+        const { data: result, error } = await supabase.functions.invoke("generate-ai-impact", {
+          body: {
+            industry: ind,
+            profile: profile || {},
+            ...(isLast ? { saveToCache: results.concat() } : {}),
+          },
+        });
+
+        if (error) throw new Error(error.message);
+        if (!result?.success) throw new Error(result?.error || `Failed for ${ind.name}`);
+
+        results.push(result.data);
+        // Update state so results appear immediately
+        setAiImpactData([...results]);
+        // Auto-select first result
+        if (idx === 0) setSelectedIndustryId(result.data.industryId);
+      } catch (err: any) {
+        console.error(`AI impact error for ${ind.name}:`, err);
+        // Continue with remaining industries instead of failing entirely
+      }
     }
+
+    if (results.length === 0) {
+      setGenError("Failed to generate AI impact analysis. Please try again.");
+    }
+    setGenerating(false);
   }, [data.industries, profile]);
 
   // Set default selection
@@ -422,6 +420,26 @@ export default function AIImpactDashboard() {
                 </div>
               </div>
             )}
+
+            {/* Show progress while generating more industries */}
+            {generating && (
+              <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+                <div className="flex items-center gap-3">
+                  <Loader2 className="h-4 w-4 animate-spin text-primary shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-xs font-medium text-foreground">
+                        Analyzing: {genProgress.industryName}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">
+                        {genProgress.current} of {genProgress.total}
+                      </span>
+                    </div>
+                    <Progress value={(genProgress.current / Math.max(genProgress.total, 1)) * 100} className="h-1.5" />
+                  </div>
+                </div>
+              </div>
+            )}
           </>
         ) : (
           /* Empty state — no AI impact data yet */
@@ -434,41 +452,33 @@ export default function AIImpactDashboard() {
                 <div>
                   <h3 className="text-sm font-semibold text-foreground">Generating AI Impact Analysis</h3>
                   <p className="mt-1 text-[11px] text-muted-foreground">
-                    Analyzing {data.industries.length} {data.industries.length === 1 ? "industry" : "industries"} across 2,050+ data points
+                    Analyzing {genProgress.total} {genProgress.total === 1 ? "industry" : "industries"} — results appear as each completes
                   </p>
                 </div>
 
                 {/* Progress bar */}
-                <Progress value={((genStep + 1) / genSteps.length) * 100} className="h-2" />
+                <Progress value={(genProgress.current / Math.max(genProgress.total, 1)) * 100} className="h-2" />
 
-                {/* Step indicators */}
-                <div className="space-y-3 text-left">
-                  {genSteps.map((step, i) => {
-                    const isActive = genStep === i;
-                    const isDone = genStep > i;
-                    return (
-                      <div key={i} className={`flex items-start gap-3 rounded-md px-3 py-2 transition-colors ${isActive ? "bg-primary/5 border border-primary/20" : ""}`}>
-                        <div className="mt-0.5 shrink-0">
-                          {isDone ? (
-                            <CheckCircle2 className="h-4 w-4 text-green-500" />
-                          ) : isActive ? (
-                            <Loader2 className="h-4 w-4 text-primary animate-spin" />
-                          ) : (
-                            <div className="h-4 w-4 rounded-full border-2 border-muted-foreground/30" />
-                          )}
-                        </div>
-                        <div>
-                          <span className={`text-xs font-medium ${isActive ? "text-foreground" : isDone ? "text-muted-foreground" : "text-muted-foreground/50"}`}>
-                            Step {i + 1} of {genSteps.length}
-                          </span>
-                          <p className={`text-[11px] ${isActive ? "text-foreground" : isDone ? "text-muted-foreground" : "text-muted-foreground/50"}`}>
-                            {step.label}
-                          </p>
-                        </div>
-                      </div>
-                    );
-                  })}
+                {/* Current industry indicator */}
+                <div className="flex items-center justify-center gap-2">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+                  <span className="text-xs text-muted-foreground">
+                    Industry {genProgress.current} of {genProgress.total}: <span className="font-medium text-foreground">{genProgress.industryName}</span>
+                  </span>
                 </div>
+
+                {/* Completed industries */}
+                {aiImpactData.length > 0 && (
+                  <div className="space-y-2 text-left">
+                    {aiImpactData.map((a, i) => (
+                      <div key={i} className="flex items-center gap-2 rounded-md bg-primary/5 px-3 py-2">
+                        <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
+                        <span className="text-xs text-foreground">{a.industryName}</span>
+                        <span className="text-[10px] text-muted-foreground ml-auto">{a.automationRate}% automated</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ) : (
               <>
