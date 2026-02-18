@@ -26,7 +26,7 @@ const sentimentIcon = (s: string) => {
 
 export default function IndustryDashboard() {
   const [search, setSearch] = useState("");
-  const { data, loading, refresh } = useIntelligence();
+  const { data, loading, refresh, isBackgroundRefreshing } = useIntelligence();
   const { industries, signals, prospects } = data;
 
   const getIndustryName = (id: string) => industries.find((i) => i.id === id)?.name ?? "Unknown";
@@ -72,11 +72,11 @@ export default function IndustryDashboard() {
           <div className="flex items-center gap-2">
             <button
               onClick={refresh}
-              disabled={loading}
+              disabled={loading || isBackgroundRefreshing}
               className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors disabled:opacity-50"
             >
-              {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
-              Refresh
+              {(loading || isBackgroundRefreshing) ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+              {isBackgroundRefreshing ? "Refreshing…" : "Refresh"}
             </button>
             <div className="relative max-w-xs w-full sm:w-auto">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
