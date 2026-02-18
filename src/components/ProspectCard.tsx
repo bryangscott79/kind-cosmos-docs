@@ -62,7 +62,9 @@ export default function ProspectCard({ prospect }: ProspectCardProps) {
       <div className="flex items-start justify-between">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold text-foreground">{prospect.companyName}</h3>
+            <Link to={`/prospects/${prospect.id}`} className="text-sm font-semibold text-foreground hover:text-primary transition-colors">
+              {prospect.companyName}
+            </Link>
             {prospect.websiteUrl && (
               <a
                 href={prospect.websiteUrl}
@@ -327,6 +329,10 @@ export default function ProspectCard({ prospect }: ProspectCardProps) {
           greeting={`I'm looking at ${prospect.companyName} (VIGYL Score: ${prospect.vigylScore}). They're a ${prospect.annualRevenue} company in ${industry?.name || "their industry"} with ${prospect.employeeCount.toLocaleString()} employees. What would you like to explore — outreach strategy, competitive angles, decision maker research, or something else?`}
         />
       </div>
+      <Link to={`/prospects/${prospect.id}`}
+        className="mt-2 flex items-center justify-center gap-1.5 rounded-md border border-border py-2 text-[11px] font-medium text-muted-foreground hover:text-primary hover:border-primary/30 transition-colors">
+        View Full Dossier <ChevronDown className="h-3 w-3 rotate-[-90deg]" />
+      </Link>
     </div>
   );
 }

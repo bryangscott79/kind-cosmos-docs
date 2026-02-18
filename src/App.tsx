@@ -18,6 +18,7 @@ import IndustryDetail from "./pages/IndustryDetail";
 import AIImpactDashboard from "./pages/AIImpactDashboard";
 import SignalFeed from "./pages/SignalFeed";
 import Prospects from "./pages/Prospects";
+import ProspectDetail from "./pages/ProspectDetail";
 import Pipeline from "./pages/Pipeline";
 import Outreach from "./pages/Outreach";
 import Reports from "./pages/Reports";
@@ -46,6 +47,7 @@ const App = () => (
               <Route path="/ai-impact" element={<ProtectedRoute><AIImpactDashboard /></ProtectedRoute>} />
               <Route path="/signals" element={<ProtectedRoute><SignalFeed /></ProtectedRoute>} />
               <Route path="/prospects" element={<ProtectedRoute><TierGate requiredTier="starter" featureName="Prospect Engine"><Prospects /></TierGate></ProtectedRoute>} />
+              <Route path="/prospects/:id" element={<ProtectedRoute><TierGate requiredTier="starter" featureName="Prospect Engine"><ProspectDetail /></TierGate></ProtectedRoute>} />
               <Route path="/pipeline" element={<ProtectedRoute><TierGate requiredTier="pro" featureName="Pipeline"><Pipeline /></TierGate></ProtectedRoute>} />
               <Route path="/outreach" element={<ProtectedRoute><TierGate requiredTier="pro" featureName="Outreach"><Outreach /></TierGate></ProtectedRoute>} />
               <Route path="/reports" element={<ProtectedRoute><TierGate requiredTier="starter" featureName="Reports"><Reports /></TierGate></ProtectedRoute>} />
