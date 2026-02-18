@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback, ReactNode 
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import type { Industry, Signal, Prospect, AIImpactAnalysis } from "@/data/mockData";
+import { industries as seedIndustries, signals as seedSignals, prospects as seedProspects } from "@/data/mockData";
 
 interface IntelligenceData {
   industries: Industry[];
@@ -17,9 +18,16 @@ interface IntelligenceContextType {
   refresh: () => Promise<void>;
   hasData: boolean;
   isBackgroundRefreshing: boolean;
+  isUsingSeedData: boolean;
 }
 
 const emptyData: IntelligenceData = { industries: [], signals: [], prospects: [], aiImpact: [] };
+const seedData: IntelligenceData = {
+  industries: seedIndustries,
+  signals: seedSignals,
+  prospects: seedProspects,
+  aiImpact: [],
+};
 
 const IntelligenceContext = createContext<IntelligenceContextType>({
   data: emptyData,
@@ -28,6 +36,7 @@ const IntelligenceContext = createContext<IntelligenceContextType>({
   refresh: async () => {},
   hasData: false,
   isBackgroundRefreshing: false,
+  isUsingSeedData: false,
 });
 
 export function IntelligenceProvider({ children }: { children: ReactNode }) {
@@ -37,6 +46,16 @@ export function IntelligenceProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [initialized, setInitialized] = useState(false);
   const [isBackgroundRefreshing, setIsBackgroundRefreshing] = useState(false);
+  const [isUsingSeedData, setIsUsingSeedData] = useState(false);
+
+  // Activate seed data fallback — ensures user always sees content
+  const activateSeedFallback = useCallback(() => {
+    if (data.industries.length === 0) {
+      console.log("Activating seed data fallback — user will see content immediately");
+      setData(seedData);
+      setIsUsingSeedData(true);
+    }
+  }, [data.industries.length]);
 
   // Load cached data from database on mount
   const loadCachedData = useCallback(async () => {
@@ -94,11 +113,13 @@ export function IntelligenceProvider({ children }: { children: ReactNode }) {
       if (!result?.success) throw new Error(result?.error || "Failed to generate intelligence");
 
       setData(result.data);
+      setIsUsingSeedData(false);
     } catch (err: any) {
       console.error("Intelligence generation error:", err);
-      // Only set error if we don't already have cached data
       if (!isBackground) {
         setError(err.message || "Failed to generate intelligence");
+        // Activate seed data so user always sees content
+        activateSeedFallback();
       }
     } finally {
       if (isBackground) {
@@ -107,7 +128,7 @@ export function IntelligenceProvider({ children }: { children: ReactNode }) {
         setLoading(false);
       }
     }
-  }, [profile, session]);
+  }, [profile, session, activateSeedFallback]);
 
   // On mount: load cache first, then refresh in background
   useEffect(() => {
@@ -122,16 +143,19 @@ export function IntelligenceProvider({ children }: { children: ReactNode }) {
       if (hasCached) {
         // We have cached data — show it immediately, refresh in background
         setLoading(false);
+        setIsUsingSeedData(false);
         generateFresh(true);
       } else {
-        // No cache — do a foreground generation
+        // No cache — show seed data immediately so screen isn't blank,
+        // then try generating fresh data in foreground
+        activateSeedFallback();
         setLoading(false);
         await generateFresh(false);
       }
     };
 
     init();
-  }, [profile, session, initialized, loadCachedData, generateFresh]);
+  }, [profile, session, initialized, loadCachedData, generateFresh, activateSeedFallback]);
 
   const refresh = useCallback(async () => {
     const hasExistingData = data.industries.length > 0;
@@ -147,6 +171,7 @@ export function IntelligenceProvider({ children }: { children: ReactNode }) {
         refresh,
         hasData: data.industries.length > 0,
         isBackgroundRefreshing,
+        isUsingSeedData,
       }}
     >
       {children}
