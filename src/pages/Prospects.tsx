@@ -202,13 +202,19 @@ export default function Prospects() {
   const userCountry = (profile?.location_country || "US").trim();
 
   // Enrich prospects with inferred scope
-  const enrichedProspects = useMemo(() => 
-    prospects.map(p => ({
+  const enrichedProspects = useMemo(() => {
+    const result = prospects.map(p => ({
       ...p,
       scope: inferScope(p, userState, userCountry, localRadius),
-    })),
-    [prospects, userState, userCountry, localRadius]
-  );
+    }));
+    // Debug: log scope distribution
+    const counts = { local: 0, national: 0, international: 0 };
+    result.forEach(p => { if (p.scope in counts) counts[p.scope as keyof typeof counts]++; });
+    if (result.length > 0) {
+      console.log(`[Prospects] Scope distribution: local=${counts.local}, national=${counts.national}, international=${counts.international} | userState="${userState}" radius=${localRadius}`);
+    }
+    return result;
+  }, [prospects, userState, userCountry, localRadius]);
 
   const states = useMemo(() => [...new Set(enrichedProspects.map(p => p.location.state))].sort(), [enrichedProspects]);
   const industriesWithProspects = useMemo(() => {
@@ -412,7 +418,7 @@ export default function Prospects() {
                 title={`Local Prospects — ${userCity || "Your Area"}${userState ? `, ${userState}` : ""}`}
                 icon={<MapPin className="h-5 w-5 text-emerald-500" />}
                 prospects={localProspects}
-                emptyMessage="No local prospects found."
+                emptyMessage={`No prospects within ${localRadius} miles of ${userCity || "your location"}. Try increasing the radius or refreshing your data.`}
                 emptyAction={refreshCTA}
               />
               <ProspectSection
