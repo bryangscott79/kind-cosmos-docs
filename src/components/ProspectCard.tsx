@@ -318,21 +318,32 @@ export default function ProspectCard({ prospect }: ProspectCardProps) {
         </button>
       </div>
 
-      <div className="mt-3 flex items-center gap-2">
-        <Link to={`/outreach?prospect=${prospect.id}`} className="flex-1 rounded-md bg-primary px-3 py-1.5 text-center text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90">
-          Generate Outreach
-        </Link>
-        <AskArgus
-          compact
-          context={`Prospect: ${prospect.companyName}\nIndustry: ${industry?.name || "Unknown"}\nVIGYL Score: ${prospect.vigylScore}/100\nRevenue: ${prospect.annualRevenue}\nEmployees: ${prospect.employeeCount.toLocaleString()}\nLocation: ${prospect.location.city}, ${prospect.location.state}\nPipeline Stage: ${prospect.pipelineStage}\nPressure Response: ${getPressureLabel(prospect.pressureResponse)}\nWhy Now: ${prospect.whyNow}\nDecision Makers: ${prospect.decisionMakers.map(d => `${d.name} (${d.title})`).join(", ")}\nNotes: ${prospect.notes || "None"}`}
-          label={prospect.companyName}
-          greeting={`I'm looking at ${prospect.companyName} (VIGYL Score: ${prospect.vigylScore}). They're a ${prospect.annualRevenue} company in ${industry?.name || "their industry"} with ${prospect.employeeCount.toLocaleString()} employees. What would you like to explore — outreach strategy, competitive angles, decision maker research, or something else?`}
-        />
+      <div className="mt-3 space-y-2">
+        <div className="flex items-center gap-2">
+          <Link to={`/prospects/${prospect.id}`} className="flex-1 rounded-md bg-primary px-3 py-2 text-center text-xs font-semibold text-primary-foreground transition-opacity hover:opacity-90">
+            View Full Dossier
+          </Link>
+          <Link to={`/outreach?prospect=${prospect.id}`} className="rounded-md border border-primary bg-primary/5 px-3 py-2 text-center text-xs font-medium text-primary transition-colors hover:bg-primary/10">
+            Generate Outreach
+          </Link>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              toast({ title: "Added to Pipeline", description: `${prospect.companyName} added to Researching stage.` });
+            }}
+            className="flex-1 rounded-md border border-border px-3 py-1.5 text-center text-xs font-medium text-foreground hover:bg-accent transition-colors"
+          >
+            Add to Pipeline
+          </button>
+          <AskArgus
+            compact
+            context={`Prospect: ${prospect.companyName}\nIndustry: ${industry?.name || "Unknown"}\nVIGYL Score: ${prospect.vigylScore}/100\nRevenue: ${prospect.annualRevenue}\nEmployees: ${prospect.employeeCount.toLocaleString()}\nLocation: ${prospect.location.city}, ${prospect.location.state}\nPipeline Stage: ${prospect.pipelineStage}\nPressure Response: ${getPressureLabel(prospect.pressureResponse)}\nWhy Now: ${prospect.whyNow}\nDecision Makers: ${prospect.decisionMakers.map(d => `${d.name} (${d.title})`).join(", ")}\nNotes: ${prospect.notes || "None"}`}
+            label={prospect.companyName}
+            greeting={`I'm looking at ${prospect.companyName} (VIGYL Score: ${prospect.vigylScore}). They're a ${prospect.annualRevenue} company in ${industry?.name || "their industry"} with ${prospect.employeeCount.toLocaleString()} employees. What would you like to explore — outreach strategy, competitive angles, decision maker research, or something else?`}
+          />
+        </div>
       </div>
-      <Link to={`/prospects/${prospect.id}`}
-        className="mt-2 flex items-center justify-center gap-1.5 rounded-md border border-border py-2 text-[11px] font-medium text-muted-foreground hover:text-primary hover:border-primary/30 transition-colors">
-        View Full Dossier <ChevronDown className="h-3 w-3 rotate-[-90deg]" />
-      </Link>
     </div>
   );
 }
