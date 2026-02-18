@@ -17,6 +17,11 @@ interface Profile {
   location_city: string | null;
   location_state: string | null;
   location_country: string | null;
+  // AI Impact Intelligence fields
+  entity_type: string | null;
+  user_persona: string | null;
+  customer_industries: string[] | null;
+  ai_maturity_self: string | null;
 }
 
 interface AuthContextType {

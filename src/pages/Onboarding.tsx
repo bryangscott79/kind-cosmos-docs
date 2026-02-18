@@ -30,7 +30,12 @@ export default function Onboarding() {
   const [city, setCity] = useState(profile?.location_city || "");
   const [state, setState] = useState(profile?.location_state || "");
 
-  // Step 2 fields
+  // Step 2 fields (AI Impact context)
+  const [entityType, setEntityType] = useState(profile?.entity_type || "");
+  const [userPersona, setUserPersona] = useState(profile?.user_persona || "");
+  const [aiMaturity, setAiMaturity] = useState(profile?.ai_maturity_self || "");
+
+  // Step 3 fields
   const [businessSummary, setBusinessSummary] = useState(profile?.business_summary || "");
   const [aiSummary, setAiSummary] = useState(profile?.ai_summary || "");
   const [recommendedIndustries, setRecommendedIndustries] = useState<RecommendedIndustry[]>([]);
@@ -127,6 +132,9 @@ export default function Onboarding() {
           business_summary: businessSummary,
           ai_summary: aiSummary,
           target_industries: accepted,
+          entity_type: entityType || null,
+          user_persona: userPersona || null,
+          ai_maturity_self: aiMaturity || null,
           onboarding_completed: true,
         })
         .eq("user_id", session.user.id);
@@ -156,7 +164,7 @@ export default function Onboarding() {
             Help VIGYL.ai find the right signals and prospects for your business
           </p>
           <div className="mt-4 flex items-center justify-center gap-2">
-            {[1, 2].map((s) => (
+            {[1, 2, 3].map((s) => (
               <div
                 key={s}
                 className={`h-1.5 rounded-full transition-all ${
@@ -281,6 +289,115 @@ export default function Onboarding() {
         )}
 
         {step === 2 && (
+          <div className="space-y-5">
+            <h2 className="text-sm font-semibold text-foreground">Your Business Context</h2>
+            <p className="text-xs text-muted-foreground -mt-3">
+              This helps VIGYL tailor AI impact insights to your specific situation.
+            </p>
+
+            <div>
+              <label className="mb-2 block text-xs font-medium text-foreground">Business Model</label>
+              <div className="grid grid-cols-2 gap-2">
+                {([
+                  { value: "b2b", label: "B2B", desc: "Sell to businesses" },
+                  { value: "b2c", label: "B2C", desc: "Sell to consumers" },
+                  { value: "d2c", label: "D2C", desc: "Direct to consumer" },
+                  { value: "government", label: "Government", desc: "Public sector" },
+                  { value: "private", label: "Private", desc: "Private company" },
+                  { value: "nonprofit", label: "Nonprofit", desc: "Mission-driven" },
+                ] as const).map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setEntityType(opt.value)}
+                    className={`rounded-md border p-2.5 text-left transition-colors ${
+                      entityType === opt.value
+                        ? "border-primary bg-primary/5"
+                        : "border-border bg-card hover:border-primary/30"
+                    }`}
+                  >
+                    <span className="text-xs font-semibold text-foreground">{opt.label}</span>
+                    <p className="text-[10px] text-muted-foreground">{opt.desc}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-2 block text-xs font-medium text-foreground">Your Role Focus</label>
+              <div className="grid grid-cols-2 gap-2">
+                {([
+                  { value: "sales", label: "Sales" },
+                  { value: "founder", label: "Founder / CEO" },
+                  { value: "executive", label: "Executive" },
+                  { value: "hr", label: "HR / People Ops" },
+                  { value: "investor", label: "Investor" },
+                  { value: "consultant", label: "Consultant" },
+                  { value: "analyst", label: "Analyst" },
+                  { value: "lobbyist", label: "Policy / Lobbying" },
+                ] as const).map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setUserPersona(opt.value)}
+                    className={`rounded-md border px-3 py-2 text-xs font-medium transition-colors ${
+                      userPersona === opt.value
+                        ? "border-primary bg-primary/5 text-foreground"
+                        : "border-border bg-card text-muted-foreground hover:border-primary/30"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-2 block text-xs font-medium text-foreground">AI Maturity</label>
+              <div className="flex flex-wrap gap-2">
+                {([
+                  { value: "exploring", label: "Exploring", emoji: "🔍" },
+                  { value: "piloting", label: "Piloting", emoji: "🧪" },
+                  { value: "scaling", label: "Scaling", emoji: "📈" },
+                  { value: "optimizing", label: "Optimizing", emoji: "⚙️" },
+                  { value: "leading", label: "Leading", emoji: "🚀" },
+                ] as const).map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setAiMaturity(opt.value)}
+                    className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                      aiMaturity === opt.value
+                        ? "border-primary bg-primary/5 text-foreground"
+                        : "border-border bg-card text-muted-foreground hover:border-primary/30"
+                    }`}
+                  >
+                    {opt.emoji} {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setStep(1)}
+                className="flex items-center gap-1.5 rounded-md border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground hover:bg-accent transition-colors"
+              >
+                <ArrowLeft className="h-4 w-4" /> Back
+              </button>
+              <button
+                type="button"
+                onClick={() => setStep(3)}
+                className="flex flex-1 items-center justify-center gap-2 rounded-md bg-gradient-to-r from-brand-blue to-brand-purple px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+              >
+                Continue <ArrowRight className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {step === 3 && (
           <div className="space-y-4">
             <h2 className="text-sm font-semibold text-foreground">Your Business & Target Industries</h2>
             <p className="text-xs text-muted-foreground -mt-2">
@@ -397,7 +514,7 @@ export default function Onboarding() {
             <div className="flex gap-3">
               <button
                 type="button"
-                onClick={() => setStep(1)}
+                onClick={() => setStep(2)}
                 className="flex items-center gap-1.5 rounded-md border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground hover:bg-accent transition-colors"
               >
                 <ArrowLeft className="h-4 w-4" /> Back

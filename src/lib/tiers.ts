@@ -64,9 +64,12 @@ export function getTierFromProductId(productId: string | null): TierKey {
 export const FEATURE_ACCESS: Record<string, TierKey> = {
   industries: "free",
   signals: "free",
+  ai_impact: "free",        // Basic view is free (teaser), full view requires starter
+  ai_impact_full: "starter", // Full three-zone view
   prospects: "starter",
   pipeline: "pro",
   outreach: "pro",
+  deep_reports: "pro",       // Deep reports require pro
   settings: "free",
 };
 

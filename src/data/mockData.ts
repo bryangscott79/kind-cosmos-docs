@@ -37,6 +37,144 @@ export interface Signal {
   impactedEntities?: SignalImpact[];
 }
 
+// =============================================================
+// AI Impact Intelligence Types
+// =============================================================
+
+export type AIZone = "ai_led" | "human_led" | "collaborative";
+export type EntityType = "b2b" | "b2c" | "d2c" | "public" | "private" | "government" | "nonprofit";
+export type UserPersona = "sales" | "hr" | "founder" | "lobbyist" | "investor" | "executive" | "consultant" | "analyst";
+export type AIMaturity = "exploring" | "piloting" | "scaling" | "optimizing" | "leading";
+
+export interface AIFunction {
+  name: string;
+  description: string;
+  automationLevel: number; // 0-100
+  zone: AIZone;
+  jobsAffected: string[];
+  opportunityType: "cost_reduction" | "revenue_growth" | "efficiency" | "new_capability" | "risk_reduction";
+  timeline: "now" | "6_months" | "1_year" | "2_plus_years";
+}
+
+export interface ValueChainNode {
+  id: string;
+  name: string;
+  zone: AIZone;
+  automationLevel: number;
+  aiTools: string[];
+  humanRoles: string[];
+  opportunity: string;
+}
+
+export interface AIImpactKPI {
+  name: string;
+  value: number;
+  unit: string;
+  trend: "up" | "down" | "stable";
+  context: string;
+}
+
+export interface EntityOverlay {
+  entityType: EntityType;
+  interpretation: string;
+  actionItems: string[];
+  relevantKPIs: string[];
+}
+
+export interface AIImpactAnalysis {
+  industryId: string;
+  industryName: string;
+  aiLedFunctions: AIFunction[];
+  humanLedFunctions: AIFunction[];
+  collaborativeFunctions: AIFunction[];
+  automationRate: number;
+  jobDisplacementIndex: number;
+  humanResilienceScore: number;
+  collaborativeOpportunityIndex: number;
+  valueChain: ValueChainNode[];
+  kpis: AIImpactKPI[];
+  entityOverlays: Record<EntityType, EntityOverlay>;
+  generatedAt: string;
+}
+
+export interface DeepReport {
+  id: string;
+  reportType: "my_industry" | "customer_industry" | "competitive_landscape" | "workforce_impact" | "ai_readiness";
+  targetIndustry: string;
+  entityContext: EntityType | null;
+  reportData: Record<string, any>;
+  executiveSummary: string;
+  status: "pending" | "generating" | "completed" | "failed";
+  createdAt: string;
+  completedAt: string | null;
+}
+
+// Zone display helpers
+export function getZoneLabel(zone: AIZone): string {
+  const labels: Record<AIZone, string> = {
+    ai_led: "AI-Led",
+    human_led: "Human-Led",
+    collaborative: "Collaborative Edge",
+  };
+  return labels[zone];
+}
+
+export function getZoneColor(zone: AIZone): string {
+  const colors: Record<AIZone, string> = {
+    ai_led: "text-red-400",
+    human_led: "text-blue-400",
+    collaborative: "text-purple-400",
+  };
+  return colors[zone];
+}
+
+export function getZoneBgColor(zone: AIZone): string {
+  const colors: Record<AIZone, string> = {
+    ai_led: "bg-red-500/10 border-red-500/20",
+    human_led: "bg-blue-500/10 border-blue-500/20",
+    collaborative: "bg-purple-500/10 border-purple-500/20",
+  };
+  return colors[zone];
+}
+
+export function getEntityLabel(entity: EntityType): string {
+  const labels: Record<EntityType, string> = {
+    b2b: "B2B",
+    b2c: "B2C",
+    d2c: "D2C",
+    public: "Public Company",
+    private: "Private Company",
+    government: "Government",
+    nonprofit: "Nonprofit",
+  };
+  return labels[entity];
+}
+
+export function getPersonaLabel(persona: UserPersona): string {
+  const labels: Record<UserPersona, string> = {
+    sales: "Sales",
+    hr: "HR / People Ops",
+    founder: "Founder / CEO",
+    lobbyist: "Lobbyist / Policy",
+    investor: "Investor",
+    executive: "Executive",
+    consultant: "Consultant",
+    analyst: "Analyst / Researcher",
+  };
+  return labels[persona];
+}
+
+export function getMaturityLabel(maturity: AIMaturity): string {
+  const labels: Record<AIMaturity, string> = {
+    exploring: "Exploring",
+    piloting: "Piloting",
+    scaling: "Scaling",
+    optimizing: "Optimizing",
+    leading: "Leading",
+  };
+  return labels[maturity];
+}
+
 function generateScoreHistory(base: number): { date: string; score: number }[] {
   const history: { date: string; score: number }[] = [];
   let score = base - 10 + Math.random() * 20;

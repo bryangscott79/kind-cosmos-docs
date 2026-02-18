@@ -13,6 +13,7 @@ import Onboarding from "./pages/Onboarding";
 import Pricing from "./pages/Pricing";
 import IndustryDashboard from "./pages/IndustryDashboard";
 import IndustryDetail from "./pages/IndustryDetail";
+import AIImpactDashboard from "./pages/AIImpactDashboard";
 import SignalFeed from "./pages/SignalFeed";
 import Prospects from "./pages/Prospects";
 import Pipeline from "./pages/Pipeline";
@@ -38,6 +39,7 @@ const App = () => (
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/industries" element={<ProtectedRoute><IndustryDashboard /></ProtectedRoute>} />
               <Route path="/industries/:slug" element={<ProtectedRoute><IndustryDetail /></ProtectedRoute>} />
+              <Route path="/ai-impact" element={<ProtectedRoute><AIImpactDashboard /></ProtectedRoute>} />
               <Route path="/signals" element={<ProtectedRoute><SignalFeed /></ProtectedRoute>} />
               <Route path="/prospects" element={<ProtectedRoute><TierGate requiredTier="starter" featureName="Prospect Engine"><Prospects /></TierGate></ProtectedRoute>} />
               <Route path="/pipeline" element={<ProtectedRoute><TierGate requiredTier="pro" featureName="Pipeline"><Pipeline /></TierGate></ProtectedRoute>} />

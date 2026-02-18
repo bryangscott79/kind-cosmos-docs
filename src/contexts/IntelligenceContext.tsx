@@ -1,12 +1,13 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import type { Industry, Signal, Prospect } from "@/data/mockData";
+import type { Industry, Signal, Prospect, AIImpactAnalysis } from "@/data/mockData";
 
 interface IntelligenceData {
   industries: Industry[];
   signals: Signal[];
   prospects: Prospect[];
+  aiImpact: AIImpactAnalysis[];
 }
 
 interface IntelligenceContextType {
@@ -18,7 +19,7 @@ interface IntelligenceContextType {
   isBackgroundRefreshing: boolean;
 }
 
-const emptyData: IntelligenceData = { industries: [], signals: [], prospects: [] };
+const emptyData: IntelligenceData = { industries: [], signals: [], prospects: [], aiImpact: [] };
 
 const IntelligenceContext = createContext<IntelligenceContextType>({
   data: emptyData,
@@ -59,6 +60,7 @@ export function IntelligenceProvider({ children }: { children: ReactNode }) {
             industries: intelligenceData.industries || [],
             signals: intelligenceData.signals || [],
             prospects: intelligenceData.prospects || [],
+            aiImpact: intelligenceData.aiImpact || [],
           });
           console.log("Loaded cached intelligence from", cached.updated_at);
           return true;

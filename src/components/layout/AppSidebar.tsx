@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { BarChart3, Radio, Users, Kanban, PenTool, Settings, LogOut, CreditCard, Lock, Shield, Menu, X } from "lucide-react";
+import { BarChart3, Radio, Users, Kanban, PenTool, Settings, LogOut, CreditCard, Lock, Shield, Menu, X, Brain } from "lucide-react";
 import vigylLogo from "@/assets/vigyl-logo.png";
 import { useAuth } from "@/contexts/AuthContext";
 import { TIERS, hasAccess, FEATURE_ACCESS, TierKey } from "@/lib/tiers";
@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 
 const navItems = [
   { label: "Dashboard", path: "/industries", icon: BarChart3, feature: "industries" },
+  { label: "AI Impact", path: "/ai-impact", icon: Brain, feature: "ai_impact" },
   { label: "Signals", path: "/signals", icon: Radio, feature: "signals" },
   { label: "Prospects", path: "/prospects", icon: Users, feature: "prospects" },
   { label: "Pipeline", path: "/pipeline", icon: Kanban, feature: "pipeline" },
