@@ -316,7 +316,7 @@ export default function ProspectCard({ prospect }: ProspectCardProps) {
       </div>
 
       <div className="mt-3 flex items-center gap-2">
-        <Link to={`/outreach?prospect=${prospect.id}`} className="flex-1 rounded-md bg-gradient-to-r from-brand-blue to-brand-purple px-3 py-1.5 text-center text-xs font-medium text-white transition-opacity hover:opacity-90">
+        <Link to={`/outreach?prospect=${prospect.id}`} className="flex-1 rounded-md bg-primary px-3 py-1.5 text-center text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90">
           Generate Outreach
         </Link>
         <button className="rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent transition-colors">

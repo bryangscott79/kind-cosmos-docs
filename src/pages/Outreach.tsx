@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { Copy, Check, Send, Sparkles } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Copy, Check, Send, Sparkles, Kanban, CheckCircle2 } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import IntelligenceLoader from "@/components/IntelligenceLoader";
 import { useIntelligence } from "@/contexts/IntelligenceContext";
-import { getScoreColor, getPressureLabel, getPressureColor } from "@/data/mockData";
+import { getScoreColor, getPressureLabel, getPressureColor, pipelineStageLabels } from "@/data/mockData";
 
 const contentTypes = [
   { value: "cold_email", label: "Cold Email" },
@@ -23,6 +24,7 @@ export default function Outreach() {
   const [generating, setGenerating] = useState(false);
   const [generatedContent, setGeneratedContent] = useState("");
   const [generatedSubject, setGeneratedSubject] = useState("");
+  const [markedSent, setMarkedSent] = useState(false);
 
   const selectedProspect = prospects.find((p) => p.id === selectedProspectId);
   const industry = selectedProspect ? industries.find((i) => i.id === selectedProspect.industryId) : null;
@@ -71,7 +73,7 @@ export default function Outreach() {
                 return (
                   <button
                     key={p.id}
-                    onClick={() => { setSelectedProspectId(p.id); setGeneratedContent(""); setGeneratedSubject(""); }}
+                    onClick={() => { setSelectedProspectId(p.id); setGeneratedContent(""); setGeneratedSubject(""); setMarkedSent(false); }}
                     className={`shrink-0 text-left rounded-md border p-3 transition-colors lg:w-full min-w-[180px] lg:min-w-0 ${isSelected ? "border-primary bg-primary/5" : "border-border bg-card hover:border-primary/20"}`}
                   >
                     <div className="flex items-center justify-between">
@@ -109,11 +111,30 @@ export default function Outreach() {
                 <button onClick={handleCopy} disabled={!generatedContent} className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-medium text-foreground hover:bg-accent transition-colors disabled:opacity-50">
                   {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}{copied ? "Copied" : "Copy"}
                 </button>
-                <button disabled={!generatedContent} className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-medium text-foreground hover:bg-accent transition-colors disabled:opacity-50">
-                  <Send className="h-3.5 w-3.5" /> Mark as Sent
+                <button
+                  onClick={() => setMarkedSent(true)}
+                  disabled={!generatedContent || markedSent}
+                  className={`inline-flex items-center gap-1.5 rounded-md border px-3 py-2 text-xs font-medium transition-colors disabled:opacity-50 ${
+                    markedSent
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                      : "border-border text-foreground hover:bg-accent"
+                  }`}
+                >
+                  {markedSent ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Send className="h-3.5 w-3.5" />}
+                  {markedSent ? "Sent ✓" : "Mark as Sent"}
                 </button>
               </div>
             </div>
+            {markedSent && (
+              <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 flex items-center justify-between">
+                <p className="text-xs text-emerald-700">
+                  <span className="font-semibold">Outreach logged.</span> {selectedProspect?.companyName} has been contacted.
+                </p>
+                <Link to="/pipeline" className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 hover:text-emerald-900 transition-colors">
+                  <Kanban className="h-3 w-3" /> View Pipeline
+                </Link>
+              </div>
+            )}
           </div>
 
           <div className="space-y-4">
@@ -131,6 +152,17 @@ export default function Outreach() {
                     <span className="text-[10px] text-muted-foreground">Response</span>
                     <p className={`text-xs font-medium text-${getPressureColor(selectedProspect.pressureResponse)}`}>{getPressureLabel(selectedProspect.pressureResponse)}</p>
                   </div>
+                </div>
+                <div className="mt-3 border-t border-border pt-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-[10px] font-medium text-muted-foreground">Pipeline Stage</p>
+                    <Link to="/pipeline" className="text-[10px] font-medium text-primary hover:text-primary/80 flex items-center gap-0.5">
+                      <Kanban className="h-2.5 w-2.5" /> View
+                    </Link>
+                  </div>
+                  <span className="inline-flex rounded-full bg-primary/10 border border-primary/20 px-2 py-0.5 text-[10px] font-medium text-primary">
+                    {pipelineStageLabels[selectedProspect.pipelineStage]}
+                  </span>
                 </div>
                 <div className="mt-3 border-t border-border pt-3">
                   <p className="text-[10px] font-medium text-muted-foreground mb-1">Why Now</p>

@@ -17,20 +17,55 @@ export default function IntelligenceLoader({ children }: { children: React.React
   if (loading && !hasData) {
     return (
       <DashboardLayout>
-        <div className="flex flex-col items-center justify-center py-24 gap-4">
-          <div className="relative">
-            <div className="h-16 w-16 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
+        <div className="space-y-5 animate-pulse">
+          {/* Header skeleton */}
+          <div className="flex items-end justify-between">
+            <div>
+              <div className="h-6 w-48 rounded bg-secondary" />
+              <div className="mt-2 h-3 w-72 rounded bg-secondary" />
+            </div>
+            <div className="flex gap-2">
+              <div className="h-9 w-20 rounded-md bg-secondary" />
+              <div className="h-9 w-40 rounded-md bg-secondary" />
+            </div>
           </div>
-          <div className="text-center">
-            <h2 className="text-lg font-semibold text-foreground">Generating Your Intelligence</h2>
-            <p className="mt-1 text-sm text-muted-foreground max-w-md">
-              Analyzing your business profile, target industries, and location to create personalized market signals, prospects, and industry insights…
-            </p>
+          {/* Stats bar skeleton */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="rounded-lg border border-border bg-card p-3">
+                <div className="h-2.5 w-20 rounded bg-secondary" />
+                <div className="mt-2 h-7 w-12 rounded bg-secondary" />
+              </div>
+            ))}
           </div>
-          <div className="flex items-center gap-2 mt-4">
+          {/* Content skeleton */}
+          <div className="grid gap-6 lg:grid-cols-3">
+            <div className="lg:col-span-2 space-y-3">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="rounded-lg border border-border bg-card p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="h-4 w-16 rounded-full bg-secondary" />
+                    <div className="h-3 w-3 rounded-full bg-secondary" />
+                  </div>
+                  <div className="h-4 w-3/4 rounded bg-secondary" />
+                  <div className="mt-2 h-3 w-full rounded bg-secondary" />
+                </div>
+              ))}
+            </div>
+            <div className="space-y-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="rounded-lg border border-border bg-card p-3">
+                  <div className="h-3 w-24 rounded bg-secondary mb-2" />
+                  <div className="h-5 w-16 rounded bg-secondary" />
+                </div>
+              ))}
+            </div>
+          </div>
+          {/* Loading message */}
+          <div className="flex items-center justify-center gap-2 pt-4">
             <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
             <span className="text-xs text-muted-foreground">
-              {elapsed < 20 ? "This may take 15-30 seconds" : elapsed < 45 ? "Still working… generating a large dataset" : "Almost there… finalizing your intelligence"}
+              {elapsed < 20 ? "Generating your intelligence — 15-30 seconds" : elapsed < 45 ? "Still working — large dataset" : "Almost there — finalizing"}
             </span>
           </div>
         </div>

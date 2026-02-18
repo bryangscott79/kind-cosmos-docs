@@ -494,9 +494,14 @@ export default function IndustryDashboard() {
                       <BarChart3 className="h-4 w-4 text-primary" />
                       <h2 className="text-sm font-semibold text-foreground">Industry Health</h2>
                     </div>
+                    <span className="text-[9px] text-muted-foreground">7-day change</span>
                   </div>
                   <div className="space-y-2">
-                    {industryMovers.improving.map((ind) => (
+                    {industryMovers.improving.map((ind) => {
+                      const delta = ind.scoreHistory && ind.scoreHistory.length >= 7
+                        ? ind.healthScore - ind.scoreHistory[ind.scoreHistory.length - 7].score
+                        : 0;
+                      return (
                       <Link
                         key={ind.id}
                         to={`/industries/${ind.slug}`}
@@ -510,6 +515,11 @@ export default function IndustryDashboard() {
                           </div>
                         </div>
                         <div className="flex items-center gap-3 shrink-0">
+                          {delta !== 0 && (
+                            <span className={`text-[10px] font-mono font-semibold ${delta > 0 ? "text-emerald-600" : "text-rose-500"}`}>
+                              {delta > 0 ? "+" : ""}{delta}
+                            </span>
+                          )}
                           {ind.scoreHistory && (
                             <div className="w-16 hidden sm:block">
                               <Sparkline data={ind.scoreHistory} healthScore={ind.healthScore} width={64} height={24} />
@@ -518,8 +528,13 @@ export default function IndustryDashboard() {
                           <span className="text-sm font-mono font-bold text-foreground w-7 text-right">{ind.healthScore}</span>
                         </div>
                       </Link>
-                    ))}
-                    {industryMovers.declining.map((ind) => (
+                      );
+                    })}
+                    {industryMovers.declining.map((ind) => {
+                      const delta = ind.scoreHistory && ind.scoreHistory.length >= 7
+                        ? ind.healthScore - ind.scoreHistory[ind.scoreHistory.length - 7].score
+                        : 0;
+                      return (
                       <Link
                         key={ind.id}
                         to={`/industries/${ind.slug}`}
@@ -533,6 +548,11 @@ export default function IndustryDashboard() {
                           </div>
                         </div>
                         <div className="flex items-center gap-3 shrink-0">
+                          {delta !== 0 && (
+                            <span className={`text-[10px] font-mono font-semibold ${delta > 0 ? "text-emerald-600" : "text-rose-500"}`}>
+                              {delta > 0 ? "+" : ""}{delta}
+                            </span>
+                          )}
                           {ind.scoreHistory && (
                             <div className="w-16 hidden sm:block">
                               <Sparkline data={ind.scoreHistory} healthScore={ind.healthScore} width={64} height={24} />
@@ -541,7 +561,8 @@ export default function IndustryDashboard() {
                           <span className="text-sm font-mono font-bold text-foreground w-7 text-right">{ind.healthScore}</span>
                         </div>
                       </Link>
-                    ))}
+                      );
+                    })}
                   </div>
                 </section>
               </div>

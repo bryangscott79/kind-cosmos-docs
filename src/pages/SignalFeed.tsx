@@ -1,14 +1,15 @@
 import { useState, useMemo } from "react";
-import { Search, ChevronDown, ChevronRight, Globe, Scale, DollarSign, Users, Cpu, Truck, TrendingUp, TrendingDown, Minus, MessageCircle, Swords, Leaf } from "lucide-react";
+import { Search, ChevronDown, ChevronRight, Globe, Scale, DollarSign, Users, Cpu, Truck, TrendingUp, TrendingDown, Minus, MessageCircle, Swords, Leaf, Bookmark } from "lucide-react";
 import { Link } from "react-router-dom";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import SignalCard from "@/components/SignalCard";
 import GlobalSignalBanner from "@/components/GlobalSignalBanner";
 import IntelligenceLoader from "@/components/IntelligenceLoader";
 import { useIntelligence } from "@/contexts/IntelligenceContext";
+import { useSavedSignals } from "@/hooks/useSavedSignals";
 import { Signal, getSignalTypeLabel } from "@/data/mockData";
 
-type FilterType = "all" | Signal["signalType"];
+type FilterType = "all" | "saved" | Signal["signalType"];
 
 const categoryConfig: Record<Signal["signalType"], { icon: typeof Globe; label: string; description: string; color: string }> = {
   political: { icon: Globe, label: "Political & Geopolitical", description: "Trade wars, sanctions, elections, defense spending shifts, and international policy changes", color: "hsl(var(--score-red))" },
@@ -97,12 +98,20 @@ export default function SignalFeed() {
   const [filter, setFilter] = useState<FilterType>("all");
   const { data } = useIntelligence();
   const { signals, industries } = data;
+  const { savedSignals } = useSavedSignals();
+
+  const savedSignalIds = useMemo(() => new Set(savedSignals.map(s => s.signal_id)), [savedSignals]);
 
   const filtered = useMemo(() => {
+    if (filter === "saved") {
+      return signals
+        .filter(s => savedSignalIds.has(s.id))
+        .filter(s => s.title.toLowerCase().includes(search.toLowerCase()) || s.summary.toLowerCase().includes(search.toLowerCase()));
+    }
     return signals
       .filter(s => filter === "all" || s.signalType === filter)
       .filter(s => s.title.toLowerCase().includes(search.toLowerCase()) || s.summary.toLowerCase().includes(search.toLowerCase()));
-  }, [search, filter, signals]);
+  }, [search, filter, signals, savedSignalIds]);
 
   const groupedByCategory = useMemo(() => {
     const groups: Record<string, Signal[]> = {};
@@ -113,8 +122,9 @@ export default function SignalFeed() {
     return groups;
   }, [filtered]);
 
-  const types: { value: FilterType; label: string; count: number }[] = [
+  const types: { value: FilterType; label: string; count: number; icon?: typeof Bookmark }[] = [
     { value: "all", label: "All", count: signals.length },
+    { value: "saved", label: "Saved", count: savedSignalIds.size, icon: Bookmark },
     ...categoryOrder.map(type => ({
       value: type as FilterType,
       label: categoryConfig[type].label.split(" ")[0],
@@ -142,7 +152,8 @@ export default function SignalFeed() {
           </div>
           <div className="flex flex-wrap gap-1.5">
             {types.map(t => (
-              <button key={t.value} onClick={() => setFilter(t.value)} className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${filter === t.value ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"}`}>
+              <button key={t.value} onClick={() => setFilter(t.value)} className={`inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${filter === t.value ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"}`}>
+                {t.icon && <t.icon className="h-3 w-3" />}
                 {t.label}<span className="ml-1 opacity-60">{t.count}</span>
               </button>
             ))}
@@ -155,10 +166,32 @@ export default function SignalFeed() {
               <CategorySection key={type} type={type} signalList={groupedByCategory[type]} defaultOpen={i < 2} industries={industries} />
             ))}
           </div>
+        ) : filter === "saved" ? (
+          <div className="mt-6 space-y-3">
+            {filtered.length > 0 ? (
+              filtered.map(signal => <SignalCard key={signal.id} signal={signal} />)
+            ) : (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-secondary mb-3">
+                  <Bookmark className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <p className="text-sm font-semibold text-foreground">No saved signals yet</p>
+                <p className="mt-1 text-xs text-muted-foreground max-w-xs">Save signals from expanded cards to build a watchlist of the market movements that matter most to your business.</p>
+              </div>
+            )}
+          </div>
         ) : (
           <div className="mt-6 space-y-3">
             {filtered.map(signal => <SignalCard key={signal.id} signal={signal} />)}
-            {filtered.length === 0 && <p className="py-12 text-center text-sm text-muted-foreground">No signals match your filters.</p>}
+            {filtered.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-secondary mb-3">
+                  <Search className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <p className="text-sm font-semibold text-foreground">No signals match your filters</p>
+                <p className="mt-1 text-xs text-muted-foreground">Try broadening your search or selecting a different category.</p>
+              </div>
+            )}
             <AffectedIndustries signalList={filtered} industries={industries} />
           </div>
         )}

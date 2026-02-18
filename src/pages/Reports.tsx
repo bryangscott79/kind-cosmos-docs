@@ -105,7 +105,7 @@ export default function Reports() {
                   key={report.id}
                   onClick={() => !locked && setSelectedReport(isSelected ? null : report.id)}
                   disabled={locked}
-                  className={`relative rounded-xl border text-left p-4 transition-all ${
+                  className={`relative rounded-xl border text-left p-4 transition-all min-h-[180px] flex flex-col ${
                     isSelected
                       ? "border-primary bg-primary/[0.03] ring-2 ring-primary/20"
                       : locked
@@ -121,6 +121,7 @@ export default function Reports() {
                   </div>
                   <h3 className="text-sm font-semibold text-foreground">{report.title}</h3>
                   <p className="mt-1 text-[11px] text-muted-foreground leading-relaxed">{report.description}</p>
+                  <div className="flex-grow" />
                   <div className="mt-3 flex items-center gap-3 text-[10px] text-muted-foreground">
                     <span>{report.dataPoints} data points</span>
                     <span>·</span>

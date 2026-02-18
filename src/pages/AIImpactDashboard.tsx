@@ -5,7 +5,7 @@ import {
   ArrowLeft, ArrowRight, ChevronDown, ChevronUp, BarChart3,
   TrendingUp, TrendingDown, Minus, Search, Columns2, X,
   Zap, Shield, DollarSign, Lightbulb, HelpCircle, Radio,
-  Users, Target, Building2, ExternalLink, Calendar
+  Users, Target, Building2, ExternalLink, Calendar, Lock, CreditCard
 } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import IntelligenceLoader from "@/components/IntelligenceLoader";
@@ -142,7 +142,7 @@ function IndustryCard({ analysis, onClick, onCompare, isCompareMode, isSelected 
   const topOpportunity = analysis.collaborativeFunctions[0];
 
   return (
-    <div className={`group relative rounded-xl border bg-card p-4 hover:shadow-md transition-all cursor-pointer ${isSelected ? "border-primary ring-2 ring-primary/20" : "border-border hover:border-primary/30"}`} onClick={onClick}>
+    <div className={`group relative rounded-xl border bg-card p-4 hover:shadow-md transition-all cursor-pointer min-h-[200px] flex flex-col ${isSelected ? "border-primary ring-2 ring-primary/20" : "border-border hover:border-primary/30"}`} onClick={onClick}>
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="min-w-0 flex-1">
           <h3 className="text-sm font-semibold text-foreground truncate leading-tight">{analysis.industryName}</h3>
@@ -162,6 +162,7 @@ function IndustryCard({ analysis, onClick, onCompare, isCompareMode, isSelected 
           <span className="font-medium text-violet-600">Top opportunity:</span> {topOpportunity.name} — {topOpportunity.description.split(".")[0]}.
         </p>
       )}
+      <div className="flex-grow" />
       <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-border/50">
         <div className="text-center"><p className="text-[10px] text-muted-foreground">Displacement</p><p className="text-xs font-mono font-bold text-rose-600">{analysis.jobDisplacementIndex}</p></div>
         <div className="text-center"><p className="text-[10px] text-muted-foreground">Opportunity</p><p className="text-xs font-mono font-bold text-violet-600">{analysis.collaborativeOpportunityIndex}</p></div>
@@ -686,16 +687,44 @@ export default function AIImpactDashboard() {
           </>)}
 
           {view === "detail" && selectedAnalysis && (
-            <DetailView
-              analysis={selectedAnalysis}
-              onBack={() => setView("overview")}
-              prospects={data.prospects}
-              signals={data.signals}
-              industries={data.industries}
-            />
+            canViewFull ? (
+              <DetailView
+                analysis={selectedAnalysis}
+                onBack={() => setView("overview")}
+                prospects={data.prospects}
+                signals={data.signals}
+                industries={data.industries}
+              />
+            ) : (
+              <div className="space-y-4">
+                <button onClick={() => setView("overview")} className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"><ArrowLeft className="h-3.5 w-3.5" /> All Industries</button>
+                <div className="rounded-xl border-2 border-dashed border-primary/20 bg-primary/[0.02] p-12 text-center max-w-lg mx-auto">
+                  <Lock className="mx-auto h-10 w-10 text-primary/30 mb-3" />
+                  <h3 className="text-base font-semibold text-foreground">Unlock Full AI Impact Analysis</h3>
+                  <p className="mt-2 text-sm text-muted-foreground">Detailed breakdowns, value chain analysis, business functions, connected prospects, and KPIs require a Starter plan.</p>
+                  <Link to="/pricing" className="mt-5 inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-brand-blue to-brand-purple px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90">
+                    <CreditCard className="h-4 w-4" /> View Plans
+                  </Link>
+                </div>
+              </div>
+            )
           )}
           {view === "compare" && compareLeft && compareRight && (
-            <CompareView left={compareLeft} right={compareRight} onBack={() => { setView("overview"); setCompareIds(["", ""]); }} onSwap={() => setCompareIds([compareIds[1], compareIds[0]])} />
+            canViewFull ? (
+              <CompareView left={compareLeft} right={compareRight} onBack={() => { setView("overview"); setCompareIds(["", ""]); }} onSwap={() => setCompareIds([compareIds[1], compareIds[0]])} />
+            ) : (
+              <div className="space-y-4">
+                <button onClick={() => { setView("overview"); setCompareIds(["", ""]); }} className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"><ArrowLeft className="h-3.5 w-3.5" /> All Industries</button>
+                <div className="rounded-xl border-2 border-dashed border-primary/20 bg-primary/[0.02] p-12 text-center max-w-lg mx-auto">
+                  <Lock className="mx-auto h-10 w-10 text-primary/30 mb-3" />
+                  <h3 className="text-base font-semibold text-foreground">Unlock Industry Comparison</h3>
+                  <p className="mt-2 text-sm text-muted-foreground">Side-by-side industry comparison with AI impact metrics requires a Starter plan.</p>
+                  <Link to="/pricing" className="mt-5 inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-brand-blue to-brand-purple px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90">
+                    <CreditCard className="h-4 w-4" /> View Plans
+                  </Link>
+                </div>
+              </div>
+            )
           )}
         </div>
       </DashboardLayout>
