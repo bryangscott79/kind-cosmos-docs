@@ -167,7 +167,7 @@ export default function SignalCard({ signal }: SignalCardProps) {
               <h5 className="text-xs font-semibold text-foreground mb-2">Impact Analysis</h5>
               <div className="space-y-1.5">
                 {signal.impactedEntities.map((entity, i) => {
-                  const config = actionConfig[entity.action];
+                  const config = actionConfig[entity.action as keyof typeof actionConfig] ?? defaultActionConfig;
                   const ImpactIcon = entity.impact === "positive" ? TrendingUp : TrendingDown;
                   return (
                     <div key={i} className={`rounded-md border px-3 py-2 ${config.className}`}>
