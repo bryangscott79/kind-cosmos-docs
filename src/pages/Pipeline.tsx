@@ -4,7 +4,7 @@ import {
   Users, Radio, Calendar, MessageSquare, ExternalLink,
   ChevronRight, ChevronLeft, ChevronDown,
   MapPin, DollarSign, Building2, Mail, Trophy, XCircle,
-  Save, ExternalLink, TrendingUp, TrendingDown, Minus
+  Save, TrendingUp, TrendingDown, Minus
 } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import IntelligenceLoader from "@/components/IntelligenceLoader";
