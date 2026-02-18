@@ -1,10 +1,18 @@
 import { useState, useMemo, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { Plus, ChevronRight, ChevronLeft, ArrowRight, Users, Radio, Calendar, MessageSquare, MoreHorizontal } from "lucide-react";
+import {
+  Users, Radio, Calendar, MessageSquare, MoreHorizontal,
+  ChevronRight, ChevronLeft, ChevronDown, ChevronUp,
+  MapPin, DollarSign, Building2, Mail, Trophy, XCircle,
+  Save, ExternalLink, TrendingUp, TrendingDown, Minus
+} from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import IntelligenceLoader from "@/components/IntelligenceLoader";
 import { useIntelligence } from "@/contexts/IntelligenceContext";
-import { getScoreColor, getPressureColor, getPressureLabel, pipelineStageLabels, PipelineStage, Prospect } from "@/data/mockData";
+import {
+  getScoreColor, getPressureColor, getPressureLabel,
+  pipelineStageLabels, PipelineStage, Prospect, Industry, Signal
+} from "@/data/mockData";
 
 const stageOrder: PipelineStage[] = ["researching", "contacted", "meeting_scheduled", "proposal_sent", "won", "lost"];
 
@@ -21,112 +29,238 @@ function PipelineCard({
   prospect,
   industries,
   signals,
-  onMoveForward,
-  onMoveBack,
+  onMove,
+  onUpdateNotes,
 }: {
   prospect: Prospect;
-  industries: any[];
-  signals: any[];
-  onMoveForward: () => void;
-  onMoveBack: () => void;
+  industries: Industry[];
+  signals: Signal[];
+  onMove: (stage: PipelineStage) => void;
+  onUpdateNotes: (notes: string) => void;
 }) {
-  const [showActions, setShowActions] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const [editingNotes, setEditingNotes] = useState(false);
+  const [notesDraft, setNotesDraft] = useState(prospect.notes);
+
   const industry = industries.find((i) => i.id === prospect.industryId);
   const relatedSignals = signals.filter((s) => prospect.relatedSignals?.includes(s.id));
   const stageIdx = stageOrder.indexOf(prospect.pipelineStage);
-  const canMoveForward = stageIdx < stageOrder.length - 2; // not won/lost
-  const canMoveBack = stageIdx > 0 && prospect.pipelineStage !== "won" && prospect.pipelineStage !== "lost";
+  const isTerminal = prospect.pipelineStage === "won" || prospect.pipelineStage === "lost";
+
+  const handleSaveNotes = () => {
+    onUpdateNotes(notesDraft);
+    setEditingNotes(false);
+  };
 
   return (
-    <div className="rounded-lg border border-border bg-card p-3 hover:border-primary/30 transition-colors">
-      <div className="flex items-start justify-between gap-1">
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-foreground truncate">{prospect.companyName}</p>
-          <p className="text-[10px] text-muted-foreground">{industry?.name}</p>
-        </div>
-        <div className="flex items-center gap-1 shrink-0">
-          <span className="font-mono text-sm font-bold text-primary">{prospect.vigylScore}</span>
-          <button
-            onClick={() => setShowActions(!showActions)}
-            className="rounded p-0.5 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-          >
-            <MoreHorizontal className="h-3.5 w-3.5" />
+    <div className={`rounded-lg border bg-card transition-all ${expanded ? "border-primary/30 shadow-sm" : "border-border hover:border-primary/20"}`}>
+      {/* Collapsed card */}
+      <div className="p-3">
+        <div className="flex items-start justify-between gap-1">
+          <button onClick={() => setExpanded(!expanded)} className="flex-1 min-w-0 text-left">
+            <p className="text-sm font-semibold text-foreground truncate">{prospect.companyName}</p>
+            <p className="text-[10px] text-muted-foreground">{industry?.name}</p>
           </button>
+          <div className="flex items-center gap-1 shrink-0">
+            <span className="font-mono text-sm font-bold text-primary">{prospect.vigylScore}</span>
+            <button onClick={() => setExpanded(!expanded)} className="rounded p-0.5 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+              {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <MoreHorizontal className="h-3.5 w-3.5" />}
+            </button>
+          </div>
         </div>
-      </div>
 
-      {/* Why now snippet */}
-      <p className="mt-1.5 text-[10px] text-muted-foreground leading-relaxed line-clamp-2">{prospect.whyNow.split(".")[0]}.</p>
+        {/* Why now snippet */}
+        <p className="mt-1.5 text-[10px] text-muted-foreground leading-relaxed line-clamp-2">{prospect.whyNow.split(".")[0]}.</p>
 
-      {/* Related signals */}
-      {relatedSignals.length > 0 && (
-        <div className="mt-2 flex items-center gap-1">
-          <Radio className="h-2.5 w-2.5 text-primary/50 shrink-0" />
-          <span className="text-[9px] text-muted-foreground truncate">
-            {relatedSignals.map((s) => s.title.split(" ").slice(0, 4).join(" ")).join(", ")}
+        {/* Related signals */}
+        {relatedSignals.length > 0 && (
+          <div className="mt-2 flex items-center gap-1">
+            <Radio className="h-2.5 w-2.5 text-primary/50 shrink-0" />
+            <span className="text-[9px] text-muted-foreground truncate">
+              {relatedSignals.map((s) => s.title.split(" ").slice(0, 4).join(" ")).join(", ")}
+            </span>
+          </div>
+        )}
+
+        {/* Meta row */}
+        <div className="mt-2 flex items-center justify-between">
+          <span className={`inline-flex rounded-full px-1.5 py-0.5 text-[9px] font-medium ${
+            prospect.pressureResponse === "growth_mode" ? "bg-emerald-100 text-emerald-700" :
+            prospect.pressureResponse === "contracting" ? "bg-rose-100 text-rose-700" :
+            "bg-blue-100 text-blue-700"
+          }`}>
+            {getPressureLabel(prospect.pressureResponse)}
           </span>
+          {prospect.lastContacted && (
+            <span className="text-[9px] text-muted-foreground flex items-center gap-0.5">
+              <Calendar className="h-2 w-2" />
+              {new Date(prospect.lastContacted).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+            </span>
+          )}
         </div>
-      )}
 
-      {/* Meta */}
-      <div className="mt-2 flex items-center justify-between">
-        <span className={`inline-flex rounded-full px-1.5 py-0.5 text-[9px] font-medium bg-${getPressureColor(prospect.pressureResponse)}/10 text-${getPressureColor(prospect.pressureResponse)}`}>
-          {getPressureLabel(prospect.pressureResponse)}
-        </span>
-        {prospect.lastContacted && (
-          <span className="text-[9px] text-muted-foreground flex items-center gap-0.5">
-            <Calendar className="h-2 w-2" />
-            {new Date(prospect.lastContacted).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-          </span>
+        {/* Notes preview (collapsed) */}
+        {!expanded && prospect.notes && (
+          <p className="mt-2 text-[10px] text-muted-foreground leading-relaxed line-clamp-1 border-t border-border pt-2 flex items-center gap-1">
+            <MessageSquare className="h-2.5 w-2.5 shrink-0" />
+            {prospect.notes}
+          </p>
+        )}
+
+        {/* Quick move buttons (always visible) */}
+        {!isTerminal && !expanded && (
+          <div className="mt-2 flex items-center gap-1 border-t border-border pt-2">
+            {stageIdx > 0 && (
+              <button onClick={() => onMove(stageOrder[stageIdx - 1])} className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+                <ChevronLeft className="h-2.5 w-2.5" /> {pipelineStageLabels[stageOrder[stageIdx - 1]]}
+              </button>
+            )}
+            <div className="flex-1" />
+            {stageIdx < stageOrder.length - 2 && (
+              <button onClick={() => onMove(stageOrder[stageIdx + 1])} className="inline-flex items-center gap-0.5 rounded bg-primary/10 border border-primary/20 px-1.5 py-0.5 text-[9px] font-medium text-primary hover:bg-primary/20 transition-colors">
+                {pipelineStageLabels[stageOrder[stageIdx + 1]]} <ChevronRight className="h-2.5 w-2.5" />
+              </button>
+            )}
+          </div>
         )}
       </div>
 
-      {/* Notes */}
-      {prospect.notes && (
-        <p className="mt-2 text-[10px] text-muted-foreground leading-relaxed line-clamp-1 border-t border-border pt-2 flex items-center gap-1">
-          <MessageSquare className="h-2.5 w-2.5 shrink-0" />
-          {prospect.notes}
-        </p>
-      )}
+      {/* Expanded view */}
+      {expanded && (
+        <div className="border-t border-border p-3 space-y-3 bg-accent/20">
+          {/* Company details */}
+          <div className="grid grid-cols-2 gap-2">
+            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+              <MapPin className="h-3 w-3 shrink-0" />
+              {prospect.location.city}, {prospect.location.state}
+            </div>
+            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+              <DollarSign className="h-3 w-3 shrink-0" />
+              {prospect.annualRevenue}
+            </div>
+            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+              <Users className="h-3 w-3 shrink-0" />
+              {prospect.employeeCount.toLocaleString()} employees
+            </div>
+            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+              {prospect.pressureResponse === "growth_mode" ? <TrendingUp className="h-3 w-3 text-emerald-500" /> :
+               prospect.pressureResponse === "contracting" ? <TrendingDown className="h-3 w-3 text-rose-500" /> :
+               <Minus className="h-3 w-3 text-blue-500" />}
+              {getPressureLabel(prospect.pressureResponse)}
+            </div>
+          </div>
 
-      {/* Stage actions */}
-      {showActions && (
-        <div className="mt-2 flex items-center gap-1.5 border-t border-border pt-2">
-          {canMoveBack && (
-            <button
-              onClick={onMoveBack}
-              className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[10px] font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-            >
-              <ChevronLeft className="h-2.5 w-2.5" />
-              {pipelineStageLabels[stageOrder[stageIdx - 1]]}
-            </button>
+          {/* Full why now */}
+          <div>
+            <p className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Why Now</p>
+            <p className="text-[11px] text-foreground leading-relaxed">{prospect.whyNow}</p>
+          </div>
+
+          {/* Decision makers */}
+          {prospect.decisionMakers.length > 0 && (
+            <div>
+              <p className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Decision Makers</p>
+              <div className="space-y-1">
+                {prospect.decisionMakers.map((dm, i) => (
+                  <div key={i} className="flex items-center justify-between rounded bg-card border border-border px-2 py-1.5">
+                    <div>
+                      <p className="text-[10px] font-semibold text-foreground">{dm.name}</p>
+                      <p className="text-[9px] text-muted-foreground">{dm.title}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
-          {canMoveForward && (
-            <button
-              onClick={onMoveForward}
-              className="inline-flex items-center gap-1 rounded-md bg-primary/10 border border-primary/20 px-2 py-1 text-[10px] font-medium text-primary hover:bg-primary/20 transition-colors"
-            >
-              {pipelineStageLabels[stageOrder[stageIdx + 1]]}
-              <ChevronRight className="h-2.5 w-2.5" />
-            </button>
+
+          {/* Related signals full */}
+          {relatedSignals.length > 0 && (
+            <div>
+              <p className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Related Signals</p>
+              <div className="space-y-1">
+                {relatedSignals.map(s => (
+                  <div key={s.id} className="rounded bg-card border border-border px-2 py-1.5">
+                    <p className="text-[10px] font-semibold text-foreground">{s.title}</p>
+                    <p className="text-[9px] text-muted-foreground mt-0.5">{s.salesImplication.split(".")[0]}.</p>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
-          {prospect.pipelineStage !== "won" && prospect.pipelineStage !== "lost" && (
-            <>
-              <div className="flex-1" />
+
+          {/* Editable notes */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                <MessageSquare className="h-2.5 w-2.5" /> Notes
+              </p>
+              {!editingNotes && (
+                <button onClick={() => { setEditingNotes(true); setNotesDraft(prospect.notes); }} className="text-[9px] font-medium text-primary hover:text-primary/80">
+                  {prospect.notes ? "Edit" : "Add note"}
+                </button>
+              )}
+            </div>
+            {editingNotes ? (
+              <div className="space-y-1.5">
+                <textarea
+                  value={notesDraft}
+                  onChange={(e) => setNotesDraft(e.target.value)}
+                  rows={3}
+                  placeholder="Add notes about this prospect..."
+                  className="w-full rounded-md border border-border bg-card px-2 py-1.5 text-[11px] text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+                  autoFocus
+                />
+                <div className="flex items-center gap-1.5">
+                  <button onClick={handleSaveNotes} className="inline-flex items-center gap-1 rounded bg-primary px-2 py-1 text-[9px] font-medium text-primary-foreground hover:opacity-90">
+                    <Save className="h-2.5 w-2.5" /> Save
+                  </button>
+                  <button onClick={() => setEditingNotes(false)} className="rounded px-2 py-1 text-[9px] font-medium text-muted-foreground hover:text-foreground">
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <p className="text-[11px] text-muted-foreground leading-relaxed italic">
+                {prospect.notes || "No notes yet."}
+              </p>
+            )}
+          </div>
+
+          {/* Stage move controls */}
+          <div className="flex flex-wrap items-center gap-1.5 border-t border-border pt-3">
+            <p className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mr-1">Move to:</p>
+            {stageOrder.filter(s => s !== prospect.pipelineStage && s !== "lost").map(stage => (
               <button
-                onClick={() => {/* TODO: move to won */}}
-                className="rounded-md px-2 py-1 text-[10px] font-medium text-emerald-600 hover:bg-emerald-50 transition-colors"
+                key={stage}
+                onClick={() => onMove(stage)}
+                className={`rounded-md px-2 py-1 text-[9px] font-medium transition-colors ${
+                  stage === "won"
+                    ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
+                    : "border border-border text-muted-foreground hover:text-foreground hover:bg-accent"
+                }`}
               >
-                Won
+                {pipelineStageLabels[stage]}
               </button>
+            ))}
+            {prospect.pipelineStage !== "lost" && (
               <button
-                onClick={() => {/* TODO: move to lost */}}
-                className="rounded-md px-2 py-1 text-[10px] font-medium text-rose-500 hover:bg-rose-50 transition-colors"
+                onClick={() => onMove("lost")}
+                className="rounded-md px-2 py-1 text-[9px] font-medium bg-rose-100 text-rose-600 hover:bg-rose-200 transition-colors ml-auto"
               >
-                Lost
+                Mark Lost
               </button>
-            </>
-          )}
+            )}
+          </div>
+
+          {/* Quick actions */}
+          <div className="flex items-center gap-2 border-t border-border pt-3">
+            <Link to={`/outreach?prospect=${prospect.id}`} className="inline-flex items-center gap-1 rounded-md bg-primary px-2.5 py-1.5 text-[10px] font-medium text-primary-foreground hover:opacity-90 transition-opacity">
+              <Mail className="h-3 w-3" /> Generate Outreach
+            </Link>
+            <Link to="/signals" className="inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1.5 text-[10px] font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+              <Radio className="h-3 w-3" /> View Signals
+            </Link>
+          </div>
         </div>
       )}
     </div>
@@ -147,6 +281,13 @@ export default function Pipeline() {
     });
   }, [prospects]);
 
+  const updateNotes = useCallback((prospectId: string, notes: string) => {
+    setLocalProspects((prev) => {
+      const list = prev || [...prospects];
+      return list.map((p) => (p.id === prospectId ? { ...p, notes } : p));
+    });
+  }, [prospects]);
+
   const columns = useMemo(() => stageOrder.map((stage) => ({
     stage,
     label: pipelineStageLabels[stage],
@@ -154,10 +295,8 @@ export default function Pipeline() {
     color: stageColors[stage],
   })), [effectiveProspects]);
 
-  // Pipeline stats
   const activeCount = effectiveProspects.filter((p) => !["researching", "won", "lost"].includes(p.pipelineStage)).length;
   const wonCount = effectiveProspects.filter((p) => p.pipelineStage === "won").length;
-  const totalValue = effectiveProspects.filter((p) => p.pipelineStage === "won").reduce((sum, p) => sum + p.vigylScore, 0);
 
   return (
     <IntelligenceLoader>
@@ -169,19 +308,14 @@ export default function Pipeline() {
               {effectiveProspects.length} prospects · {activeCount} active · {wonCount} won
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <Link
-              to="/prospects"
-              className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-            >
-              <Users className="h-3.5 w-3.5" /> Find Prospects
-            </Link>
-          </div>
+          <Link to="/prospects" className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+            <Users className="h-3.5 w-3.5" /> Find Prospects
+          </Link>
         </div>
 
         <div className="mt-5 flex gap-3 overflow-x-auto pb-4">
           {columns.map((col) => (
-            <div key={col.stage} className="min-w-[240px] flex-1">
+            <div key={col.stage} className="min-w-[260px] flex-1">
               <div className={`flex items-center justify-between mb-2 pb-2 border-t-2 ${col.color} pt-2`}>
                 <div className="flex items-center gap-2">
                   <h3 className="text-[11px] font-semibold text-foreground uppercase tracking-wider">{col.label}</h3>
@@ -197,14 +331,8 @@ export default function Pipeline() {
                     prospect={p}
                     industries={industries}
                     signals={signals}
-                    onMoveForward={() => {
-                      const idx = stageOrder.indexOf(p.pipelineStage);
-                      if (idx < stageOrder.length - 2) moveProspect(p.id, stageOrder[idx + 1]);
-                    }}
-                    onMoveBack={() => {
-                      const idx = stageOrder.indexOf(p.pipelineStage);
-                      if (idx > 0) moveProspect(p.id, stageOrder[idx - 1]);
-                    }}
+                    onMove={(stage) => moveProspect(p.id, stage)}
+                    onUpdateNotes={(notes) => updateNotes(p.id, notes)}
                   />
                 ))}
                 {col.prospects.length === 0 && (

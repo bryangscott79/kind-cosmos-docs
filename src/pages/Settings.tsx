@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Save, Bell, CreditCard, Building2, Globe, Loader2, Sparkles, MapPin, Users, Briefcase, Target, Check, X, ArrowRight, LogOut } from "lucide-react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { Save, Bell, CreditCard, Building2, Globe, Loader2, Sparkles, MapPin, Users, Briefcase, Target, Check, X, ArrowRight, LogOut, Search, Plus } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,11 +15,169 @@ const tabs = [
 
 const companySizes = ["1-10", "11-50", "51-200", "201-1000", "1000+"];
 
+const PRESET_INDUSTRIES = [
+  // Technology
+  "Technology & SaaS", "Cybersecurity", "Artificial Intelligence & ML", "Cloud Computing", "Data Analytics & BI",
+  "DevOps & Infrastructure", "FinTech", "EdTech", "HealthTech", "PropTech", "LegalTech", "InsurTech", "AgriTech",
+  "HR Tech", "MarTech & AdTech", "GovTech", "Blockchain & Web3", "IoT & Connected Devices", "Robotics & Automation",
+  // Healthcare & Life Sciences
+  "Healthcare IT", "Pharmaceuticals & Biotech", "Medical Devices", "Telehealth & Digital Health", "Clinical Research",
+  "Healthcare Services", "Mental Health & Wellness", "Veterinary", "Dental",
+  // Financial Services
+  "Financial Services & Banking", "Insurance", "Wealth Management", "Private Equity & VC", "Payments & Processing",
+  "Lending & Credit", "Accounting & Tax",
+  // Energy & Environment
+  "Clean Energy & Renewables", "Oil & Gas", "Utilities", "Environmental Services", "Carbon & Sustainability",
+  "Mining & Resources",
+  // Manufacturing & Industrial
+  "Manufacturing & Industrial", "Aerospace & Defense", "Automotive & Transportation", "Chemicals", "Construction",
+  "Electronics & Consumer Tech", "Packaging", "Semiconductors", "3D Printing & Additive",
+  // Consumer & Retail
+  "Retail & E-Commerce", "Consumer Packaged Goods", "Food & Beverage", "Fashion & Apparel", "Beauty & Personal Care",
+  "Luxury Goods", "Direct-to-Consumer", "Grocery & Supermarkets",
+  // Services
+  "Professional Services", "Consulting", "Staffing & Recruiting", "Legal Services", "Marketing & Advertising",
+  "Design & Creative Services", "Facilities Management", "Security Services",
+  // Real Estate & Hospitality
+  "Commercial Real Estate", "Residential Real Estate", "Hospitality & Tourism", "Hotels & Resorts",
+  "Property Management", "Coworking & Flexible Space",
+  // Media & Entertainment
+  "Media & Entertainment", "Gaming", "Music & Audio", "Streaming & Content", "Sports & Fitness", "Events & Live",
+  "Publishing & News",
+  // Transportation & Logistics
+  "Logistics & Supply Chain", "Freight & Shipping", "Airlines & Aviation", "Last-Mile Delivery", "Fleet Management",
+  "Maritime & Ports", "Railways",
+  // Education
+  "Higher Education", "K-12 Education", "Corporate Training & L&D", "Online Learning Platforms",
+  // Government & Nonprofit
+  "Government & Public Sector", "Nonprofit & NGO", "International Development", "Civic Tech",
+  // Agriculture & Food
+  "Agriculture & Farming", "Food Processing", "Aquaculture & Fisheries", "Cannabis & Hemp",
+  // Telecom
+  "Telecommunications", "5G & Network Infrastructure", "Satellite & Space Tech",
+  // Other
+  "Waste Management & Recycling", "Water & Wastewater", "Nuclear", "Social Impact", "Pet Care & Animal Health",
+];
+
 interface RecommendedIndustry {
   name: string;
   match_score: number;
   reasoning: string;
   accepted: boolean;
+}
+
+function IndustryPicker({ selected, onAdd, onRemove }: { selected: string[]; onAdd: (name: string) => void; onRemove: (name: string) => void }) {
+  const [search, setSearch] = useState("");
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return PRESET_INDUSTRIES.filter(i => !selected.includes(i)).slice(0, 15);
+    const q = search.toLowerCase();
+    return PRESET_INDUSTRIES.filter(i =>
+      i.toLowerCase().includes(q) && !selected.includes(i)
+    );
+  }, [search, selected]);
+
+  const exactMatch = PRESET_INDUSTRIES.some(i => i.toLowerCase() === search.trim().toLowerCase()) || selected.some(i => i.toLowerCase() === search.trim().toLowerCase());
+
+  // Close on click outside
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const handleAdd = (name: string) => {
+    onAdd(name);
+    setSearch("");
+  };
+
+  const handleCustomAdd = () => {
+    if (search.trim() && !selected.includes(search.trim())) {
+      onAdd(search.trim());
+      setSearch("");
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      {/* Selected chips */}
+      {selected.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {selected.filter(name => name && !/^\d+$/.test(name)).map((name) => (
+            <span key={name} className="inline-flex items-center gap-1 rounded-full border border-primary/20 bg-primary/5 px-2.5 py-1 text-xs font-medium text-primary">
+              {name}
+              <button type="button" onClick={() => onRemove(name)} className="ml-0.5 hover:text-destructive transition-colors"><X className="h-3 w-3" /></button>
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* Search input */}
+      <div ref={containerRef} className="relative">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setOpen(true); }}
+            onFocus={() => setOpen(true)}
+            placeholder="Search industries or type your own..."
+            className="w-full rounded-md border border-border bg-background pl-9 pr-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+          />
+        </div>
+
+        {/* Dropdown */}
+        {open && (search.trim() || true) && (
+          <div className="absolute z-20 mt-1 w-full max-h-60 overflow-y-auto rounded-lg border border-border bg-card shadow-lg">
+            {filtered.length > 0 ? (
+              <div className="py-1">
+                {filtered.slice(0, 20).map(name => (
+                  <button
+                    key={name}
+                    type="button"
+                    onClick={() => handleAdd(name)}
+                    className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors flex items-center justify-between"
+                  >
+                    <span>{name}</span>
+                    <Plus className="h-3 w-3 text-muted-foreground" />
+                  </button>
+                ))}
+              </div>
+            ) : search.trim() && !exactMatch ? (
+              <button
+                type="button"
+                onClick={handleCustomAdd}
+                className="w-full text-left px-3 py-3 text-sm hover:bg-accent transition-colors flex items-center gap-2"
+              >
+                <Plus className="h-3.5 w-3.5 text-primary" />
+                <span>Add custom: <span className="font-semibold text-primary">"{search.trim()}"</span></span>
+              </button>
+            ) : search.trim() && exactMatch ? (
+              <div className="px-3 py-3 text-sm text-muted-foreground">Already added.</div>
+            ) : null}
+            {search.trim() && filtered.length > 0 && !exactMatch && (
+              <div className="border-t border-border">
+                <button
+                  type="button"
+                  onClick={handleCustomAdd}
+                  className="w-full text-left px-3 py-2 text-sm text-primary hover:bg-accent transition-colors flex items-center gap-2"
+                >
+                  <Plus className="h-3 w-3" />
+                  <span>Add custom: "{search.trim()}"</span>
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      <p className="text-[10px] text-muted-foreground">{PRESET_INDUSTRIES.length} industries available · You can also type any custom industry name</p>
+    </div>
+  );
 }
 
 export default function Settings() {
@@ -333,37 +491,30 @@ export default function Settings() {
               <div className="rounded-lg border border-border bg-card p-6">
                 <h3 className="text-sm font-semibold text-foreground mb-2">Target Industries</h3>
                 <p className="text-xs text-muted-foreground mb-4">
-                  These industries drive your signal feed, prospect engine, and dashboard content.
+                  These industries drive your signal feed, prospect engine, and dashboard content. Add from the preset list or type your own.
                 </p>
 
-                {targetIndustries.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {targetIndustries.filter(name => name && !/^\d+$/.test(name)).map((name) => (
-                      <span
-                        key={name}
-                        className="inline-flex items-center gap-1 rounded-full border border-primary/20 bg-primary/5 px-2.5 py-1 text-xs font-medium text-primary"
-                      >
-                        {name}
-                        <button type="button" onClick={() => removeIndustry(name)} className="ml-0.5 hover:text-destructive transition-colors">
-                          <X className="h-3 w-3" />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                )}
+                {/* Search + add */}
+                <IndustryPicker
+                  selected={targetIndustries}
+                  onAdd={(name) => setTargetIndustries(prev => prev.includes(name) ? prev : [...prev, name])}
+                  onRemove={removeIndustry}
+                />
 
-                <button
-                  type="button"
-                  onClick={handleAnalyzeIndustries}
-                  disabled={analyzing}
-                  className="flex w-full items-center justify-center gap-2 rounded-md border border-primary/30 bg-primary/5 px-4 py-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/10 disabled:opacity-50"
-                >
-                  {analyzing ? (
-                    <><Loader2 className="h-4 w-4 animate-spin" /> Analyzing your business…</>
-                  ) : (
-                    <><Target className="h-4 w-4" /> Re-analyze Target Industries</>
-                  )}
-                </button>
+                <div className="mt-4">
+                  <button
+                    type="button"
+                    onClick={handleAnalyzeIndustries}
+                    disabled={analyzing}
+                    className="flex w-full items-center justify-center gap-2 rounded-md border border-primary/30 bg-primary/5 px-4 py-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/10 disabled:opacity-50"
+                  >
+                    {analyzing ? (
+                      <><Loader2 className="h-4 w-4 animate-spin" /> Analyzing your business…</>
+                    ) : (
+                      <><Target className="h-4 w-4" /> AI: Suggest Industries from My Business</>
+                    )}
+                  </button>
+                </div>
 
                 {recommendedIndustries.length > 0 && (
                   <div className="mt-4 space-y-2">
