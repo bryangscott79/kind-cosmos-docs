@@ -485,16 +485,47 @@ Make everything specific to the user's business capabilities and geography. No g
     const userCity = (location_city || "").trim().toLowerCase();
     const userCountry = (location_country || "US").trim().toUpperCase();
 
-    intelligence.prospects = intelligence.prospects.map((p: any) => {
-      // Validate industry assignment
-      const currentIndustry = industryMap.get(p.industryId);
-      if (currentIndustry && isIndustryMismatch(p.companyName, currentIndustry.name)) {
-        const betterIndustryId = findBestIndustry(p.companyName, intelligence.industries);
-        if (betterIndustryId) {
-          console.log(`Reassigned "${p.companyName}" from "${currentIndustry.name}" to industry "${industryMap.get(betterIndustryId)?.name}"`);
-          p.industryId = betterIndustryId;
+    // Also do a broad mismatch check: if company name contains indicator keywords but industry name doesn't
+    function isBroadMismatch(companyName: string, industryName: string): boolean {
+      const indLower = industryName.toLowerCase();
+      for (const indicator of industryIndicators) {
+        if (indicator.pattern.test(companyName)) {
+          // Check if the industry name contains ANY of the expected keywords
+          const matchesExpectedIndustry = indicator.keywords.some((kw) => indLower.includes(kw));
+          if (!matchesExpectedIndustry) {
+            console.log(`Broad mismatch: "${companyName}" matches pattern ${indicator.pattern} but industry "${industryName}" doesn't contain any of [${indicator.keywords.join(", ")}]`);
+            return true;
+          }
         }
       }
+      return false;
+    }
+
+    intelligence.prospects = intelligence.prospects.filter((p: any) => {
+      // Validate industry assignment
+      const currentIndustry = industryMap.get(p.industryId);
+      
+      // Check if industry ID even exists
+      if (!currentIndustry) {
+        console.log(`Removing "${p.companyName}" — industryId "${p.industryId}" not found`);
+        return false;
+      }
+
+      const hasMismatch = isIndustryMismatch(p.companyName, currentIndustry.name) || isBroadMismatch(p.companyName, currentIndustry.name);
+      
+      if (hasMismatch) {
+        const betterIndustryId = findBestIndustry(p.companyName, intelligence.industries);
+        if (betterIndustryId) {
+          console.log(`Reassigned "${p.companyName}" from "${currentIndustry.name}" to "${industryMap.get(betterIndustryId)?.name}"`);
+          p.industryId = betterIndustryId;
+          return true;
+        } else {
+          console.log(`Removing "${p.companyName}" — mismatched with "${currentIndustry.name}" and no better industry found`);
+          return false;
+        }
+      }
+      return true;
+    }).map((p: any) => {
 
       let scope = p.scope;
       if (!scope) {
