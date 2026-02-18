@@ -1,9 +1,11 @@
 import { useState, useMemo, useCallback } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Brain, Bot, User, Handshake, Sparkles, Loader2, RefreshCw,
   ArrowLeft, ArrowRight, ChevronDown, ChevronUp, BarChart3,
   TrendingUp, TrendingDown, Minus, Search, Columns2, X,
-  Zap, Shield, DollarSign, Lightbulb
+  Zap, Shield, DollarSign, Lightbulb, HelpCircle, Radio,
+  Users, Target, Building2, ExternalLink, Calendar
 } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import IntelligenceLoader from "@/components/IntelligenceLoader";
@@ -11,7 +13,7 @@ import { useIntelligence } from "@/contexts/IntelligenceContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { hasAccess } from "@/lib/tiers";
 import { supabase } from "@/integrations/supabase/client";
-import type { AIZone, AIFunction, AIImpactAnalysis } from "@/data/mockData";
+import type { AIZone, AIFunction, AIImpactAnalysis, Signal, Prospect, Industry } from "@/data/mockData";
 
 const ZONE_CONFIG: Record<AIZone, { label: string; color: string; bg: string; border: string; icon: typeof Bot; accent: string }> = {
   ai_led: { label: "AI-Led", color: "text-rose-600", bg: "bg-rose-50", border: "border-rose-200", icon: Bot, accent: "from-rose-500 to-rose-600" },
@@ -23,7 +25,84 @@ const OPPORTUNITY_ICONS: Record<string, typeof Zap> = {
   cost_reduction: DollarSign, revenue_growth: TrendingUp, efficiency: Zap, new_capability: Lightbulb, risk_reduction: Shield,
 };
 
+const signalTypeColors: Record<string, string> = {
+  political: "bg-purple-100 text-purple-700", regulatory: "bg-blue-100 text-blue-700",
+  economic: "bg-emerald-100 text-emerald-700", hiring: "bg-amber-100 text-amber-700",
+  tech: "bg-cyan-100 text-cyan-700", supply_chain: "bg-rose-100 text-rose-700",
+  social: "bg-pink-100 text-pink-700", competitive: "bg-slate-100 text-slate-700",
+  environmental: "bg-lime-100 text-lime-700",
+};
+
 type ViewState = "overview" | "detail" | "compare";
+
+function HowToReadGuide() {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="rounded-lg border border-border bg-card overflow-hidden">
+      <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-accent/50 transition-colors">
+        <div className="flex items-center gap-2">
+          <HelpCircle className="h-4 w-4 text-primary" />
+          <span className="text-xs font-semibold text-foreground">How to read this page</span>
+        </div>
+        {open ? <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />}
+      </button>
+      {open && (
+        <div className="px-4 pb-4 pt-1 border-t border-border/50 space-y-4">
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-md bg-rose-50 border border-rose-200 p-3">
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <Bot className="h-3.5 w-3.5 text-rose-600" />
+                <p className="text-xs font-semibold text-rose-700">AI-Led Zone</p>
+              </div>
+              <p className="text-[11px] text-rose-600/80 leading-relaxed">Functions where AI handles &gt;60% of work. These represent <span className="font-semibold">cost reduction</span> opportunities — sell automation tools here, but also recognize these roles are most at risk of displacement.</p>
+            </div>
+            <div className="rounded-md bg-violet-50 border border-violet-200 p-3">
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <Handshake className="h-3.5 w-3.5 text-violet-600" />
+                <p className="text-xs font-semibold text-violet-700">Collaborative Edge</p>
+              </div>
+              <p className="text-[11px] text-violet-600/80 leading-relaxed">The <span className="font-semibold">highest-value zone</span>. AI augments human capability (20-60%). This is where the best business opportunities exist — companies need tools that make their people more effective, not replace them.</p>
+            </div>
+            <div className="rounded-md bg-sky-50 border border-sky-200 p-3">
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <User className="h-3.5 w-3.5 text-sky-600" />
+                <p className="text-xs font-semibold text-sky-700">Human-Led Zone</p>
+              </div>
+              <p className="text-[11px] text-sky-600/80 leading-relaxed">Functions where humans remain essential (&lt;20% automation). Relationship-driven, judgment-intensive roles. These represent <span className="font-semibold">job security</span> — and areas where AI solutions should support, not supplant.</p>
+            </div>
+          </div>
+          <div className="rounded-md bg-secondary p-3">
+            <p className="text-xs font-semibold text-foreground mb-2">Key Metrics Explained</p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <div className="flex gap-2">
+                <span className="text-[10px] font-mono font-bold text-rose-600 w-20 shrink-0">Displacement</span>
+                <p className="text-[11px] text-muted-foreground">How many roles in this industry are at risk of AI replacement. Higher = more disruption, more urgency to act.</p>
+              </div>
+              <div className="flex gap-2">
+                <span className="text-[10px] font-mono font-bold text-violet-600 w-20 shrink-0">Opportunity</span>
+                <p className="text-[11px] text-muted-foreground">How much room exists for AI+human collaboration. Higher = bigger market for augmentation tools and services.</p>
+              </div>
+              <div className="flex gap-2">
+                <span className="text-[10px] font-mono font-bold text-sky-600 w-20 shrink-0">Resilience</span>
+                <p className="text-[11px] text-muted-foreground">How stable human-essential roles are. Higher = more job security, but potentially harder to sell pure automation.</p>
+              </div>
+              <div className="flex gap-2">
+                <span className="text-[10px] font-mono font-bold text-foreground w-20 shrink-0">Automation %</span>
+                <p className="text-[11px] text-muted-foreground">The overall percentage of industry functions that AI currently handles. The circular gauge on each card.</p>
+              </div>
+            </div>
+          </div>
+          <div className="rounded-md bg-secondary p-3">
+            <p className="text-xs font-semibold text-foreground mb-1">How to use this</p>
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              Click any industry card to see the full breakdown — value chain, business functions, KPIs, and connected prospects and signals. Use <span className="font-medium text-foreground">Compare</span> to evaluate two industries side-by-side. Industries with high Opportunity scores and active signals are your best sales targets. The detail view shows which specific companies in that industry are potential customers and what market signals are driving urgency.
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function AutomationGauge({ value, size = "md" }: { value: number; size?: "sm" | "md" }) {
   const radius = size === "sm" ? 28 : 36;
@@ -121,10 +200,66 @@ function FunctionRow({ fn }: { fn: AIFunction }) {
   );
 }
 
-function DetailView({ analysis, onBack }: { analysis: AIImpactAnalysis; onBack: () => void }) {
+function DetailView({ analysis, onBack, prospects, signals, industries }: {
+  analysis: AIImpactAnalysis; onBack: () => void;
+  prospects: Prospect[]; signals: Signal[]; industries: Industry[];
+}) {
+  const navigate = useNavigate();
   const [activeZone, setActiveZone] = useState<AIZone | "all">("all");
   const allFunctions = useMemo(() => [...analysis.aiLedFunctions, ...analysis.collaborativeFunctions, ...analysis.humanLedFunctions], [analysis]);
   const filteredFunctions = activeZone === "all" ? allFunctions : allFunctions.filter((f) => f.zone === activeZone);
+
+  // Find the matching industry by name (AI impact uses industryName, intelligence uses industry.name)
+  const matchedIndustry = industries.find(
+    (i) => i.id === analysis.industryId || i.name.toLowerCase() === analysis.industryName.toLowerCase()
+  );
+
+  // Connected prospects — match by industryId or industry name
+  const connectedProspects = useMemo(() => {
+    if (!matchedIndustry) return [];
+    return prospects.filter((p) => p.industryId === matchedIndustry.id).sort((a, b) => b.vigylScore - a.vigylScore).slice(0, 6);
+  }, [prospects, matchedIndustry]);
+
+  // Connected signals — match by industryTags
+  const connectedSignals = useMemo(() => {
+    if (!matchedIndustry) return [];
+    return signals.filter((s) => s.industryTags.includes(matchedIndustry.id)).sort((a, b) => b.publishedAt.localeCompare(a.publishedAt)).slice(0, 5);
+  }, [signals, matchedIndustry]);
+
+  // Generate actionable insights based on the data
+  const actionableInsights = useMemo(() => {
+    const insights: { icon: typeof Target; color: string; title: string; description: string }[] = [];
+
+    if (analysis.collaborativeOpportunityIndex >= 70) {
+      insights.push({
+        icon: Target, color: "text-violet-600",
+        title: "High Augmentation Demand",
+        description: `This industry scores ${analysis.collaborativeOpportunityIndex}/100 on collaborative opportunity. Companies here want AI that makes their teams better — not replacement. Lead with augmentation messaging.`,
+      });
+    }
+    if (analysis.jobDisplacementIndex >= 50) {
+      insights.push({
+        icon: Zap, color: "text-rose-600",
+        title: "Disruption Creates Urgency",
+        description: `With a displacement index of ${analysis.jobDisplacementIndex}/100, companies are feeling pressure to adapt. Decision-makers are more receptive to solutions that future-proof their workforce.`,
+      });
+    }
+    if (analysis.humanResilienceScore >= 70) {
+      insights.push({
+        icon: Shield, color: "text-sky-600",
+        title: "Human Roles Are Stable",
+        description: `High resilience (${analysis.humanResilienceScore}/100) means pure automation sells are harder here. Position solutions around augmenting existing human expertise, not replacing it.`,
+      });
+    }
+    if (connectedProspects.filter(p => p.vigylScore >= 80).length >= 2) {
+      insights.push({
+        icon: Users, color: "text-emerald-600",
+        title: `${connectedProspects.filter(p => p.vigylScore >= 80).length} Hot Prospects Ready`,
+        description: `Multiple high-scoring prospects in this industry are showing buying signals. The AI impact data gives you a framework for positioning your solution.`,
+      });
+    }
+    return insights;
+  }, [analysis, connectedProspects]);
 
   return (
     <div className="space-y-6">
@@ -138,6 +273,29 @@ function DetailView({ analysis, onBack }: { analysis: AIImpactAnalysis; onBack: 
           <AutomationGauge value={analysis.automationRate} size="md" />
         </div>
       </div>
+
+      {/* Actionable Insights — the "so what" */}
+      {actionableInsights.length > 0 && (
+        <div className="rounded-lg border border-primary/20 bg-primary/[0.02] p-4">
+          <p className="text-xs font-semibold text-foreground mb-3 flex items-center gap-2"><Target className="h-4 w-4 text-primary" /> What This Means For You</p>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {actionableInsights.map((insight, i) => {
+              const Icon = insight.icon;
+              return (
+                <div key={i} className="rounded-md bg-card border border-border p-3">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <Icon className={`h-3.5 w-3.5 ${insight.color}`} />
+                    <p className="text-[11px] font-semibold text-foreground">{insight.title}</p>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground leading-relaxed">{insight.description}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Score cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { label: "Automation Rate", value: analysis.automationRate, color: "text-foreground", desc: "Overall AI penetration" },
@@ -152,6 +310,87 @@ function DetailView({ analysis, onBack }: { analysis: AIImpactAnalysis; onBack: 
           </div>
         ))}
       </div>
+
+      {/* Connected Opportunities */}
+      {(connectedProspects.length > 0 || connectedSignals.length > 0) && (
+        <div className="grid gap-4 lg:grid-cols-2">
+          {/* Prospects in this industry */}
+          {connectedProspects.length > 0 && (
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-primary" />
+                  <h3 className="text-sm font-semibold text-foreground">Prospects in {analysis.industryName}</h3>
+                </div>
+                <Link to="/prospects" className="text-[10px] font-medium text-primary hover:text-primary/80 flex items-center gap-0.5">
+                  View all <ArrowRight className="h-2.5 w-2.5" />
+                </Link>
+              </div>
+              <div className="space-y-2">
+                {connectedProspects.map((p) => (
+                  <div
+                    key={p.id}
+                    onClick={() => navigate("/prospects")}
+                    className="rounded-lg border border-border bg-card p-3 hover:border-primary/20 transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-semibold text-foreground">{p.companyName}</span>
+                      <span className="text-xs font-mono font-bold text-primary">{p.vigylScore}</span>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground line-clamp-1">{p.whyNow.split(".")[0]}.</p>
+                    <div className="flex items-center gap-2 mt-1.5">
+                      <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${
+                        p.pressureResponse === "growth_mode" ? "bg-green-100 text-green-700" :
+                        p.pressureResponse === "contracting" ? "bg-red-100 text-red-700" :
+                        "bg-blue-100 text-blue-700"
+                      }`}>{p.pressureResponse.replace("_", " ")}</span>
+                      {p.annualRevenue && <span className="text-[10px] text-muted-foreground">{p.annualRevenue}</span>}
+                      {p.employeeCount && <span className="text-[10px] text-muted-foreground">· {p.employeeCount.toLocaleString()} emp</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Signals affecting this industry */}
+          {connectedSignals.length > 0 && (
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Radio className="h-4 w-4 text-primary" />
+                  <h3 className="text-sm font-semibold text-foreground">Active Signals</h3>
+                </div>
+                <Link to="/signals" className="text-[10px] font-medium text-primary hover:text-primary/80 flex items-center gap-0.5">
+                  View all <ArrowRight className="h-2.5 w-2.5" />
+                </Link>
+              </div>
+              <div className="space-y-2">
+                {connectedSignals.map((s) => (
+                  <div
+                    key={s.id}
+                    onClick={() => navigate("/signals")}
+                    className="rounded-lg border border-border bg-card p-3 hover:border-primary/20 transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${signalTypeColors[s.signalType] || ""}`}>
+                        {s.signalType.replace("_", " ")}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">
+                        {new Date(s.publishedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                      </span>
+                    </div>
+                    <p className="text-xs font-semibold text-foreground leading-snug">{s.title}</p>
+                    <p className="text-[10px] text-muted-foreground mt-1 line-clamp-1">{s.salesImplication}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Value Chain */}
       {analysis.valueChain.length > 0 && (
         <div>
           <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2"><BarChart3 className="h-4 w-4 text-primary" /> Value Chain</h3>
@@ -175,6 +414,8 @@ function DetailView({ analysis, onBack }: { analysis: AIImpactAnalysis; onBack: 
           </div>
         </div>
       )}
+
+      {/* Business Functions */}
       <div>
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-semibold text-foreground">Business Functions</h3>
@@ -189,6 +430,8 @@ function DetailView({ analysis, onBack }: { analysis: AIImpactAnalysis; onBack: 
         </div>
         <div className="grid gap-2 sm:grid-cols-2">{filteredFunctions.map((fn, i) => (<FunctionRow key={`${fn.zone}-${fn.name}-${i}`} fn={fn} />))}</div>
       </div>
+
+      {/* KPIs */}
       {analysis.kpis.length > 0 && (
         <div>
           <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2"><Sparkles className="h-4 w-4 text-primary" /> Key AI Impact Metrics</h3>
@@ -409,6 +652,7 @@ export default function AIImpactDashboard() {
             )}
 
             {effectiveAiImpact.length > 0 && (<>
+              <HowToReadGuide />
               <div className="flex items-center gap-3">
                 <div className="relative flex-1 max-w-xs">
                   <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -441,7 +685,15 @@ export default function AIImpactDashboard() {
             </>)}
           </>)}
 
-          {view === "detail" && selectedAnalysis && (<DetailView analysis={selectedAnalysis} onBack={() => setView("overview")} />)}
+          {view === "detail" && selectedAnalysis && (
+            <DetailView
+              analysis={selectedAnalysis}
+              onBack={() => setView("overview")}
+              prospects={data.prospects}
+              signals={data.signals}
+              industries={data.industries}
+            />
+          )}
           {view === "compare" && compareLeft && compareRight && (
             <CompareView left={compareLeft} right={compareRight} onBack={() => { setView("overview"); setCompareIds(["", ""]); }} onSwap={() => setCompareIds([compareIds[1], compareIds[0]])} />
           )}
