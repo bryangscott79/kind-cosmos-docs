@@ -423,12 +423,79 @@ Make everything specific to the user's business capabilities and geography. No g
       scoreHistory: generateScoreHistory(ind.healthScore),
     }));
 
+    // Build industry lookup for validation
+    const industryMap = new Map<string, any>();
+    intelligence.industries.forEach((ind: any) => {
+      industryMap.set(ind.id, ind);
+    });
+
+    // Post-process: validate prospect-industry assignments
+    // Keywords that should NEVER appear in certain industries
+    const industryKeywordBlacklist: Record<string, RegExp[]> = {
+      "education": [/airline/i, /aviation/i, /restaurant/i, /mining/i, /petroleum/i, /oil\b/i, /gas\b/i],
+      "edtech": [/airline/i, /aviation/i, /restaurant/i, /mining/i, /petroleum/i],
+      "healthcare": [/airline/i, /aviation/i, /mining/i],
+      "defense": [/restaurant/i, /bakery/i, /cafe/i, /food\b/i],
+    };
+
+    // Keywords that indicate what industry a company SHOULD be in
+    const industryIndicators: { pattern: RegExp; keywords: string[] }[] = [
+      { pattern: /airline|aviation|airways|air\s?lines/i, keywords: ["airline", "aviation", "transport", "aerospace"] },
+      { pattern: /restaurant|food|beverage|cafe|bakery|brewing|distill/i, keywords: ["food", "beverage", "hospitality"] },
+      { pattern: /bank|financial|capital|wealth|insurance|credit/i, keywords: ["financial", "banking", "insurance"] },
+      { pattern: /pharma|biotech|therapeutics|medical|health/i, keywords: ["pharma", "health", "life science", "biotech"] },
+      { pattern: /mining|petroleum|oil|energy|solar|wind/i, keywords: ["energy", "mining", "natural resource"] },
+      { pattern: /auto|motor|vehicle|car\b/i, keywords: ["auto", "transport", "vehicle"] },
+      { pattern: /tech|software|digital|cloud|data|cyber/i, keywords: ["tech", "saas", "software", "digital"] },
+      { pattern: /retail|store|shop|commerce/i, keywords: ["retail", "commerce", "consumer"] },
+      { pattern: /construct|building|real estate|property/i, keywords: ["real estate", "construct"] },
+      { pattern: /hotel|resort|tourism|hospitality|travel/i, keywords: ["hospitality", "tourism", "travel"] },
+      { pattern: /school|university|education|learning|academy/i, keywords: ["education", "edtech", "learning"] },
+      { pattern: /logistic|shipping|freight|supply chain/i, keywords: ["logistic", "supply chain", "shipping"] },
+      { pattern: /media|entertainment|broadcast|streaming|film/i, keywords: ["media", "entertainment"] },
+      { pattern: /telecom|wireless|mobile|network/i, keywords: ["telecom", "communication"] },
+      { pattern: /agri|farm|crop|seed/i, keywords: ["agri", "agtech", "farm"] },
+    ];
+
+    function findBestIndustry(companyName: string, industries: any[]): string | null {
+      for (const indicator of industryIndicators) {
+        if (indicator.pattern.test(companyName)) {
+          // Find an industry whose name matches one of the keywords
+          const match = industries.find((ind: any) =>
+            indicator.keywords.some((kw) => ind.name.toLowerCase().includes(kw))
+          );
+          if (match) return match.id;
+        }
+      }
+      return null;
+    }
+
+    function isIndustryMismatch(companyName: string, industryName: string): boolean {
+      const indLower = industryName.toLowerCase();
+      for (const [indKey, patterns] of Object.entries(industryKeywordBlacklist)) {
+        if (indLower.includes(indKey)) {
+          if (patterns.some((p) => p.test(companyName))) return true;
+        }
+      }
+      return false;
+    }
+
     // Ensure all prospects have proper defaults and infer scope if missing
     const userState = (location_state || "").trim().toUpperCase();
     const userCity = (location_city || "").trim().toLowerCase();
     const userCountry = (location_country || "US").trim().toUpperCase();
 
     intelligence.prospects = intelligence.prospects.map((p: any) => {
+      // Validate industry assignment
+      const currentIndustry = industryMap.get(p.industryId);
+      if (currentIndustry && isIndustryMismatch(p.companyName, currentIndustry.name)) {
+        const betterIndustryId = findBestIndustry(p.companyName, intelligence.industries);
+        if (betterIndustryId) {
+          console.log(`Reassigned "${p.companyName}" from "${currentIndustry.name}" to industry "${industryMap.get(betterIndustryId)?.name}"`);
+          p.industryId = betterIndustryId;
+        }
+      }
+
       let scope = p.scope;
       if (!scope) {
         const pCountry = (p.location?.country || "").trim().toUpperCase();
