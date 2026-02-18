@@ -485,7 +485,8 @@ Make everything specific to the user's business capabilities and geography. No g
           }
         }
 
-        console.log(`Attempt ${attempt + 1}: No parseable response, raw choice:`, JSON.stringify(data.choices?.[0]?.message).substring(0, 500));
+        const rawMessage = JSON.stringify(data.choices?.[0]?.message ?? data);
+        console.log(`Attempt ${attempt + 1}: No parseable response, raw choice:`, rawMessage.substring(0, 500));
         if (attempt < MAX_RETRIES) {
           console.log("Retrying...");
           continue;
