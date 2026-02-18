@@ -1,17 +1,26 @@
 import { Link } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
 import vigylLogo from "@/assets/vigyl-logo.png";
 import IndustryCard from "@/components/IndustryCard";
 import FeatureShowcase from "@/components/landing/FeatureShowcase";
 import UrlAnalyzer from "@/components/landing/UrlAnalyzer";
 import { industries } from "@/data/mockData";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
+import { TIERS } from "@/lib/tiers";
 
 export default function Landing() {
   const previewIndustries = industries.slice(0, 6);
   const { ref: heroRef, isVisible: heroVisible } = useScrollReveal({ threshold: 0.05 });
   const { ref: industryHeadingRef, isVisible: industryHeadingVisible } = useScrollReveal();
   const { ref: analyzerRef, isVisible: analyzerVisible } = useScrollReveal({ threshold: 0.1 });
+  const { ref: pricingRef, isVisible: pricingVisible } = useScrollReveal({ threshold: 0.1 });
+
+  const tiers: { key: keyof typeof TIERS; highlight?: boolean }[] = [
+    { key: "free" },
+    { key: "starter" },
+    { key: "pro", highlight: true },
+    { key: "enterprise" },
+  ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -22,6 +31,9 @@ export default function Landing() {
             <img src={vigylLogo} alt="VIGYL" className="h-8" />
           </Link>
           <div className="flex items-center gap-4">
+            <a href="#pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              Pricing
+            </a>
             <Link to="/auth" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               Sign In
             </Link>
@@ -136,6 +148,85 @@ export default function Landing() {
       >
         <UrlAnalyzer />
       </div>
+
+      {/* Pricing */}
+      <section
+        id="pricing"
+        ref={pricingRef}
+        className="border-t border-border"
+        style={{
+          opacity: pricingVisible ? 1 : 0,
+          transform: pricingVisible ? "translateY(0)" : "translateY(24px)",
+          transition: "opacity 0.6s ease, transform 0.6s ease",
+        }}
+      >
+        <div className="mx-auto max-w-5xl px-6 py-20 text-center">
+          <h2 className="text-2xl font-bold text-foreground sm:text-3xl">
+            Simple, transparent{" "}
+            <span className="bg-gradient-to-r from-brand-blue to-brand-purple bg-clip-text text-transparent">pricing</span>
+          </h2>
+          <p className="mt-2 text-sm text-muted-foreground">Start free. Scale as you grow.</p>
+
+          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {tiers.map(({ key, highlight }) => {
+              const t = TIERS[key];
+              return (
+                <div
+                  key={key}
+                  className={`relative flex flex-col rounded-xl border p-6 text-left transition-all ${
+                    highlight
+                      ? "border-primary bg-primary/5 shadow-lg shadow-primary/10"
+                      : "border-border bg-card"
+                  }`}
+                >
+                  {highlight && (
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-gradient-to-r from-brand-blue to-brand-purple px-3 py-0.5 text-[10px] font-semibold text-white uppercase tracking-wider">
+                      Most Popular
+                    </div>
+                  )}
+
+                  <h3 className="text-sm font-semibold text-foreground">{t.name}</h3>
+                  <div className="mt-2 flex items-baseline gap-1">
+                    <span className="text-3xl font-bold text-foreground">
+                      {t.price === 0 ? "Free" : `$${t.price}`}
+                    </span>
+                    {t.price > 0 && <span className="text-xs text-muted-foreground">/mo</span>}
+                  </div>
+
+                  <ul className="mt-5 flex-1 space-y-2.5">
+                    {t.features.map((f) => (
+                      <li key={f} className="flex items-start gap-2 text-xs text-muted-foreground">
+                        <Check className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-primary" />
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+
+                  <div className="mt-6">
+                    <Link
+                      to="/auth"
+                      className={`block w-full rounded-md px-4 py-2.5 text-center text-xs font-semibold transition-all ${
+                        highlight
+                          ? "bg-gradient-to-r from-brand-blue to-brand-purple text-white hover:opacity-90"
+                          : "border border-border bg-card text-foreground hover:bg-accent"
+                      }`}
+                    >
+                      {key === "free" ? "Get Started Free" : "Start " + t.name}
+                    </Link>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <p className="mt-8 text-xs text-muted-foreground">
+            All plans include a 14-day free trial of Pro features.{" "}
+            <Link to="/pricing" className="text-primary hover:text-primary/80 font-medium">
+              View full plan comparison →
+            </Link>
+          </p>
+        </div>
+      </section>
 
       {/* Footer */}
       <footer className="border-t border-border bg-card">

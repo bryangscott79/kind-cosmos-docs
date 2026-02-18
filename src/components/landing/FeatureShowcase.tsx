@@ -1,4 +1,4 @@
-import { BarChart3, Radio, Users, Shield, TrendingUp, Zap, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { BarChart3, Radio, Users, Shield, TrendingUp, Zap, ArrowUpRight, ArrowDownRight, MessageCircle, Kanban, Brain } from "lucide-react";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 
 function MiniHealthScore({ label, score, color }: { label: string; score: number; color: string }) {
@@ -72,18 +72,85 @@ function FeatureProspectEngine() {
   );
 }
 
-function FeaturePressureResponse() {
-  const companies = [
-    { name: "NovaTech", mode: "Growth", color: "bg-green-100 text-green-700 border-green-200" },
-    { name: "Orion Defense", mode: "Investing", color: "bg-blue-100 text-blue-700 border-blue-200" },
-    { name: "Summit Retail", mode: "Contracting", color: "bg-red-100 text-red-700 border-red-200" },
+function FeaturePipeline() {
+  const stages = [
+    { stage: "Researching", count: 5, color: "bg-blue-500" },
+    { stage: "Outreach", count: 3, color: "bg-violet-500" },
+    { stage: "Meeting", count: 2, color: "bg-amber-500" },
+    { stage: "Proposal", count: 1, color: "bg-green-500" },
   ];
   return (
     <div className="mt-4 space-y-2">
-      {companies.map((c, i) => (
+      {stages.map((s, i) => (
         <div key={i} className="rounded-lg border border-border bg-card p-2.5 flex items-center justify-between">
-          <span className="text-[11px] font-semibold text-foreground">{c.name}</span>
-          <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${c.color}`}>{c.mode}</span>
+          <div className="flex items-center gap-2">
+            <span className={`h-2.5 w-2.5 rounded-full ${s.color}`} />
+            <span className="text-[11px] font-semibold text-foreground">{s.stage}</span>
+          </div>
+          <span className="text-[11px] font-mono text-muted-foreground">{s.count} deals</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function FeatureAIOutreach() {
+  return (
+    <div className="mt-4 rounded-lg border border-border bg-card p-3 space-y-2">
+      <div className="flex gap-1.5">
+        {["Email", "LinkedIn", "Brief"].map((t) => (
+          <span key={t} className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${t === "Email" ? "bg-primary/10 text-primary border-primary/20" : "bg-muted text-muted-foreground border-border"}`}>{t}</span>
+        ))}
+      </div>
+      <div className="rounded border border-border bg-background p-2">
+        <p className="text-[10px] text-muted-foreground italic leading-relaxed">
+          "Hi Sarah — I noticed Meridian just appointed a new CTO amid the EU AI Act rollout. Given your compliance infrastructure needs, I'd love to share how we've helped similar orgs navigate..."
+        </p>
+      </div>
+      <div className="flex items-center gap-1.5">
+        <Zap className="h-3 w-3 text-primary" />
+        <span className="text-[10px] text-primary font-medium">Generated from 3 active signals</span>
+      </div>
+    </div>
+  );
+}
+
+function FeatureAskArgus() {
+  return (
+    <div className="mt-4 rounded-lg border border-border bg-card p-3 space-y-2">
+      <div className="rounded-lg bg-secondary/60 p-2">
+        <p className="text-[10px] text-muted-foreground">You:</p>
+        <p className="text-[11px] text-foreground mt-0.5">"What's the best angle to approach Meridian Health?"</p>
+      </div>
+      <div className="rounded-lg bg-primary/5 border border-primary/10 p-2">
+        <p className="text-[10px] text-primary font-medium">Argus:</p>
+        <p className="text-[11px] text-foreground mt-0.5 leading-relaxed">"Their new CTO has a compliance background — lead with regulatory readiness. Reference the EU AI Act timeline and position your platform as reducing their audit burden by 60%."</p>
+      </div>
+    </div>
+  );
+}
+
+function FeatureAIImpact() {
+  const impacts = [
+    { area: "Customer Service", risk: 72, opportunity: 85 },
+    { area: "Supply Chain", risk: 45, opportunity: 68 },
+    { area: "Marketing", risk: 60, opportunity: 91 },
+  ];
+  return (
+    <div className="mt-4 rounded-lg border border-border bg-card p-3 space-y-2">
+      {impacts.map((item, i) => (
+        <div key={i} className="space-y-1">
+          <span className="text-[11px] font-semibold text-foreground">{item.area}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-[9px] text-red-500 w-7">Risk</span>
+            <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
+              <div className="h-full rounded-full bg-red-400" style={{ width: `${item.risk}%` }} />
+            </div>
+            <span className="text-[9px] text-green-600 w-7">Opp.</span>
+            <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
+              <div className="h-full rounded-full bg-green-500" style={{ width: `${item.opportunity}%` }} />
+            </div>
+          </div>
         </div>
       ))}
     </div>
@@ -117,35 +184,35 @@ function FeatureVIGYLScore() {
   );
 }
 
-function FeatureAIOutreach() {
-  return (
-    <div className="mt-4 rounded-lg border border-border bg-card p-3 space-y-2">
-      <div className="flex gap-1.5">
-        {["Email", "LinkedIn", "Brief"].map((t) => (
-          <span key={t} className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${t === "Email" ? "bg-primary/10 text-primary border-primary/20" : "bg-muted text-muted-foreground border-border"}`}>{t}</span>
-        ))}
-      </div>
-      <div className="rounded border border-border bg-background p-2">
-        <p className="text-[10px] text-muted-foreground italic leading-relaxed">
-          "Hi Sarah — I noticed Meridian just appointed a new CTO amid the EU AI Act rollout. Given your compliance infrastructure needs, I'd love to share how we've helped similar orgs navigate..."
-        </p>
-      </div>
-      <div className="flex items-center gap-1.5">
-        <Zap className="h-3 w-3 text-primary" />
-        <span className="text-[10px] text-primary font-medium">Generated from 3 active signals</span>
-      </div>
-    </div>
-  );
-}
-
 const features = [
   { icon: BarChart3, title: "Industry Health Scores", description: "Real-time composite scoring across 6 signal categories. Know which markets are thriving before your competitors do.", preview: FeatureHealthScores },
   { icon: Radio, title: "Signal Intelligence", description: "AI-processed geopolitical, economic, and regulatory signals with direct sales implications for your business.", preview: FeatureSignalIntel },
-  { icon: Users, title: "Prospect Engine", description: "Scored prospects with 'Why Now' rationale — know exactly when and why to reach out.", preview: FeatureProspectEngine },
-  { icon: Shield, title: "Pressure Response", description: "Understand if a company is contracting, investing strategically, or in growth mode. Target the right ones.", preview: FeaturePressureResponse },
+  { icon: Users, title: "Prospect Engine", description: "Scored prospects with 'Why Now' rationale, decision-maker profiles, feedback loop, and full company dossiers.", preview: FeatureProspectEngine },
   { icon: TrendingUp, title: "VIGYL Score", description: "Composite prospect scoring: industry health, service alignment, spending signals, timing, and accessibility.", preview: FeatureVIGYLScore },
-  { icon: Zap, title: "AI Outreach", description: "Generate signal-aware cold emails, LinkedIn messages, and meeting briefs that reference what's actually happening.", preview: FeatureAIOutreach },
+  { icon: Kanban, title: "Pipeline Management", description: "Drag-and-drop deal tracking from research to close. Keep every signal-driven opportunity organized.", preview: FeaturePipeline },
+  { icon: Zap, title: "AI Outreach Generation", description: "Generate signal-aware cold emails, LinkedIn messages, and meeting briefs that reference what's actually happening.", preview: FeatureAIOutreach },
+  { icon: MessageCircle, title: "Ask Argus — AI Sales Advisor", description: "Get instant strategy, talking points, competitive analysis, and next-step recommendations on any prospect or signal.", preview: FeatureAskArgus },
+  { icon: Brain, title: "AI Impact Dashboard", description: "See how AI is disrupting each industry — risk assessments, opportunity maps, and strategic implications for your pitch.", preview: FeatureAIImpact },
+  { icon: Shield, title: "Pressure Response Analysis", description: "Understand if a company is contracting, investing strategically, or in growth mode. Target the right ones at the right time.", preview: FeaturePressureResponse },
 ];
+
+function FeaturePressureResponse() {
+  const companies = [
+    { name: "NovaTech", mode: "Growth", color: "bg-green-100 text-green-700 border-green-200" },
+    { name: "Orion Defense", mode: "Investing", color: "bg-blue-100 text-blue-700 border-blue-200" },
+    { name: "Summit Retail", mode: "Contracting", color: "bg-red-100 text-red-700 border-red-200" },
+  ];
+  return (
+    <div className="mt-4 space-y-2">
+      {companies.map((c, i) => (
+        <div key={i} className="rounded-lg border border-border bg-card p-2.5 flex items-center justify-between">
+          <span className="text-[11px] font-semibold text-foreground">{c.name}</span>
+          <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${c.color}`}>{c.mode}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function FeatureCard({ feature, index }: { feature: typeof features[0]; index: number }) {
   const { ref, isVisible } = useScrollReveal({ threshold: 0.1 });

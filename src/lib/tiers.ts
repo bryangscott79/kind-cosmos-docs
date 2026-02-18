@@ -6,9 +6,10 @@ export const TIERS = {
     product_id: null,
     price_id: null,
     features: [
-      "Industry Health Dashboard",
-      "Signal Feed (basic)",
+      "Industry Health Dashboard with real-time scores",
+      "Signal Feed — geopolitical, economic & regulatory alerts",
       "6 industries tracked",
+      "AI Impact Overview",
     ],
   },
   starter: {
@@ -18,9 +19,12 @@ export const TIERS = {
     price_id: "price_1T02t8An8oRG1jaDAC6B9YxG",
     features: [
       "Everything in Free",
-      "Prospect Engine",
-      "Location & revenue filters",
-      "Decision maker contacts",
+      "Prospect Engine with scored leads & 'Why Now'",
+      "Location, revenue & employee filters",
+      "Decision-maker contacts with LinkedIn links",
+      "Prospect feedback loop (More / Less like this)",
+      "AI Impact Detail & Comparison views",
+      "Industry & Signal Reports",
     ],
   },
   pro: {
@@ -30,9 +34,10 @@ export const TIERS = {
     price_id: "price_1T02tPAn8oRG1jaDbp3t8BmN",
     features: [
       "Everything in Starter",
-      "Pipeline Management",
-      "Outreach Generation",
-      "Advanced signal analytics",
+      "Pipeline Management — drag-and-drop deal stages",
+      "AI Outreach Generation (email, LinkedIn, briefs)",
+      "Ask Argus — AI sales advisor on every page",
+      "Advanced signal analytics & saved signals",
     ],
   },
   enterprise: {
@@ -42,10 +47,11 @@ export const TIERS = {
     price_id: "price_1T02tbAn8oRG1jaDtlHTRtIr",
     features: [
       "Everything in Pro",
-      "AI-powered insights",
+      "AI-powered deep insights & strategy briefs",
       "Priority signal alerts",
-      "Unlimited industries",
-      "API access",
+      "Unlimited industries tracked",
+      "API access & integrations",
+      "Dedicated onboarding support",
     ],
   },
 } as const;
