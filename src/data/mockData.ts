@@ -279,6 +279,9 @@ export interface Prospect {
   employeeCount: number;
   scope?: ProspectScope;
   isDreamClient?: boolean;
+  websiteUrl?: string;
+  relatedLinks?: { title: string; url: string }[];
+  competitors?: { name: string; description: string }[];
 }
 
 export interface OutreachContent {
