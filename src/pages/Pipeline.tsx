@@ -4,7 +4,7 @@ import {
   Users, Radio, Calendar, MessageSquare, ExternalLink,
   ChevronRight, ChevronLeft, ChevronDown,
   MapPin, DollarSign, Building2, Mail, Trophy, XCircle,
-  Save, TrendingUp, TrendingDown, Minus
+  Save, TrendingUp, TrendingDown, Minus, Target
 } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import IntelligenceLoader from "@/components/IntelligenceLoader";
@@ -130,67 +130,81 @@ function PipelineCard({
       {/* Expanded view */}
       {expanded && (
         <div className="border-t border-border p-3 space-y-3 bg-accent/20">
-          {/* Company details */}
-          <div className="grid grid-cols-2 gap-2">
+          {/* ── PRIMARY OPPORTUNITY ── */}
+          <div className="rounded-lg border border-primary/20 bg-primary/[0.03] p-3">
+            <p className="text-[9px] font-bold text-primary uppercase tracking-wider mb-1.5 flex items-center gap-1">
+              <Target className="h-3 w-3" /> Primary Opportunity
+            </p>
+            <p className="text-[11px] text-foreground leading-relaxed font-medium">
+              {prospect.pressureResponse === "growth_mode"
+                ? `${prospect.companyName} is investing aggressively — lead with competitive advantage and speed to market.`
+                : prospect.pressureResponse === "contracting"
+                ? `${prospect.companyName} is tightening spend — lead with cost savings and efficiency. Keep proposals lean.`
+                : `${prospect.companyName} is investing strategically — show clear ROI with a phased rollout.`}
+            </p>
+            {relatedSignals[0] && (
+              <div className="mt-2 rounded-md bg-card border border-border p-2">
+                <p className="text-[9px] text-muted-foreground font-medium mb-0.5">Signal to reference:</p>
+                <p className="text-[10px] font-semibold text-foreground leading-snug">{relatedSignals[0].title}</p>
+                <p className="text-[9px] text-muted-foreground mt-0.5">{relatedSignals[0].salesImplication.split(".")[0]}.</p>
+              </div>
+            )}
+          </div>
+
+          {/* ── KEY CONTACT ── */}
+          {prospect.decisionMakers[0] && (
+            <div className="flex items-center gap-3 rounded-md border border-border bg-card p-2.5">
+              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                <Users className="h-3.5 w-3.5 text-primary" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-bold text-foreground">{prospect.decisionMakers[0].name}</p>
+                <p className="text-[9px] text-muted-foreground">{prospect.decisionMakers[0].title}</p>
+              </div>
+              {prospect.decisionMakers.length > 1 && (
+                <span className="text-[9px] text-muted-foreground shrink-0">+{prospect.decisionMakers.length - 1} more</span>
+              )}
+            </div>
+          )}
+
+          {/* ── COMPANY SNAPSHOT ── */}
+          <div className="grid grid-cols-2 gap-1.5">
             <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-              <MapPin className="h-3 w-3 shrink-0" />
+              <MapPin className="h-2.5 w-2.5 shrink-0" />
               {prospect.location.city}, {prospect.location.state}
             </div>
             <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-              <DollarSign className="h-3 w-3 shrink-0" />
+              <DollarSign className="h-2.5 w-2.5 shrink-0" />
               {prospect.annualRevenue}
             </div>
             <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-              <Users className="h-3 w-3 shrink-0" />
-              {prospect.employeeCount.toLocaleString()} employees
+              <Users className="h-2.5 w-2.5 shrink-0" />
+              {prospect.employeeCount.toLocaleString()}
             </div>
             <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-              {prospect.pressureResponse === "growth_mode" ? <TrendingUp className="h-3 w-3 text-emerald-500" /> :
-               prospect.pressureResponse === "contracting" ? <TrendingDown className="h-3 w-3 text-rose-500" /> :
-               <Minus className="h-3 w-3 text-blue-500" />}
+              {prospect.pressureResponse === "growth_mode" ? <TrendingUp className="h-2.5 w-2.5 text-emerald-500" /> :
+               prospect.pressureResponse === "contracting" ? <TrendingDown className="h-2.5 w-2.5 text-rose-500" /> :
+               <Minus className="h-2.5 w-2.5 text-blue-500" />}
               {getPressureLabel(prospect.pressureResponse)}
             </div>
           </div>
 
-          {/* Full why now */}
-          <div>
-            <p className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Why Now</p>
-            <p className="text-[11px] text-foreground leading-relaxed">{prospect.whyNow}</p>
-          </div>
-
-          {/* Decision makers */}
-          {prospect.decisionMakers.length > 0 && (
+          {/* Additional signals (if more than one) */}
+          {relatedSignals.length > 1 && (
             <div>
-              <p className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Decision Makers</p>
+              <p className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Other Signals ({relatedSignals.length - 1})</p>
               <div className="space-y-1">
-                {prospect.decisionMakers.map((dm, i) => (
-                  <div key={i} className="flex items-center justify-between rounded bg-card border border-border px-2 py-1.5">
-                    <div>
-                      <p className="text-[10px] font-semibold text-foreground">{dm.name}</p>
-                      <p className="text-[9px] text-muted-foreground">{dm.title}</p>
-                    </div>
+                {relatedSignals.slice(1).map(s => (
+                  <div key={s.id} className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                    <Radio className="h-2 w-2 text-primary/50 shrink-0" />
+                    <span className="truncate">{s.title}</span>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Related signals full */}
-          {relatedSignals.length > 0 && (
-            <div>
-              <p className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Related Signals</p>
-              <div className="space-y-1">
-                {relatedSignals.map(s => (
-                  <div key={s.id} className="rounded bg-card border border-border px-2 py-1.5">
-                    <p className="text-[10px] font-semibold text-foreground">{s.title}</p>
-                    <p className="text-[9px] text-muted-foreground mt-0.5">{s.salesImplication.split(".")[0]}.</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Editable notes */}
+          {/* ── NOTES ── */}
           <div>
             <div className="flex items-center justify-between mb-1">
               <p className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
@@ -228,7 +242,7 @@ function PipelineCard({
             )}
           </div>
 
-          {/* Stage move controls */}
+          {/* ── STAGE CONTROLS ── */}
           <div className="flex flex-wrap items-center gap-1.5 border-t border-border pt-3">
             <p className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mr-1">Move to:</p>
             {stageOrder.filter(s => s !== prospect.pipelineStage && s !== "lost").map(stage => (
@@ -254,10 +268,10 @@ function PipelineCard({
             )}
           </div>
 
-          {/* Quick actions */}
+          {/* ── ACTIONS ── */}
           <div className="flex items-center gap-2 border-t border-border pt-3">
             <Link to={`/outreach?prospect=${prospect.id}`} className="inline-flex items-center gap-1 rounded-md bg-primary px-2.5 py-1.5 text-[10px] font-medium text-primary-foreground hover:opacity-90 transition-opacity">
-              <Mail className="h-3 w-3" /> Generate Outreach
+              <Mail className="h-3 w-3" /> Outreach
             </Link>
             <Link to={`/prospects/${prospect.id}`} className="inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1.5 text-[10px] font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
               <ExternalLink className="h-3 w-3" /> Full Dossier

@@ -5,7 +5,7 @@ import {
   Radio, Calendar, TrendingUp, TrendingDown, Minus, ExternalLink,
   Mail, ChevronRight, Bot, Handshake, User, Brain, Sparkles,
   Target, Lightbulb, Shield, Zap, AlertTriangle, Clock, Star, Swords,
-  MessageSquare, LinkIcon
+  MessageSquare, LinkIcon, Loader2
 } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import IntelligenceLoader from "@/components/IntelligenceLoader";
@@ -59,10 +59,31 @@ function MetricPill({ label, value, icon }: { label: string; value: string; icon
 
 export default function ProspectDetail() {
   const { id } = useParams<{ id: string }>();
-  const { data } = useIntelligence();
+  const { data, loading, isUsingSeedData } = useIntelligence();
   const { prospects, industries, signals, aiImpact } = data;
 
   const prospect = prospects.find(p => p.id === id);
+
+  // If prospect not found but still loading or using seed data, show loading
+  if (!prospect && (loading || isUsingSeedData)) {
+    return (
+      <IntelligenceLoader>
+        <DashboardLayout>
+          <div className="space-y-4">
+            <Link to="/prospects" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
+              <ArrowLeft className="h-3.5 w-3.5" /> Back to Prospects
+            </Link>
+            <div className="rounded-xl border border-border bg-card p-8 flex flex-col items-center gap-3">
+              <Loader2 className="h-5 w-5 animate-spin text-primary" />
+              <p className="text-sm text-muted-foreground">Loading prospect dossier...</p>
+              <p className="text-xs text-muted-foreground/60">Your personalized data is still generating.</p>
+            </div>
+          </div>
+        </DashboardLayout>
+      </IntelligenceLoader>
+    );
+  }
+
   if (!prospect) return <Navigate to="/prospects" replace />;
 
   const industry = industries.find(i => i.id === prospect.industryId);
