@@ -1,5 +1,6 @@
-import { useState, useMemo, useCallback } from "react";
-import { Brain, Users, Zap, TrendingUp, TrendingDown, Minus, Lock, ArrowRight, ChevronDown, ChevronUp, Bot, User, Handshake, BarChart3, Sparkles, Loader2, RefreshCw } from "lucide-react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { Brain, Users, Zap, TrendingUp, TrendingDown, Minus, Lock, ArrowRight, ChevronDown, ChevronUp, Bot, User, Handshake, BarChart3, Sparkles, Loader2, RefreshCw, CheckCircle2 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useIntelligence } from "@/contexts/IntelligenceContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -199,6 +200,29 @@ export default function AIImpactDashboard() {
   const [aiImpactData, setAiImpactData] = useState<AIImpactAnalysis[]>([]);
   const [generating, setGenerating] = useState(false);
   const [genError, setGenError] = useState<string | null>(null);
+  const [genStep, setGenStep] = useState(0);
+  const stepTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const genSteps = [
+    { label: "Gathering data from 2,050+ digital intelligence data points", duration: 6000 },
+    { label: "Analyzing AI impact across industry functions & value chains", duration: 12000 },
+    { label: "Scoring impact & generating personalized insights", duration: 8000 },
+  ];
+
+  // Simulated step progression during generation
+  useEffect(() => {
+    if (!generating) {
+      setGenStep(0);
+      if (stepTimerRef.current) clearTimeout(stepTimerRef.current);
+      return;
+    }
+    if (genStep < genSteps.length - 1) {
+      stepTimerRef.current = setTimeout(() => {
+        setGenStep((s) => Math.min(s + 1, genSteps.length - 1));
+      }, genSteps[genStep].duration);
+    }
+    return () => { if (stepTimerRef.current) clearTimeout(stepTimerRef.current); };
+  }, [generating, genStep]);
 
   // Use data from context if available, otherwise use local state
   const effectiveAiImpact = useMemo(() => {
@@ -402,34 +426,71 @@ export default function AIImpactDashboard() {
         ) : (
           /* Empty state — no AI impact data yet */
           <div className="rounded-lg border border-dashed border-border bg-card p-10 text-center">
-            <Brain className="mx-auto h-10 w-10 text-primary/30" />
-            <h3 className="mt-3 text-sm font-semibold text-foreground">
-              {generating ? "Generating AI Impact Analysis..." : genError ? "Generation Failed" : "AI Impact Analysis Available"}
-            </h3>
-            <p className="mt-1.5 text-xs text-muted-foreground max-w-sm mx-auto">
-              {generating
-                ? "Analyzing AI's impact across your industries. This takes 15-30 seconds..."
-                : genError
-                ? genError
-                : "Click below to analyze how AI is transforming your target industries — where it's creating opportunity and where humans remain essential."}
-            </p>
-            <button
-              onClick={generateAiImpact}
-              disabled={generating || data.industries.length === 0}
-              className="mt-4 inline-flex items-center gap-2 rounded-md bg-gradient-to-r from-brand-blue to-brand-purple px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-            >
-              {generating ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Analyzing...
-                </>
-              ) : (
-                <>
+            {generating ? (
+              <div className="max-w-md mx-auto space-y-6">
+                <div className="relative">
+                  <div className="h-16 w-16 mx-auto rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground">Generating AI Impact Analysis</h3>
+                  <p className="mt-1 text-[11px] text-muted-foreground">
+                    Analyzing {data.industries.length} {data.industries.length === 1 ? "industry" : "industries"} across 2,050+ data points
+                  </p>
+                </div>
+
+                {/* Progress bar */}
+                <Progress value={((genStep + 1) / genSteps.length) * 100} className="h-2" />
+
+                {/* Step indicators */}
+                <div className="space-y-3 text-left">
+                  {genSteps.map((step, i) => {
+                    const isActive = genStep === i;
+                    const isDone = genStep > i;
+                    return (
+                      <div key={i} className={`flex items-start gap-3 rounded-md px-3 py-2 transition-colors ${isActive ? "bg-primary/5 border border-primary/20" : ""}`}>
+                        <div className="mt-0.5 shrink-0">
+                          {isDone ? (
+                            <CheckCircle2 className="h-4 w-4 text-green-500" />
+                          ) : isActive ? (
+                            <Loader2 className="h-4 w-4 text-primary animate-spin" />
+                          ) : (
+                            <div className="h-4 w-4 rounded-full border-2 border-muted-foreground/30" />
+                          )}
+                        </div>
+                        <div>
+                          <span className={`text-xs font-medium ${isActive ? "text-foreground" : isDone ? "text-muted-foreground" : "text-muted-foreground/50"}`}>
+                            Step {i + 1} of {genSteps.length}
+                          </span>
+                          <p className={`text-[11px] ${isActive ? "text-foreground" : isDone ? "text-muted-foreground" : "text-muted-foreground/50"}`}>
+                            {step.label}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : (
+              <>
+                <Brain className="mx-auto h-10 w-10 text-primary/30" />
+                <h3 className="mt-3 text-sm font-semibold text-foreground">
+                  {genError ? "Generation Failed" : "AI Impact Analysis Available"}
+                </h3>
+                <p className="mt-1.5 text-xs text-muted-foreground max-w-sm mx-auto">
+                  {genError
+                    ? genError
+                    : "Click below to analyze how AI is transforming your target industries — where it's creating opportunity and where humans remain essential."}
+                </p>
+                <button
+                  onClick={generateAiImpact}
+                  disabled={data.industries.length === 0}
+                  className="mt-4 inline-flex items-center gap-2 rounded-md bg-gradient-to-r from-brand-blue to-brand-purple px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+                >
                   <Sparkles className="h-4 w-4" />
                   {genError ? "Try Again" : "Generate AI Impact Analysis"}
-                </>
-              )}
-            </button>
+                </button>
+              </>
+            )}
           </div>
         )}
       </div>
