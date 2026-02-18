@@ -47,11 +47,35 @@ serve(async (req) => {
       const { data: profiles } = await supabase.from("profiles").select("*");
       const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
 
+      // Fetch current Stripe subscriptions for each user to determine tier
+      const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", { apiVersion: "2025-08-27.basil" });
+      const emailToProductId = new Map<string, string | null>();
+
+      for (const u of users.users) {
+        if (!u.email) continue;
+        try {
+          const customers = await stripe.customers.list({ email: u.email, limit: 1 });
+          if (customers.data.length > 0) {
+            const subs = await stripe.subscriptions.list({ customer: customers.data[0].id, status: "active", limit: 1 });
+            const trialSubs = subs.data.length === 0
+              ? await stripe.subscriptions.list({ customer: customers.data[0].id, status: "trialing", limit: 1 })
+              : { data: [] };
+            const activeSub = subs.data[0] || trialSubs.data[0];
+            if (activeSub) {
+              emailToProductId.set(u.email, activeSub.items.data[0]?.price?.product as string || null);
+            }
+          }
+        } catch (e) {
+          console.error(`Error fetching Stripe data for ${u.email}:`, e);
+        }
+      }
+
       const result = users.users.map((u: any) => ({
         id: u.id,
         email: u.email,
         created_at: u.created_at,
         profile: profileMap.get(u.id) || null,
+        product_id: emailToProductId.get(u.email) || null,
       }));
 
       return new Response(JSON.stringify({ users: result }), {
