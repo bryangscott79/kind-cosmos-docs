@@ -7,6 +7,7 @@ import SignalCard from "@/components/SignalCard";
 import IntelligenceLoader from "@/components/IntelligenceLoader";
 import { useIntelligence } from "@/contexts/IntelligenceContext";
 import { getScoreColorHsl, getTrendIcon } from "@/data/mockData";
+import AskArgus from "@/components/AskArgus";
 import { XAxis, YAxis, ResponsiveContainer, Tooltip, Area, AreaChart } from "recharts";
 
 const scoreFactors = [
@@ -144,6 +145,12 @@ export default function IndustryDetail() {
                 </div>
               )}
             </div>
+
+            <AskArgus
+              context={`Industry: ${industry.name}\nHealth Score: ${industry.healthScore}/100\nTrend: ${industry.trendDirection}\nActive Signals: ${relatedSignals.length} (${relatedSignals.filter(s => s.severity >= 4).length} high-severity)\nProspects: ${relatedProspects.length} in pipeline\nTop Prospects: ${relatedProspects.slice(0, 3).map(p => `${p.companyName} (Score: ${p.vigylScore})`).join(", ")}\n${impactData ? `AI Automation Rate: ${impactData.automationRate}%\nAI-Led Functions: ${impactData.aiLedFunctions.length}\nCollaborative Functions: ${impactData.collaborativeFunctions.length}\nHuman-Led Functions: ${impactData.humanLedFunctions.length}\nOpportunity Index: ${impactData.collaborativeOpportunityIndex}` : "AI Impact: Not yet analyzed"}\nSeller Insight: ${sellerInsight.summary}`}
+              label={industry.name}
+              greeting={`I'm looking at ${industry.name} (Health Score: ${industry.healthScore}). There are ${relatedSignals.length} active signals and ${relatedProspects.length} prospects in your pipeline. What would you like to explore?`}
+            />
 
             {/* AI Impact snapshot */}
             {impactData && (

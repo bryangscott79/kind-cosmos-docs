@@ -7,6 +7,7 @@ import { useIntelligence } from "@/contexts/IntelligenceContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import AskArgus from "@/components/AskArgus";
 
 interface ProspectCardProps {
   prospect: Prospect;
@@ -319,9 +320,12 @@ export default function ProspectCard({ prospect }: ProspectCardProps) {
         <Link to={`/outreach?prospect=${prospect.id}`} className="flex-1 rounded-md bg-primary px-3 py-1.5 text-center text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90">
           Generate Outreach
         </Link>
-        <button className="rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent transition-colors">
-          Add to Pipeline
-        </button>
+        <AskArgus
+          compact
+          context={`Prospect: ${prospect.companyName}\nIndustry: ${industry?.name || "Unknown"}\nVIGYL Score: ${prospect.vigylScore}/100\nRevenue: ${prospect.annualRevenue}\nEmployees: ${prospect.employeeCount.toLocaleString()}\nLocation: ${prospect.location.city}, ${prospect.location.state}\nPipeline Stage: ${prospect.pipelineStage}\nPressure Response: ${getPressureLabel(prospect.pressureResponse)}\nWhy Now: ${prospect.whyNow}\nDecision Makers: ${prospect.decisionMakers.map(d => `${d.name} (${d.title})`).join(", ")}\nNotes: ${prospect.notes || "None"}`}
+          label={prospect.companyName}
+          greeting={`I'm looking at ${prospect.companyName} (VIGYL Score: ${prospect.vigylScore}). They're a ${prospect.annualRevenue} company in ${industry?.name || "their industry"} with ${prospect.employeeCount.toLocaleString()} employees. What would you like to explore — outreach strategy, competitive angles, decision maker research, or something else?`}
+        />
       </div>
     </div>
   );

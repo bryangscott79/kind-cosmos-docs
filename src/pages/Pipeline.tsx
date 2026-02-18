@@ -13,6 +13,7 @@ import {
   getScoreColor, getPressureColor, getPressureLabel,
   pipelineStageLabels, PipelineStage, Prospect, Industry, Signal
 } from "@/data/mockData";
+import AskArgus from "@/components/AskArgus";
 
 const stageOrder: PipelineStage[] = ["researching", "contacted", "meeting_scheduled", "proposal_sent", "won", "lost"];
 
@@ -260,6 +261,11 @@ function PipelineCard({
             <Link to="/signals" className="inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1.5 text-[10px] font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
               <Radio className="h-3 w-3" /> View Signals
             </Link>
+            <AskArgus
+              compact
+              context={`Prospect: ${prospect.companyName}\nIndustry: ${industry?.name || "Unknown"}\nVIGYL Score: ${prospect.vigylScore}\nRevenue: ${prospect.annualRevenue}\nEmployees: ${prospect.employeeCount.toLocaleString()}\nLocation: ${prospect.location.city}, ${prospect.location.state}\nPipeline Stage: ${pipelineStageLabels[prospect.pipelineStage]}\nPressure Response: ${getPressureLabel(prospect.pressureResponse)}\nWhy Now: ${prospect.whyNow}\nDecision Makers: ${prospect.decisionMakers.map(d => `${d.name} (${d.title})`).join(", ")}\nNotes: ${prospect.notes || "None"}\nRelated Signals: ${relatedSignals.map(s => s.title).join(", ") || "None"}`}
+              label={prospect.companyName}
+            />
           </div>
         </div>
       )}

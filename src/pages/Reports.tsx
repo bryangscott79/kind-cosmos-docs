@@ -15,6 +15,7 @@ import {
   Industry, Signal, Prospect, AIImpactAnalysis,
   getScoreColorHsl, getPressureLabel, pipelineStageLabels, getSignalTypeLabel
 } from "@/data/mockData";
+import AskArgus from "@/components/AskArgus";
 
 // ─── Report type config ───
 const reportTypes = [
@@ -606,6 +607,12 @@ export default function Reports() {
                 <h1 className="text-lg font-bold text-foreground">{viewingReport.title}</h1>
                 <p className="text-[10px] text-muted-foreground mt-1">Generated {new Date(viewingReport.createdAt).toLocaleString()}</p>
               </div>
+              <AskArgus
+                context={`Report: ${viewingReport.title}\nType: ${viewingReport.type}\nGenerated: ${new Date(viewingReport.createdAt).toLocaleString()}\n\nThis is a ${viewingReport.type.replace(/_/g, " ")} report from the VIGYL platform. The user is viewing this report and may want to discuss strategy, drill deeper into specific findings, or get actionable next steps.`}
+                label={viewingReport.title}
+                greeting={`I can see your ${viewingReport.title.split(":")[0]}. What would you like to dig into? I can help with strategy, talking points, competitive angles, or next steps.`}
+                compact
+              />
             </div>
             <div className="rounded-xl border border-border bg-card p-6">
               {viewingReport.content}

@@ -5,6 +5,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { IntelligenceProvider } from "@/contexts/IntelligenceContext";
+import { ArgusProvider } from "@/contexts/ArgusContext";
+import ArgusChat from "@/components/ArgusChat";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import TierGate from "@/components/TierGate";
 import Landing from "./pages/Landing";
@@ -33,6 +35,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <IntelligenceProvider>
+            <ArgusProvider>
             <Routes>
               <Route path="/" element={<Landing />} />
               <Route path="/auth" element={<Auth />} />
@@ -50,6 +53,8 @@ const App = () => (
               <Route path="/admin" element={<Admin />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
+            <ArgusChat />
+            </ArgusProvider>
           </IntelligenceProvider>
         </AuthProvider>
       </BrowserRouter>

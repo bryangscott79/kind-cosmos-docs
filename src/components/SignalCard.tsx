@@ -6,6 +6,7 @@ import { Bookmark, BookmarkCheck, ChevronDown, ChevronRight, ExternalLink, Link2
 import { useSavedSignals } from "@/hooks/useSavedSignals";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIntelligence } from "@/contexts/IntelligenceContext";
+import AskArgus from "@/components/AskArgus";
 
 interface SignalCardProps {
   signal: Signal;
@@ -266,6 +267,14 @@ export default function SignalCard({ signal }: SignalCardProps) {
                   View AI Impact on {industryNames[0] || "Industry"}
                 </button>
               )}
+              <div onClick={(e) => e.stopPropagation()}>
+                <AskArgus
+                  compact
+                  context={`Signal: ${signal.title}\nType: ${getSignalTypeLabel(signal.signalType)}\nSeverity: ${signal.severity}/5\nSentiment: ${signal.sentiment}\nIndustries: ${industryNames.join(", ")}\nSummary: ${signal.summary}\nSales Implication: ${signal.salesImplication}\nPublished: ${signal.publishedAt}`}
+                  label={signal.title}
+                  greeting={`I'm looking at the signal "${signal.title}" (severity ${signal.severity}/5, ${signal.sentiment}). This affects ${industryNames.join(" and ")}. What would you like to know — how to act on this, which prospects to contact, or how this connects to other market movements?`}
+                />
+              </div>
             </div>
           )}
           {signal.sources?.length > 0 && (
