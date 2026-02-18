@@ -40,11 +40,14 @@ export type Database = {
       }
       profiles: {
         Row: {
+          ai_maturity_self: string | null
           ai_summary: string | null
           business_summary: string | null
           company_name: string | null
           company_size: string | null
           created_at: string
+          customer_industries: string[] | null
+          entity_type: string | null
           id: string
           location_city: string | null
           location_country: string | null
@@ -54,14 +57,18 @@ export type Database = {
           target_industries: string[] | null
           updated_at: string
           user_id: string
+          user_persona: string | null
           website_url: string | null
         }
         Insert: {
+          ai_maturity_self?: string | null
           ai_summary?: string | null
           business_summary?: string | null
           company_name?: string | null
           company_size?: string | null
           created_at?: string
+          customer_industries?: string[] | null
+          entity_type?: string | null
           id?: string
           location_city?: string | null
           location_country?: string | null
@@ -71,14 +78,18 @@ export type Database = {
           target_industries?: string[] | null
           updated_at?: string
           user_id: string
+          user_persona?: string | null
           website_url?: string | null
         }
         Update: {
+          ai_maturity_self?: string | null
           ai_summary?: string | null
           business_summary?: string | null
           company_name?: string | null
           company_size?: string | null
           created_at?: string
+          customer_industries?: string[] | null
+          entity_type?: string | null
           id?: string
           location_city?: string | null
           location_country?: string | null
@@ -88,6 +99,7 @@ export type Database = {
           target_industries?: string[] | null
           updated_at?: string
           user_id?: string
+          user_persona?: string | null
           website_url?: string | null
         }
         Relationships: []
