@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
-import { TIERS, TierKey } from "@/lib/tiers";
+import { TIERS, TierKey, getTierFromProductId } from "@/lib/tiers";
 import { Loader2, Shield, Crown, ArrowUpDown, UserPlus, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -13,6 +13,7 @@ interface AdminUser {
   id: string;
   email: string;
   created_at: string;
+  product_id: string | null;
   profile: {
     company_name: string | null;
     onboarding_completed: boolean;
@@ -61,6 +62,8 @@ export default function Admin() {
       });
       if (error) throw error;
       toast({ title: "Tier updated", description: `${userEmail} set to ${tierConfig.name}` });
+      // Refetch users to update displayed tiers
+      await fetchUsers();
       // If updating own user, refresh subscription state
       if (user?.email === userEmail) {
         await refreshSubscription();
@@ -161,24 +164,30 @@ export default function Admin() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1.5">
-                        {tierKeys.map((tk) => (
-                          <button
-                            key={tk}
-                            onClick={() => setTier(user.email, tk)}
-                            disabled={updating === user.email}
-                            className={`rounded px-2.5 py-1 text-xs font-medium transition-colors ${
-                              tk === "free"
-                                ? "bg-secondary text-muted-foreground hover:text-foreground"
-                                : "bg-primary/10 text-primary hover:bg-primary/20"
-                            } disabled:opacity-50`}
-                          >
-                            {updating === user.email ? (
-                              <Loader2 className="h-3 w-3 animate-spin" />
-                            ) : (
-                              TIERS[tk].name
-                            )}
-                          </button>
-                        ))}
+                        {tierKeys.map((tk) => {
+                          const userTier = getTierFromProductId(user.product_id);
+                          const isActive = tk === userTier;
+                          return (
+                            <button
+                              key={tk}
+                              onClick={() => setTier(user.email, tk)}
+                              disabled={updating === user.email}
+                              className={`rounded px-2.5 py-1 text-xs font-medium transition-colors ${
+                                isActive
+                                  ? "bg-primary text-primary-foreground ring-2 ring-primary/30"
+                                  : tk === "free"
+                                    ? "bg-secondary text-muted-foreground hover:text-foreground"
+                                    : "bg-primary/10 text-primary hover:bg-primary/20"
+                              } disabled:opacity-50`}
+                            >
+                              {updating === user.email ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                              ) : (
+                                TIERS[tk].name
+                              )}
+                            </button>
+                          );
+                        })}
                       </div>
                     </td>
                   </tr>
