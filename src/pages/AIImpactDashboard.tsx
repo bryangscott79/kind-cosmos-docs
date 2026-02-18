@@ -1,5 +1,5 @@
-import { useState, useMemo, useCallback } from "react";
-import { Brain, Users, Zap, TrendingUp, TrendingDown, Minus, Lock, ArrowRight, ChevronDown, ChevronUp, Bot, User, Handshake, BarChart3, Sparkles, Loader2, RefreshCw, CheckCircle2 } from "lucide-react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { Brain, Users, Zap, TrendingUp, TrendingDown, Minus, Lock, ArrowRight, ChevronDown, ChevronUp, Bot, User, Handshake, BarChart3, Sparkles, Loader2, RefreshCw, CheckCircle2, Search, Play } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useIntelligence } from "@/contexts/IntelligenceContext";
@@ -172,21 +172,43 @@ function IndustrySelector({
   selectedId: string;
   onSelect: (id: string) => void;
 }) {
+  const [search, setSearch] = useState("");
+  const filtered = search.trim()
+    ? industries.filter((i) => i.name.toLowerCase().includes(search.toLowerCase()))
+    : industries;
+
   return (
-    <div className="flex gap-2 overflow-x-auto pb-2">
-      {industries.map((ind) => (
-        <button
-          key={ind.id}
-          onClick={() => onSelect(ind.id)}
-          className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
-            selectedId === ind.id
-              ? "border-primary bg-primary/10 text-foreground"
-              : "border-border bg-card text-muted-foreground hover:border-primary/30"
-          }`}
-        >
-          {ind.name}
-        </button>
-      ))}
+    <div className="space-y-2">
+      {industries.length > 3 && (
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Filter industries..."
+            className="w-full rounded-md border border-border bg-card pl-8 pr-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+          />
+        </div>
+      )}
+      <div className="flex gap-2 overflow-x-auto pb-2 flex-wrap">
+        {filtered.map((ind) => (
+          <button
+            key={ind.id}
+            onClick={() => onSelect(ind.id)}
+            className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+              selectedId === ind.id
+                ? "border-primary bg-primary/10 text-foreground"
+                : "border-border bg-card text-muted-foreground hover:border-primary/30"
+            }`}
+          >
+            {ind.name}
+          </button>
+        ))}
+        {filtered.length === 0 && (
+          <span className="text-xs text-muted-foreground italic py-1">No industries match "{search}"</span>
+        )}
+      </div>
     </div>
   );
 }
@@ -201,6 +223,7 @@ export default function AIImpactDashboard() {
   const [generating, setGenerating] = useState(false);
   const [genError, setGenError] = useState<string | null>(null);
   const [genProgress, setGenProgress] = useState({ current: 0, total: 0, industryName: "" });
+  const abortRef = useRef(false);
 
   // Use data from context if available, otherwise use local state
   const effectiveAiImpact = useMemo(() => {
@@ -209,42 +232,56 @@ export default function AIImpactDashboard() {
     return [];
   }, [aiImpactData, data.aiImpact]);
 
-  const generateAiImpact = useCallback(async () => {
-    if (data.industries.length === 0) return;
+  // Detect which industries are missing from existing results
+  const missingIndustries = useMemo(() => {
+    if (data.industries.length === 0) return [];
+    const existingIds = new Set(effectiveAiImpact.map((a) => a.industryId));
+    return data.industries
+      .map((i) => ({ id: i.id, name: i.name }))
+      .filter((i) => !existingIds.has(i.id));
+  }, [data.industries, effectiveAiImpact]);
+
+  const generateAiImpact = useCallback(async (industriesToProcess?: { id: string; name: string }[]) => {
+    const industries = industriesToProcess || data.industries.map((i) => ({ id: i.id, name: i.name }));
+    if (industries.length === 0) return;
+
+    abortRef.current = false;
     setGenerating(true);
     setGenError(null);
-    setAiImpactData([]);
+    // If doing a full refresh, clear; if resuming, keep existing
+    if (!industriesToProcess) setAiImpactData([]);
 
-    const industries = data.industries.map((i) => ({ id: i.id, name: i.name }));
     const total = industries.length;
-    const results: AIImpactAnalysis[] = [];
+    const results: AIImpactAnalysis[] = industriesToProcess ? [...effectiveAiImpact] : [];
 
     for (let idx = 0; idx < total; idx++) {
+      if (abortRef.current) break;
       const ind = industries[idx];
       setGenProgress({ current: idx + 1, total, industryName: ind.name });
 
       try {
-        // On the last industry, pass all results so the edge function caches them
-        const isLast = idx === total - 1;
         const { data: result, error } = await supabase.functions.invoke("generate-ai-impact", {
           body: {
             industry: ind,
             profile: profile || {},
-            ...(isLast ? { saveToCache: results.concat() } : {}),
           },
         });
 
+        if (abortRef.current) break;
         if (error) throw new Error(error.message);
         if (!result?.success) throw new Error(result?.error || `Failed for ${ind.name}`);
 
-        results.push(result.data);
-        // Update state so results appear immediately
+        // Add or replace in results array
+        const existingIdx = results.findIndex((r) => r.industryId === result.data.industryId);
+        if (existingIdx >= 0) {
+          results[existingIdx] = result.data;
+        } else {
+          results.push(result.data);
+        }
         setAiImpactData([...results]);
-        // Auto-select first result
-        if (idx === 0) setSelectedIndustryId(result.data.industryId);
+        if (!selectedIndustryId || idx === 0) setSelectedIndustryId(result.data.industryId);
       } catch (err: any) {
         console.error(`AI impact error for ${ind.name}:`, err);
-        // Continue with remaining industries instead of failing entirely
       }
     }
 
@@ -252,7 +289,12 @@ export default function AIImpactDashboard() {
       setGenError("Failed to generate AI impact analysis. Please try again.");
     }
     setGenerating(false);
-  }, [data.industries, profile]);
+  }, [data.industries, profile, effectiveAiImpact, selectedIndustryId]);
+
+  // Cleanup: abort on unmount so we don't try to setState after unmount
+  useEffect(() => {
+    return () => { abortRef.current = true; };
+  }, []);
 
   // Set default selection
   const effectiveSelected = selectedIndustryId || (effectiveAiImpact.length > 0 ? effectiveAiImpact[0].industryId : "");
@@ -293,7 +335,7 @@ export default function AIImpactDashboard() {
           </div>
           {effectiveAiImpact.length > 0 && (
             <button
-              onClick={generateAiImpact}
+              onClick={() => generateAiImpact()}
               disabled={generating}
               className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors disabled:opacity-50"
             >
@@ -310,6 +352,25 @@ export default function AIImpactDashboard() {
             selectedId={effectiveSelected}
             onSelect={setSelectedIndustryId}
           />
+        )}
+
+        {/* Resume banner for missing industries */}
+        {!generating && missingIndustries.length > 0 && effectiveAiImpact.length > 0 && (
+          <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 min-w-0">
+              <Play className="h-4 w-4 text-primary shrink-0" />
+              <span className="text-xs text-muted-foreground">
+                <span className="font-medium text-foreground">{missingIndustries.length}</span> {missingIndustries.length === 1 ? "industry" : "industries"} remaining
+              </span>
+            </div>
+            <button
+              onClick={() => generateAiImpact(missingIndustries)}
+              className="shrink-0 inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90 transition-opacity"
+            >
+              <Sparkles className="h-3 w-3" />
+              Continue Analyzing
+            </button>
+          </div>
         )}
 
         {/* Zone Legend */}
@@ -492,7 +553,7 @@ export default function AIImpactDashboard() {
                     : "Click below to analyze how AI is transforming your target industries — where it's creating opportunity and where humans remain essential."}
                 </p>
                 <button
-                  onClick={generateAiImpact}
+                  onClick={() => generateAiImpact()}
                   disabled={data.industries.length === 0}
                   className="mt-4 inline-flex items-center gap-2 rounded-md bg-gradient-to-r from-brand-blue to-brand-purple px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
                 >
