@@ -1,11 +1,10 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useState, useMemo } from "react";
 import { Brain, Users, Zap, TrendingUp, TrendingDown, Minus, Lock, ArrowRight, ChevronDown, ChevronUp, Bot, User, Handshake, BarChart3, Sparkles, Loader2, RefreshCw, CheckCircle2, Search, Play } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useIntelligence } from "@/contexts/IntelligenceContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { hasAccess } from "@/lib/tiers";
-import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import type { AIZone, AIFunction, ValueChainNode, AIImpactAnalysis } from "@/data/mockData";
 import { getZoneLabel, getZoneBgColor, getZoneColor } from "@/data/mockData";
@@ -214,23 +213,16 @@ function IndustrySelector({
 }
 
 export default function AIImpactDashboard() {
-  const { data, loading } = useIntelligence();
-  const { tier, profile } = useAuth();
+  const { data, loading, aiImpactGen, generateAiImpact } = useIntelligence();
+  const { tier } = useAuth();
   const canViewFull = hasAccess(tier, "starter");
 
   const [selectedIndustryId, setSelectedIndustryId] = useState<string>("");
-  const [aiImpactData, setAiImpactData] = useState<AIImpactAnalysis[]>([]);
-  const [generating, setGenerating] = useState(false);
-  const [genError, setGenError] = useState<string | null>(null);
-  const [genProgress, setGenProgress] = useState({ current: 0, total: 0, industryName: "" });
-  const abortRef = useRef(false);
 
-  // Use data from context if available, otherwise use local state
-  const effectiveAiImpact = useMemo(() => {
-    if (aiImpactData.length > 0) return aiImpactData;
-    if (data.aiImpact && data.aiImpact.length > 0) return data.aiImpact;
-    return [];
-  }, [aiImpactData, data.aiImpact]);
+  const effectiveAiImpact = data.aiImpact || [];
+  const generating = aiImpactGen.generating;
+  const genProgress = aiImpactGen.progress;
+  const genError = aiImpactGen.error;
 
   // Detect which industries are missing from existing results
   const missingIndustries = useMemo(() => {
@@ -240,61 +232,6 @@ export default function AIImpactDashboard() {
       .map((i) => ({ id: i.id, name: i.name }))
       .filter((i) => !existingIds.has(i.id));
   }, [data.industries, effectiveAiImpact]);
-
-  const generateAiImpact = useCallback(async (industriesToProcess?: { id: string; name: string }[]) => {
-    const industries = industriesToProcess || data.industries.map((i) => ({ id: i.id, name: i.name }));
-    if (industries.length === 0) return;
-
-    abortRef.current = false;
-    setGenerating(true);
-    setGenError(null);
-    // If doing a full refresh, clear; if resuming, keep existing
-    if (!industriesToProcess) setAiImpactData([]);
-
-    const total = industries.length;
-    const results: AIImpactAnalysis[] = industriesToProcess ? [...effectiveAiImpact] : [];
-
-    for (let idx = 0; idx < total; idx++) {
-      if (abortRef.current) break;
-      const ind = industries[idx];
-      setGenProgress({ current: idx + 1, total, industryName: ind.name });
-
-      try {
-        const { data: result, error } = await supabase.functions.invoke("generate-ai-impact", {
-          body: {
-            industry: ind,
-            profile: profile || {},
-          },
-        });
-
-        if (abortRef.current) break;
-        if (error) throw new Error(error.message);
-        if (!result?.success) throw new Error(result?.error || `Failed for ${ind.name}`);
-
-        // Add or replace in results array
-        const existingIdx = results.findIndex((r) => r.industryId === result.data.industryId);
-        if (existingIdx >= 0) {
-          results[existingIdx] = result.data;
-        } else {
-          results.push(result.data);
-        }
-        setAiImpactData([...results]);
-        if (!selectedIndustryId || idx === 0) setSelectedIndustryId(result.data.industryId);
-      } catch (err: any) {
-        console.error(`AI impact error for ${ind.name}:`, err);
-      }
-    }
-
-    if (results.length === 0) {
-      setGenError("Failed to generate AI impact analysis. Please try again.");
-    }
-    setGenerating(false);
-  }, [data.industries, profile, effectiveAiImpact, selectedIndustryId]);
-
-  // Cleanup: abort on unmount so we don't try to setState after unmount
-  useEffect(() => {
-    return () => { abortRef.current = true; };
-  }, []);
 
   // Set default selection
   const effectiveSelected = selectedIndustryId || (effectiveAiImpact.length > 0 ? effectiveAiImpact[0].industryId : "");
@@ -529,9 +466,9 @@ export default function AIImpactDashboard() {
                 </div>
 
                 {/* Completed industries */}
-                {aiImpactData.length > 0 && (
+                {effectiveAiImpact.length > 0 && (
                   <div className="space-y-2 text-left">
-                    {aiImpactData.map((a, i) => (
+                    {effectiveAiImpact.map((a, i) => (
                       <div key={i} className="flex items-center gap-2 rounded-md bg-primary/5 px-3 py-2">
                         <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
                         <span className="text-xs text-foreground">{a.industryName}</span>
