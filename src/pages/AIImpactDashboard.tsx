@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Brain, Bot, User, Handshake, Sparkles, Loader2, RefreshCw,
@@ -12,7 +12,6 @@ import IntelligenceLoader from "@/components/IntelligenceLoader";
 import { useIntelligence } from "@/contexts/IntelligenceContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { hasAccess } from "@/lib/tiers";
-import { supabase } from "@/integrations/supabase/client";
 import type { AIZone, AIFunction, AIImpactAnalysis, Signal, Prospect, Industry } from "@/data/mockData";
 
 const ZONE_CONFIG: Record<AIZone, { label: string; color: string; bg: string; border: string; icon: typeof Bot; accent: string }> = {
@@ -556,22 +555,23 @@ function CompareView({ left, right, onBack, onSwap }: { left: AIImpactAnalysis; 
 
 export default function AIImpactDashboard() {
   const { data } = useIntelligence();
-  const { tier, profile } = useAuth();
+  const { tier } = useAuth();
   const canViewFull = hasAccess(tier, "starter");
   const [view, setView] = useState<ViewState>("overview");
   const [selectedId, setSelectedId] = useState<string>("");
   const [compareIds, setCompareIds] = useState<[string, string]>(["", ""]);
   const [isCompareMode, setIsCompareMode] = useState(false);
   const [searchFilter, setSearchFilter] = useState("");
-  const [aiImpactData, setAiImpactData] = useState<AIImpactAnalysis[]>([]);
-  const [generating, setGenerating] = useState(false);
-  const [genError, setGenError] = useState<string | null>(null);
+
+  // Use context's AI impact data and generation (handles one-at-a-time edge function calls)
+  const { aiImpactGen, generateAiImpact } = useIntelligence();
+  const generating = aiImpactGen.generating;
+  const genError = aiImpactGen.error;
 
   const effectiveAiImpact = useMemo(() => {
-    if (aiImpactData.length > 0) return aiImpactData;
     if (data.aiImpact && data.aiImpact.length > 0) return data.aiImpact;
     return [];
-  }, [aiImpactData, data.aiImpact]);
+  }, [data.aiImpact]);
 
   const filteredIndustries = useMemo(() => {
     if (!searchFilter) return effectiveAiImpact;
@@ -581,21 +581,6 @@ export default function AIImpactDashboard() {
   const selectedAnalysis = effectiveAiImpact.find((a) => a.industryId === selectedId);
   const compareLeft = effectiveAiImpact.find((a) => a.industryId === compareIds[0]);
   const compareRight = effectiveAiImpact.find((a) => a.industryId === compareIds[1]);
-
-  const generateAiImpact = useCallback(async () => {
-    if (data.industries.length === 0) return;
-    setGenerating(true); setGenError(null);
-    try {
-      const { data: result, error } = await supabase.functions.invoke("generate-ai-impact", {
-        body: { industries: data.industries.map((i) => ({ id: i.id, name: i.name })), profile: profile || {} },
-      });
-      if (error) throw new Error(error.message);
-      if (!result?.success) throw new Error(result?.error || "Failed to generate");
-      setAiImpactData(result.data);
-    } catch (err: any) {
-      console.error("AI impact error:", err); setGenError(err.message || "Generation failed");
-    } finally { setGenerating(false); }
-  }, [data.industries, profile]);
 
   const handleIndustryClick = (id: string) => {
     if (isCompareMode) {
@@ -626,7 +611,7 @@ export default function AIImpactDashboard() {
                 </p>
               </div>
               {effectiveAiImpact.length > 0 && (
-                <button onClick={generateAiImpact} disabled={generating}
+                <button onClick={() => generateAiImpact()} disabled={generating}
                   className="shrink-0 inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors disabled:opacity-50">
                   {generating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}Refresh
                 </button>
@@ -640,11 +625,20 @@ export default function AIImpactDashboard() {
                   {generating ? "Analyzing Your Industries..." : genError ? "Generation Failed" : "Ready to Analyze"}
                 </h3>
                 <p className="mt-2 text-sm text-muted-foreground max-w-md mx-auto">
-                  {generating ? "Mapping AI impact across your industries. This takes 15-30 seconds..."
+                  {generating
+                    ? `Processing ${aiImpactGen.progress.current} of ${aiImpactGen.progress.total}: ${aiImpactGen.progress.industryName}...`
                     : genError ? genError
                     : `We'll analyze ${data.industries.length} industries to show where AI creates opportunity and where humans remain essential.`}
                 </p>
-                <button onClick={generateAiImpact} disabled={generating || data.industries.length === 0}
+                {generating && aiImpactGen.progress.total > 0 && (
+                  <div className="mt-4 mx-auto max-w-xs">
+                    <div className="h-1.5 w-full rounded-full bg-secondary overflow-hidden">
+                      <div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${(aiImpactGen.progress.current / aiImpactGen.progress.total) * 100}%` }} />
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mt-1">{aiImpactGen.progress.current}/{aiImpactGen.progress.total} complete</p>
+                  </div>
+                )}
+                <button onClick={() => generateAiImpact()} disabled={generating || data.industries.length === 0}
                   className="mt-5 inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 px-6 py-3 text-sm font-semibold text-white transition-all hover:shadow-lg hover:shadow-violet-500/20 disabled:opacity-50">
                   {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
                   {genError ? "Try Again" : "Generate AI Impact Analysis"}
