@@ -68,7 +68,7 @@ serve(async (req) => {
     const personaContext = user_persona ? `\nUser Persona: ${user_persona}` : "";
     const maturityContext = ai_maturity_self ? `\nAI Maturity: ${ai_maturity_self}` : "";
 
-    const systemPrompt = `You are an elite B2B sales intelligence analyst with deep knowledge of EVERY industry globally. You track companies of all sizes from Fortune 500 to emerging startups across every sector. You generate realistic, actionable market intelligence. You also have deep expertise in AI's impact on industries — you understand which business functions are being automated, which remain human-essential, and where the collaborative opportunity zone exists. Today is ${today}.`;
+    const systemPrompt = `You are an elite B2B sales intelligence analyst with deep knowledge of EVERY industry globally. You track companies of all sizes from Fortune 500 to emerging startups across every sector. You generate realistic, actionable market intelligence. Today is ${today}.`;
 
     const userPrompt = `Generate comprehensive, personalized sales intelligence for this user:
 
@@ -135,9 +135,10 @@ Generate a LARGE volume of diverse prospects. The more the better.
    These MUST have location.state set to "${location_state || "GA"}" or neighboring states (SC, TN, AL, NC).
    
    **BATCH B — NATIONAL (10-15 prospects, scope: "national"):**
-   Companies in OTHER US states far from ${location_state || "GA"}. Use states like: California, New York, Texas, Illinois, Washington, Colorado, Massachusetts, Florida, Oregon, Minnesota, Arizona.
-   These MUST have location.country = "United States" and location.state != "${location_state || "GA"}".
-   Examples: a company in San Francisco CA, one in Austin TX, one in Chicago IL, one in Seattle WA, one in Boston MA, one in Miami FL, etc.
+   Companies in OTHER US states far from ${location_state || "GA"}. DO NOT use neighboring states (AL, FL, SC, NC, TN for GA users).
+   Use DISTANT states like: California, New York, Texas, Illinois, Washington, Colorado, Massachusetts, Oregon, Minnesota, Arizona, Michigan, Ohio, Pennsylvania, Virginia, Nevada.
+   These MUST have location.country = "United States" and location.state NOT "${location_state || "GA"}" and NOT any neighboring state.
+   Examples: a company in San Francisco CA, one in Austin TX, one in Chicago IL, one in Seattle WA, one in Boston MA, one in Denver CO, etc.
    
    **BATCH C — INTERNATIONAL (8-12 prospects, scope: "international"):**
    Companies in OTHER COUNTRIES. Use: United Kingdom, Germany, Japan, Canada, Australia, Brazil, Singapore, UAE, France, South Korea, Netherlands, India.
@@ -157,24 +158,7 @@ Generate a LARGE volume of diverse prospects. The more the better.
     - For each prospect, include 2-4 **recommended services** the user could sell
     - Annual revenue formats: "$2.3M", "$145M", "$3.8B", etc.
 
-Make everything specific to the user's business capabilities and geography. No generic examples. Think about what this specific company could ACTUALLY sell to each prospect.
-
-4. **AI Impact Analysis** — For EACH of the 10-14 industries above, generate an AI impact analysis:
-
-   For each industry, classify business functions into THREE ZONES:
-   - **AI-Led** (automation >60%): Functions where AI handles most of the work. These represent cost reduction and efficiency opportunities.
-   - **Human-Led** (automation <20%): Functions where humans remain essential — judgment, relationships, creativity, physical presence. These represent job security and human value.
-   - **Collaborative Edge** (automation 20-60%): The HIGHEST OPPORTUNITY ZONE. AI augments human capability. This is where the most value is created.
-
-   For each industry, provide:
-   - 2-4 functions per zone (ai_led, human_led, collaborative)
-   - Each function needs: name, description, automationLevel (0-100), zone, jobsAffected (array of role titles), opportunityType (cost_reduction/revenue_growth/efficiency/new_capability/risk_reduction), timeline (now/6_months/1_year/2_plus_years)
-   - An overall automationRate (0-100 for the industry)
-   - A jobDisplacementIndex (0-100, how many jobs are at risk)
-   - A humanResilienceScore (0-100, how resilient human roles are)
-   - A collaborativeOpportunityIndex (0-100, how much opportunity exists in the collaborative zone)
-   - A valueChain: array of 4-7 stages showing the industry value chain, each with: id, name, zone, automationLevel, aiTools (array of tool names), humanRoles (array of role titles), opportunity (one sentence)
-   - 4-8 KPIs: each with name, value (number), unit (%, $M, months, etc.), trend (up/down/stable), context (one sentence explaining significance)`;
+Make everything specific to the user's business capabilities and geography. No generic examples. Think about what this specific company could ACTUALLY sell to each prospect.`;
 
 
     const tools = [
@@ -309,107 +293,8 @@ Make everything specific to the user's business capabilities and geography. No g
                   additionalProperties: false,
                 },
               },
-              aiImpact: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    industryId: { type: "string" },
-                    industryName: { type: "string" },
-                    aiLedFunctions: {
-                      type: "array",
-                      items: {
-                        type: "object",
-                        properties: {
-                          name: { type: "string" },
-                          description: { type: "string" },
-                          automationLevel: { type: "number" },
-                          zone: { type: "string", enum: ["ai_led"] },
-                          jobsAffected: { type: "array", items: { type: "string" } },
-                          opportunityType: { type: "string", enum: ["cost_reduction", "revenue_growth", "efficiency", "new_capability", "risk_reduction"] },
-                          timeline: { type: "string", enum: ["now", "6_months", "1_year", "2_plus_years"] },
-                        },
-                        required: ["name", "description", "automationLevel", "zone", "jobsAffected", "opportunityType", "timeline"],
-                        additionalProperties: false,
-                      },
-                    },
-                    humanLedFunctions: {
-                      type: "array",
-                      items: {
-                        type: "object",
-                        properties: {
-                          name: { type: "string" },
-                          description: { type: "string" },
-                          automationLevel: { type: "number" },
-                          zone: { type: "string", enum: ["human_led"] },
-                          jobsAffected: { type: "array", items: { type: "string" } },
-                          opportunityType: { type: "string", enum: ["cost_reduction", "revenue_growth", "efficiency", "new_capability", "risk_reduction"] },
-                          timeline: { type: "string", enum: ["now", "6_months", "1_year", "2_plus_years"] },
-                        },
-                        required: ["name", "description", "automationLevel", "zone", "jobsAffected", "opportunityType", "timeline"],
-                        additionalProperties: false,
-                      },
-                    },
-                    collaborativeFunctions: {
-                      type: "array",
-                      items: {
-                        type: "object",
-                        properties: {
-                          name: { type: "string" },
-                          description: { type: "string" },
-                          automationLevel: { type: "number" },
-                          zone: { type: "string", enum: ["collaborative"] },
-                          jobsAffected: { type: "array", items: { type: "string" } },
-                          opportunityType: { type: "string", enum: ["cost_reduction", "revenue_growth", "efficiency", "new_capability", "risk_reduction"] },
-                          timeline: { type: "string", enum: ["now", "6_months", "1_year", "2_plus_years"] },
-                        },
-                        required: ["name", "description", "automationLevel", "zone", "jobsAffected", "opportunityType", "timeline"],
-                        additionalProperties: false,
-                      },
-                    },
-                    automationRate: { type: "number" },
-                    jobDisplacementIndex: { type: "number" },
-                    humanResilienceScore: { type: "number" },
-                    collaborativeOpportunityIndex: { type: "number" },
-                    valueChain: {
-                      type: "array",
-                      items: {
-                        type: "object",
-                        properties: {
-                          id: { type: "string" },
-                          name: { type: "string" },
-                          zone: { type: "string", enum: ["ai_led", "human_led", "collaborative"] },
-                          automationLevel: { type: "number" },
-                          aiTools: { type: "array", items: { type: "string" } },
-                          humanRoles: { type: "array", items: { type: "string" } },
-                          opportunity: { type: "string" },
-                        },
-                        required: ["id", "name", "zone", "automationLevel", "aiTools", "humanRoles", "opportunity"],
-                        additionalProperties: false,
-                      },
-                    },
-                    kpis: {
-                      type: "array",
-                      items: {
-                        type: "object",
-                        properties: {
-                          name: { type: "string" },
-                          value: { type: "number" },
-                          unit: { type: "string" },
-                          trend: { type: "string", enum: ["up", "down", "stable"] },
-                          context: { type: "string" },
-                        },
-                        required: ["name", "value", "unit", "trend", "context"],
-                        additionalProperties: false,
-                      },
-                    },
-                  },
-                  required: ["industryId", "industryName", "aiLedFunctions", "humanLedFunctions", "collaborativeFunctions", "automationRate", "jobDisplacementIndex", "humanResilienceScore", "collaborativeOpportunityIndex", "valueChain", "kpis"],
-                  additionalProperties: false,
-                },
-              },
             },
-            required: ["industries", "signals", "prospects", "aiImpact"],
+            required: ["industries", "signals", "prospects"],
             additionalProperties: false,
           },
         },
@@ -538,27 +423,28 @@ Make everything specific to the user's business capabilities and geography. No g
       };
     });
 
+    // Validate scope distribution — log warnings if skewed
+    const scopeCounts = { local: 0, national: 0, international: 0 };
+    intelligence.prospects.forEach((p: any) => {
+      if (p.scope in scopeCounts) scopeCounts[p.scope as keyof typeof scopeCounts]++;
+    });
+    console.log("Prospect scope distribution:", scopeCounts);
+    if (scopeCounts.national === 0 && intelligence.prospects.length > 10) {
+      console.warn("WARNING: No national prospects generated — scope inference may need attention");
+    }
+    if (scopeCounts.international === 0 && intelligence.prospects.length > 10) {
+      console.warn("WARNING: No international prospects generated — scope inference may need attention");
+    }
+
     console.log(
       "Generated:",
       intelligence.industries.length, "industries,",
       intelligence.signals.length, "signals,",
-      intelligence.prospects.length, "prospects,",
-      (intelligence.aiImpact || []).length, "AI impact analyses"
+      intelligence.prospects.length, "prospects"
     );
 
-    // Ensure aiImpact has defaults
-    intelligence.aiImpact = (intelligence.aiImpact || []).map((impact: any) => ({
-      ...impact,
-      aiLedFunctions: impact.aiLedFunctions || [],
-      humanLedFunctions: impact.humanLedFunctions || [],
-      collaborativeFunctions: impact.collaborativeFunctions || [],
-      valueChain: impact.valueChain || [],
-      kpis: impact.kpis || [],
-      automationRate: impact.automationRate || 0,
-      jobDisplacementIndex: impact.jobDisplacementIndex || 0,
-      humanResilienceScore: impact.humanResilienceScore || 0,
-      collaborativeOpportunityIndex: impact.collaborativeOpportunityIndex || 0,
-    }));
+    // Preserve any existing aiImpact from cache (generated by dedicated function)
+    intelligence.aiImpact = intelligence.aiImpact || [];
 
     // Cache the intelligence data in the database
     try {

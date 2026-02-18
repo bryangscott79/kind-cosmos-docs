@@ -35,20 +35,12 @@ const NEIGHBORING_STATES: Record<string, string[]> = {
 };
 
 function inferScope(prospect: Prospect, userState: string, userCountry: string, localRadius: number): ProspectScope {
+  // If the AI explicitly assigned a scope, TRUST IT — don't override
   if (prospect.scope) {
-    // Re-evaluate local vs national based on radius
-    if (prospect.scope === "international") return "international";
-    const pState = (prospect.location?.state || "").trim().toUpperCase();
-    const uState = userState.toUpperCase();
-    if (pState === uState) return "local";
-    // If radius >= 100 miles, include neighboring states as local
-    if (localRadius >= 100) {
-      const neighbors = NEIGHBORING_STATES[uState] || [];
-      if (neighbors.includes(pState)) return "local";
-    }
-    return "national";
+    return prospect.scope;
   }
   
+  // Only infer scope when the AI didn't provide one
   const pCountry = (prospect.location?.country || "").trim();
   const pState = (prospect.location?.state || "").trim().toUpperCase();
   const uState = userState.toUpperCase();
