@@ -103,66 +103,33 @@ Generate intelligence across a WIDE range of industries. Think globally and acro
 - Logistics & Supply Chain
 - Mining & Natural Resources
 
-Generate a LARGE volume of diverse prospects. The more the better.
+Generate diverse, high-quality intelligence. Be concise but specific.
 
-1. **10-14 industries** most relevant to this user's sales targets. Include DIVERSE industries - don't just pick obvious ones. Include both the user's stated targets AND adjacent/unexpected industries where they could sell. Include health scores (0-100), trend direction, and top market signals for each.
+1. **8-10 industries** most relevant to this user's sales targets. Include DIVERSE industries — not just obvious ones. Include health scores (0-100), trend direction, and top market signals for each.
 
-2. **25-35 market signals** across ALL these industries. Signal types MUST include:
-   - political: government policy, trade deals, sanctions, elections
-   - regulatory: compliance mandates, new laws, enforcement actions
-   - economic: spending trends, market shifts, rate changes, M&A
-   - hiring: talent wars, layoffs, executive moves, workforce shifts
-   - tech: platform shifts, AI adoption, infrastructure investments
-   - supply_chain: disruptions, reshoring, logistics changes
-   - social: brand sentiment changes, viral trends, social media shifts, influencer impacts, PR crises, consumer behavior changes
-   - competitive: competitor launches, market share shifts, strategic pivots, acquisitions
-   - environmental: climate policy, ESG mandates, sustainability shifts, green transitions
-   
+2. **12-18 market signals** across these industries. Signal types: political, regulatory, economic, hiring, tech, supply_chain, social, competitive, environmental.
    Each signal needs a clear sales implication. Use recent dates near ${today}. Include REAL publication sources with realistic URLs.
+   For each signal, include 2-3 "impactedEntities" with name, type (industry/company), impact (positive/negative), action (engage/avoid/monitor), and reason.
 
-   **CRITICAL: For each signal, include 2-5 "impactedEntities"** — specific industries or companies that are impacted. Each entity must have:
-   - "name": the industry or company name (e.g. "Solar Panel Manufacturers", "Delta Airlines", "Cloud Infrastructure Providers")
-   - "type": "industry" or "company"
-   - "impact": "positive" or "negative"
-   - "action": "engage" (actively pursue — they need solutions), "avoid" (they're contracting/risky), or "monitor" (watch for the right moment)
-   - "reason": one sentence explaining WHY this entity is impacted and what the user should do about it
+3. **18-25 prospect companies** in THREE BATCHES:
 
-3. **30-45 prospect companies** that would be ideal customers. You MUST generate prospects in THREE SEPARATE BATCHES:
-
-   **BATCH A — LOCAL (8-12 prospects, scope: "local"):**
-   Companies physically located near ${location_city || "the user's city"}, ${location_state || "the user's state"}.
-   Include cities within ~150 miles. For Georgia that means Atlanta, Athens, Marietta, Savannah, Augusta, Chattanooga TN, Greenville SC, etc.
-   These MUST have location.state set to "${location_state || "GA"}" or neighboring states (SC, TN, AL, NC).
+   **BATCH A — LOCAL (5-8 prospects, scope: "local"):**
+   Companies near ${location_city || "the user's city"}, ${location_state || "the user's state"} (within ~150 miles).
    
-   **BATCH B — NATIONAL (10-15 prospects, scope: "national"):**
-   Companies in OTHER US states far from ${location_state || "GA"}. DO NOT use neighboring states (AL, FL, SC, NC, TN for GA users).
-   Use DISTANT states like: California, New York, Texas, Illinois, Washington, Colorado, Massachusetts, Oregon, Minnesota, Arizona, Michigan, Ohio, Pennsylvania, Virginia, Nevada.
-   These MUST have location.country = "United States" and location.state NOT "${location_state || "GA"}" and NOT any neighboring state.
-   Examples: a company in San Francisco CA, one in Austin TX, one in Chicago IL, one in Seattle WA, one in Boston MA, one in Denver CO, etc.
+   **BATCH B — NATIONAL (6-9 prospects, scope: "national"):**
+   Companies in OTHER US states far from ${location_state || "GA"}.
    
-   **BATCH C — INTERNATIONAL (8-12 prospects, scope: "international"):**
-   Companies in OTHER COUNTRIES. Use: United Kingdom, Germany, Japan, Canada, Australia, Brazil, Singapore, UAE, France, South Korea, Netherlands, India.
-   These MUST have location.country set to the FULL country name (NOT "US" or "United States").
-   Examples: a company in London, United Kingdom; one in Tokyo, Japan; one in Toronto, Canada; one in Munich, Germany.
+   **BATCH C — INTERNATIONAL (5-8 prospects, scope: "international"):**
+   Companies in OTHER COUNTRIES (UK, Germany, Japan, Canada, Australia, etc.).
 
-    CRITICAL RULES FOR ALL PROSPECTS:
-    - Each prospect MUST have a "scope" field set to exactly "local", "national", or "international" matching the batch above
-    - **INDUSTRY VALIDATION**: Each prospect's "industryId" MUST exactly match the "id" of one of the industries you generated above. Do NOT assign a prospect to an industry that doesn't exist in your industries list. An airline is NOT "Education & EdTech". A restaurant is NOT "Defense & Aerospace". Match the prospect's ACTUAL business to the correct industry.
-    - Verify: national prospects MUST have a US state different from ${location_state || "GA"}
-    - Verify: international prospects MUST have a non-US country
-    - Include a MIX of company sizes: small ($1M-$50M), mid ($50M-$500M), large ($500M-$5B), major ($5B+)
-    - Industry diversity: spread across at least 8 different industries
-    - Include food & beverage, automotive, airlines, electronics, hospitality, agriculture — not just tech!
-    - Real-seeming companies with plausible names, revenue figures, employee counts
-    - Each with a compelling "Why Now" reason linked to current market signals
-    - Include realistic decision maker names and titles
-    - For each prospect, include 2-4 **recommended services** the user could sell
-    - Annual revenue formats: "$2.3M", "$145M", "$3.8B", etc.
-    - **websiteUrl**: Include a realistic company website URL (e.g., "https://www.companyname.com")
-    - **relatedLinks**: Include 2-4 related links (recent news articles, press releases, SEC filings, industry reports) with title and URL
-    - **competitors**: Include 2-3 competitors the prospect may already be working with or evaluating. Each with name and a brief description of what they provide that overlaps with the user's services
+    CRITICAL RULES:
+    - Each prospect's "industryId" MUST match an industry you generated. An airline is NOT "Education". Match the prospect's ACTUAL business to the correct industry.
+    - Include a MIX of company sizes and spread across at least 6 different industries
+    - Include food & beverage, automotive, airlines, electronics, hospitality — not just tech!
+    - Each with a "Why Now" reason, decision makers, 2-3 recommended services, websiteUrl, 2-3 relatedLinks, and 2-3 competitors
 
-Make everything specific to the user's business capabilities and geography. No generic examples. Think about what this specific company could ACTUALLY sell to each prospect.`;
+Make everything specific to the user's business capabilities and geography.`;
+
 
 
     const tools = [
@@ -344,7 +311,7 @@ Make everything specific to the user's business capabilities and geography. No g
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            model: "google/gemini-2.5-flash",
+            model: "openai/gpt-5-mini",
             messages: [
               { role: "system", content: systemPrompt },
               { role: "user", content: userPrompt },
@@ -415,7 +382,14 @@ Make everything specific to the user's business capabilities and geography. No g
       throw new Error("Could not generate intelligence after multiple attempts. Please try again.");
     }
 
-    // intelligence already parsed above
+    // Safety: ensure required arrays exist
+    if (!Array.isArray(intelligence.industries)) intelligence.industries = [];
+    if (!Array.isArray(intelligence.signals)) intelligence.signals = [];
+    if (!Array.isArray(intelligence.prospects)) intelligence.prospects = [];
+
+    if (intelligence.industries.length === 0) {
+      throw new Error("AI returned empty intelligence. Please try again.");
+    }
 
     // Post-process: add score history to industries
     intelligence.industries = intelligence.industries.map((ind: any) => ({
