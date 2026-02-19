@@ -39,11 +39,11 @@ export function useCrmConnections() {
   const load = useCallback(async () => {
     if (!user) { setLoading(false); return; }
     try {
-      const { data, error } = await supabase
-        .from("crm_connections")
+      const { data, error } = await (supabase
+        .from("crm_connections" as any) as any)
         .select("*")
         .eq("user_id", user.id)
-        .order("created_at") as any;
+        .order("created_at");
       if (error) throw error;
       setConnections(data || []);
     } catch (e) {
@@ -62,17 +62,17 @@ export function useCrmConnections() {
   ) => {
     if (!user) throw new Error("Not authenticated");
 
-    const { data, error } = await supabase
-      .from("crm_connections")
+    const { data, error } = await (supabase
+      .from("crm_connections" as any) as any)
       .upsert({
         user_id: user.id,
         provider,
         api_key: apiKey,
         instance_url: instanceUrl || null,
         is_active: true,
-      } as any, { onConflict: "user_id,provider" })
+      }, { onConflict: "user_id,provider" })
       .select()
-      .single() as any;
+      .single();
 
     if (error) throw error;
     setConnections(prev => {
@@ -88,27 +88,27 @@ export function useCrmConnections() {
   }, [user]);
 
   const removeConnection = useCallback(async (id: string) => {
-    const { error } = await supabase
-      .from("crm_connections")
+    const { error } = await (supabase
+      .from("crm_connections" as any) as any)
       .delete()
-      .eq("id", id) as any;
+      .eq("id", id);
     if (error) throw error;
     setConnections(prev => prev.filter(c => c.id !== id));
   }, []);
 
   const toggleConnection = useCallback(async (id: string, active: boolean) => {
-    const { error } = await supabase
-      .from("crm_connections")
-      .update({ is_active: active } as any)
+    const { error } = await (supabase
+      .from("crm_connections" as any) as any)
+      .update({ is_active: active })
       .eq("id", id);
     if (error) throw error;
     setConnections(prev => prev.map(c => c.id === id ? { ...c, is_active: active } : c));
   }, []);
 
   const updateStageMapping = useCallback(async (id: string, mapping: Record<string, string>) => {
-    const { error } = await supabase
-      .from("crm_connections")
-      .update({ default_pipeline_mapping: mapping } as any)
+    const { error } = await (supabase
+      .from("crm_connections" as any) as any)
+      .update({ default_pipeline_mapping: mapping })
       .eq("id", id);
     if (error) throw error;
     setConnections(prev => prev.map(c => c.id === id ? { ...c, default_pipeline_mapping: mapping } : c));
@@ -210,13 +210,13 @@ export function useCrmSync() {
   // Load sync history for a prospect
   const getSyncHistory = useCallback(async (prospectId: string): Promise<CrmSyncLog[]> => {
     if (!user) return [];
-    const { data } = await supabase
-      .from("crm_sync_log")
+    const { data } = await (supabase
+      .from("crm_sync_log" as any) as any)
       .select("*")
       .eq("user_id", user.id)
       .eq("prospect_id", prospectId)
       .order("created_at", { ascending: false })
-      .limit(10) as any;
+      .limit(10);
     return data || [];
   }, [user]);
 
