@@ -8,3 +8,9 @@ verify_jwt = false
 
 [functions.subscribe-digest]
 verify_jwt = false
+
+[functions.stripe-webhook]
+verify_jwt = false
+
+[functions.invite-team-member]
+verify_jwt = false
