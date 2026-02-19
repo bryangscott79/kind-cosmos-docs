@@ -413,9 +413,9 @@ Make everything specific to the user's business capabilities and geography.`;
     }
 
     // Post-process: add score history to industries
-    intelligence.industries = intelligence.industries.map((ind: any) => ({
+    intelligence.industries = intelligence.industries.map((ind: any, idx: number) => ({
       ...ind,
-      scoreHistory: generateScoreHistory(ind.healthScore),
+      scoreHistory: generateScoreHistory(ind.healthScore, ind.trendDirection || "stable", idx + 100),
     }));
 
     // Build industry lookup for validation
@@ -632,13 +632,44 @@ Make everything specific to the user's business capabilities and geography.`;
   }
 });
 
-function generateScoreHistory(base: number): { date: string; score: number }[] {
+function seededRandom(seed: number): () => number {
+  let s = seed;
+  return () => {
+    s = (s * 16807 + 0) % 2147483647;
+    return s / 2147483647;
+  };
+}
+
+function generateScoreHistory(
+  base: number,
+  trendDirection: string = "stable",
+  seed: number = 42
+): { date: string; score: number }[] {
+  const rng = seededRandom(seed + base * 1000);
   const history: { date: string; score: number }[] = [];
-  let score = base - 10 + Math.random() * 20;
-  for (let i = 29; i >= 0; i--) {
+
+  let phase1Bias: number, phase2Bias: number, phase3Bias: number;
+  if (trendDirection === "improving") {
+    phase1Bias = -0.15; phase2Bias = 0.05; phase3Bias = 0.25;
+  } else if (trendDirection === "declining") {
+    phase1Bias = 0.1; phase2Bias = -0.1; phase3Bias = -0.2;
+  } else {
+    phase1Bias = 0.05; phase2Bias = -0.05; phase3Bias = 0.02;
+  }
+
+  let score = base - (phase1Bias + phase2Bias + phase3Bias) * 30;
+  score = Math.max(10, Math.min(95, score));
+
+  for (let i = 89; i >= 0; i--) {
     const date = new Date();
     date.setDate(date.getDate() - i);
-    score = Math.max(5, Math.min(95, score + (Math.random() - 0.45) * 6));
+    const daysAgo = i;
+    let bias: number;
+    if (daysAgo >= 60) bias = phase1Bias;
+    else if (daysAgo >= 30) bias = phase2Bias;
+    else bias = phase3Bias;
+    const noise = (rng() - 0.5) * 5;
+    score = Math.max(5, Math.min(98, score + bias + noise));
     history.push({ date: date.toISOString().split("T")[0], score: Math.round(score) });
   }
   return history;
