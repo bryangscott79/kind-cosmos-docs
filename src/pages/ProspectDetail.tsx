@@ -315,7 +315,7 @@ ${impactData ? `Industry AI Automation: ${impactData.automationRate}%, Opportuni
                         const prompt = buildPresentationPrompt(prospect, industry, relatedSignals, impactData);
                         navigator.clipboard.writeText(prompt);
                         setCopied(true);
-                        toast.success("Prompt copied to clipboard!");
+                        toast({ title: "Prompt copied to clipboard!" });
                         setTimeout(() => setCopied(false), 2000);
                       }}
                       className="absolute top-2 right-2 inline-flex items-center gap-1 rounded-md bg-primary px-2.5 py-1.5 text-[10px] font-semibold text-primary-foreground hover:bg-primary/90 transition-colors z-10"

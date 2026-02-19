@@ -74,6 +74,7 @@ serve(async (req) => {
         id: u.id,
         email: u.email,
         created_at: u.created_at,
+        last_sign_in_at: u.last_sign_in_at,
         profile: profileMap.get(u.id) || null,
         product_id: emailToProductId.get(u.email) || null,
       }));
@@ -101,7 +102,6 @@ serve(async (req) => {
 
       const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", { apiVersion: "2025-08-27.basil" });
 
-      // Find or create Stripe customer
       const customers = await stripe.customers.list({ email: userEmail, limit: 1 });
       let customerId: string;
       if (customers.data.length > 0) {
@@ -111,24 +111,20 @@ serve(async (req) => {
         customerId = customer.id;
       }
 
-      // Cancel existing subscriptions
       const existingSubs = await stripe.subscriptions.list({ customer: customerId, status: "active" });
       for (const sub of existingSubs.data) {
         await stripe.subscriptions.cancel(sub.id);
       }
 
-      // If productId is null (free tier), we're done
       if (!productId) {
         return new Response(JSON.stringify({ success: true, tier: "free" }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
 
-      // Find the price for this product
       const prices = await stripe.prices.list({ product: productId, active: true, limit: 1 });
       if (prices.data.length === 0) throw new Error("No active price found for product");
 
-      // Create a subscription with a trial (so no payment needed for testing)
       await stripe.subscriptions.create({
         customer: customerId,
         items: [{ price: prices.data[0].id }],
@@ -136,6 +132,76 @@ serve(async (req) => {
       });
 
       return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (action === "update-profile") {
+      const { userId, updates } = body;
+      if (!userId) throw new Error("userId is required");
+
+      const allowedFields = [
+        "company_name", "role_title", "website_url", "company_size",
+        "location_city", "location_state", "location_country",
+        "target_industries", "customer_industries", "user_persona",
+        "ai_maturity_self", "entity_type", "business_summary"
+      ];
+      const safeUpdates: Record<string, any> = {};
+      for (const key of allowedFields) {
+        if (key in updates) safeUpdates[key] = updates[key];
+      }
+
+      const { error } = await supabase
+        .from("profiles")
+        .update(safeUpdates)
+        .eq("user_id", userId);
+      if (error) throw error;
+
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (action === "delete-user") {
+      const { userId } = body;
+      if (!userId) throw new Error("userId is required");
+
+      // Don't allow deleting yourself
+      if (userId === userData.user.id) throw new Error("Cannot delete yourself");
+
+      const { error } = await supabase.auth.admin.deleteUser(userId);
+      if (error) throw error;
+
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (action === "get-user-detail") {
+      const { userId } = body;
+      if (!userId) throw new Error("userId is required");
+
+      const { data: authUser, error: authErr } = await supabase.auth.admin.getUserById(userId);
+      if (authErr) throw authErr;
+
+      const { data: profile } = await supabase.from("profiles").select("*").eq("user_id", userId).maybeSingle();
+      const { data: signals } = await supabase.from("saved_signals").select("*").eq("user_id", userId);
+      const { data: feedback } = await supabase.from("prospect_feedback").select("*").eq("user_id", userId);
+      const { data: intelligence } = await supabase.from("cached_intelligence").select("id, created_at, updated_at").eq("user_id", userId);
+
+      return new Response(JSON.stringify({
+        user: {
+          id: authUser.user.id,
+          email: authUser.user.email,
+          created_at: authUser.user.created_at,
+          last_sign_in_at: authUser.user.last_sign_in_at,
+          email_confirmed_at: authUser.user.email_confirmed_at,
+        },
+        profile,
+        saved_signals: signals || [],
+        prospect_feedback: feedback || [],
+        cached_intelligence: intelligence || [],
+      }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
