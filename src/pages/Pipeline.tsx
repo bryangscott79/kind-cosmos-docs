@@ -279,7 +279,7 @@ function PipelineCard({
           </div>
 
           {/* ── ACTIONS ── */}
-          <div className="flex items-center gap-2 border-t border-border pt-3">
+          <div className="flex items-center gap-2 flex-wrap border-t border-border pt-3">
             <Link to={`/outreach?prospect=${prospect.id}`} className="inline-flex items-center gap-1 rounded-md bg-primary px-2.5 py-1.5 text-[10px] font-medium text-primary-foreground hover:opacity-90 transition-opacity">
               <Mail className="h-3 w-3" /> Outreach
             </Link>
@@ -292,33 +292,35 @@ function PipelineCard({
               context={`Prospect: ${prospect.companyName}\nIndustry: ${industry?.name || "Unknown"}\nVIGYL Score: ${prospect.vigylScore}\nRevenue: ${prospect.annualRevenue}\nEmployees: ${prospect.employeeCount.toLocaleString()}\nLocation: ${prospect.location.city}, ${prospect.location.state}\nPipeline Stage: ${pipelineStageLabels[prospect.pipelineStage]}\nPressure Response: ${getPressureLabel(prospect.pressureResponse)}\nWhy Now: ${prospect.whyNow}\nDecision Makers: ${prospect.decisionMakers.map(d => `${d.name} (${d.title})`).join(", ")}\nNotes: ${prospect.notes || "None"}\nRelated Signals: ${relatedSignals.map(s => s.title).join(", ") || "None"}`}
               label={prospect.companyName}
             />
-            <div className="ml-auto">
-              {confirmDelete ? (
-                <div className="flex items-center gap-1.5 rounded-md border border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-900/20 px-2 py-1">
-                  <span className="text-[10px] text-rose-600 dark:text-rose-400 font-medium">Remove?</span>
-                  <button
-                    onClick={() => { onDelete(); setConfirmDelete(false); }}
-                    className="rounded px-2 py-0.5 text-[10px] font-semibold bg-rose-500 text-white hover:bg-rose-600 transition-colors"
-                  >
-                    Yes
-                  </button>
-                  <button
-                    onClick={() => setConfirmDelete(false)}
-                    className="rounded px-2 py-0.5 text-[10px] font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              ) : (
+          </div>
+
+          {/* ── REMOVE ── */}
+          <div className="flex items-center justify-end border-t border-border pt-2">
+            {confirmDelete ? (
+              <div className="flex items-center gap-1.5 rounded-md border border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-900/20 px-2 py-1">
+                <span className="text-[10px] text-rose-600 dark:text-rose-400 font-medium">Remove from pipeline?</span>
                 <button
-                  onClick={() => setConfirmDelete(true)}
-                  className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1.5 text-[10px] font-medium text-muted-foreground hover:text-rose-500 hover:border-rose-200 dark:hover:border-rose-800 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-colors"
-                  title="Remove from pipeline"
+                  onClick={() => { onDelete(); setConfirmDelete(false); }}
+                  className="rounded px-2 py-0.5 text-[10px] font-semibold bg-rose-500 text-white hover:bg-rose-600 transition-colors"
                 >
-                  <Trash2 className="h-3 w-3" /> Remove
+                  Yes
                 </button>
-              )}
-            </div>
+                <button
+                  onClick={() => setConfirmDelete(false)}
+                  className="rounded px-2 py-0.5 text-[10px] font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setConfirmDelete(true)}
+                className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1.5 text-[10px] font-medium text-muted-foreground hover:text-rose-500 hover:border-rose-200 dark:hover:border-rose-800 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-colors"
+                title="Remove from pipeline"
+              >
+                <Trash2 className="h-3 w-3" /> Remove
+              </button>
+            )}
           </div>
         </div>
       )}

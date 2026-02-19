@@ -179,6 +179,69 @@ export default function ProspectDetail() {
     }
   }, [prospect, enriching, industries, profile, toast]);
 
+  // Track view — MUST be before any early returns to satisfy React hooks rules
+  useEffect(() => {
+    if (prospect) track(EVENTS.PROSPECT_VIEWED, { company: prospect.companyName, score: prospect.vigylScore });
+  }, [prospect?.id]);
+
+  // Derived data — safe to compute even if prospect is null (useMemo keeps hook order stable)
+  const industry = useMemo(() => prospect
+    ? industries.find(i => i.id === prospect.industryId)
+      || industries.find(i => i.name.toLowerCase() === (prospect.industryId || "").toLowerCase())
+    : undefined,
+  [prospect, industries]);
+
+  const relatedSignals = useMemo(() => prospect
+    ? signals.filter(s => prospect.relatedSignals?.includes(s.id))
+    : [],
+  [prospect, signals]);
+
+  const industrySignals = useMemo(() => prospect
+    ? signals.filter(s => s.industryTags.includes(prospect.industryId)).filter(s => !prospect.relatedSignals?.includes(s.id))
+    : [],
+  [prospect, signals]);
+
+  const industryProspects = useMemo(() => prospect
+    ? prospects.filter(p => p.industryId === prospect.industryId && p.id !== prospect.id).sort((a, b) => b.vigylScore - a.vigylScore)
+    : [],
+  [prospect, prospects]);
+
+  const impactData = useMemo(() => prospect
+    ? aiImpact?.find(a => a.industryId === prospect.industryId || a.industryName?.toLowerCase() === industry?.name?.toLowerCase())
+    : undefined,
+  [prospect, aiImpact, industry]);
+
+  const stageIdx = prospect ? stageOrder.indexOf(prospect.pipelineStage) : -1;
+
+  // Use enriched contacts if available, otherwise fall back to original + fix LinkedIn URLs
+  const displayContacts = useMemo(() => {
+    if (!prospect) return [];
+    return enrichedContacts || prospect.decisionMakers.map(dm => ({
+      ...dm,
+      linkedinUrl: dm.linkedinUrl && dm.linkedinUrl !== "#"
+        ? dm.linkedinUrl
+        : `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(`${dm.title} ${prospect.companyName}`)}`,
+    }));
+  }, [prospect, enrichedContacts]);
+
+  // Build Argus context
+  const argusContext = prospect ? `Prospect Dossier: ${prospect.companyName}
+Industry: ${industry?.name || "Unknown"}
+VIGYL Score: ${prospect.vigylScore}/100
+Revenue: ${prospect.annualRevenue}
+Employees: ${prospect.employeeCount.toLocaleString()}
+Location: ${prospect.location.city}, ${prospect.location.state}
+Pipeline Stage: ${pipelineStageLabels[prospect.pipelineStage]}
+Pressure Response: ${getPressureLabel(prospect.pressureResponse)}
+Why Now: ${prospect.whyNow}
+Decision Makers: ${displayContacts.map(d => `${d.name} (${d.title})${d.verified ? " [verified]" : " [suggested role]"}`).join(", ")}
+Notes: ${prospect.notes || "None"}
+Related Signals: ${relatedSignals.map(s => `${s.title} (${s.sentiment}, severity ${s.severity}/5)`).join("; ") || "None"}
+${prospect.competitors ? `Competitors: ${prospect.competitors.map(c => c.name).join(", ")}` : ""}
+${impactData ? `Industry AI Automation: ${impactData.automationRate}%, Opportunity Index: ${impactData.collaborativeOpportunityIndex}` : ""}` : "";
+
+  // ── Early returns AFTER all hooks ──
+
   // If prospect not found but still loading or using seed data, show loading
   if (!prospect && (loading || isUsingSeedData || pipelineLoading)) {
     return (
@@ -200,44 +263,6 @@ export default function ProspectDetail() {
   }
 
   if (!prospect) return <Navigate to="/prospects" replace />;
-
-  const industry = industries.find(i => i.id === prospect.industryId) 
-    || industries.find(i => i.name.toLowerCase() === (prospect.industryId || "").toLowerCase());
-
-  // Track view
-  useEffect(() => {
-    if (prospect) track(EVENTS.PROSPECT_VIEWED, { company: prospect.companyName, score: prospect.vigylScore });
-  }, [prospect?.id]);
-  const relatedSignals = signals.filter(s => prospect.relatedSignals?.includes(s.id));
-  const industrySignals = signals.filter(s => s.industryTags.includes(prospect.industryId)).filter(s => !prospect.relatedSignals?.includes(s.id));
-  const industryProspects = prospects.filter(p => p.industryId === prospect.industryId && p.id !== prospect.id).sort((a, b) => b.vigylScore - a.vigylScore);
-  const impactData = aiImpact?.find(a => a.industryId === prospect.industryId || a.industryName?.toLowerCase() === industry?.name?.toLowerCase());
-
-  const stageIdx = stageOrder.indexOf(prospect.pipelineStage);
-
-  // Use enriched contacts if available, otherwise fall back to original + fix LinkedIn URLs
-  const displayContacts = enrichedContacts || prospect.decisionMakers.map(dm => ({
-    ...dm,
-    linkedinUrl: dm.linkedinUrl && dm.linkedinUrl !== "#"
-      ? dm.linkedinUrl
-      : `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(`${dm.title} ${prospect.companyName}`)}`,
-  }));
-
-  // Build Argus context
-  const argusContext = `Prospect Dossier: ${prospect.companyName}
-Industry: ${industry?.name || "Unknown"}
-VIGYL Score: ${prospect.vigylScore}/100
-Revenue: ${prospect.annualRevenue}
-Employees: ${prospect.employeeCount.toLocaleString()}
-Location: ${prospect.location.city}, ${prospect.location.state}
-Pipeline Stage: ${pipelineStageLabels[prospect.pipelineStage]}
-Pressure Response: ${getPressureLabel(prospect.pressureResponse)}
-Why Now: ${prospect.whyNow}
-Decision Makers: ${displayContacts.map(d => `${d.name} (${d.title})${d.verified ? " [verified]" : " [suggested role]"}`).join(", ")}
-Notes: ${prospect.notes || "None"}
-Related Signals: ${relatedSignals.map(s => `${s.title} (${s.sentiment}, severity ${s.severity}/5)`).join("; ") || "None"}
-${prospect.competitors ? `Competitors: ${prospect.competitors.map(c => c.name).join(", ")}` : ""}
-${impactData ? `Industry AI Automation: ${impactData.automationRate}%, Opportunity Index: ${impactData.collaborativeOpportunityIndex}` : ""}`;
 
   return (
     <IntelligenceLoader>
