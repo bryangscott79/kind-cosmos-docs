@@ -513,7 +513,7 @@ function generateAIReadiness(industry: Industry, aiImpact: AIImpactAnalysis | un
 // ─── Main Reports Page ───
 export default function Reports() {
   const { data } = useIntelligence();
-  const { tier } = useAuth();
+  const { tier, persona } = useAuth();
   const { industries, prospects, signals, aiImpact } = data;
   const [selectedReport, setSelectedReport] = useState<string | null>(null);
   const [selectedIndustry, setSelectedIndustry] = useState("");

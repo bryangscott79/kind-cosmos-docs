@@ -82,9 +82,20 @@ export default function Landing() {
               transition: "opacity 0.7s ease 0.25s, transform 0.7s ease 0.25s",
             }}
           >
-            VIGYL.ai transforms geopolitical, economic, and regulatory signals into actionable sales intelligence.
-            Know who to sell to, when, and why.
+            VIGYL.ai transforms geopolitical, economic, and regulatory signals into actionable intelligence — whether you're closing deals, building a company, or navigating your career.
           </p>
+          <div
+            className="mx-auto mt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-2"
+            style={{
+              opacity: heroVisible ? 1 : 0,
+              transform: heroVisible ? "translateY(0)" : "translateY(16px)",
+              transition: "opacity 0.6s ease 0.35s, transform 0.6s ease 0.35s",
+            }}
+          >
+            {["Sales Teams", "Founders", "Job Seekers", "Analysts", "HR Leaders", "Investors"].map((p) => (
+              <span key={p} className="text-xs text-muted-foreground/70">{p}</span>
+            ))}
+          </div>
           <div
             className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4"
             style={{
@@ -234,7 +245,7 @@ export default function Landing() {
           <div className="flex items-center">
             <img src={vigylLogo} alt="VIGYL" className="h-6" />
           </div>
-          <p className="text-xs text-muted-foreground text-center">© 2026 VIGYL.ai — Market intelligence for modern sellers</p>
+          <p className="text-xs text-muted-foreground text-center">© 2026 VIGYL.ai — Market intelligence for the AI era</p>
         </div>
       </footer>
     </div>

@@ -13,6 +13,7 @@ import GlobalSignalBanner from "@/components/GlobalSignalBanner";
 import Sparkline from "@/components/Sparkline";
 import IntelligenceLoader from "@/components/IntelligenceLoader";
 import { useIntelligence } from "@/contexts/IntelligenceContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { getSignalTypeLabel } from "@/data/mockData";
 import AskArgus from "@/components/AskArgus";
 
@@ -177,9 +178,11 @@ export default function IndustryDashboard() {
   const [digestDismissed, setDigestDismissed] = useState(false);
   const [digestEmail, setDigestEmail] = useState("");
   const [digestSubmitted, setDigestSubmitted] = useState(false);
+  const [welcomeDismissed, setWelcomeDismissed] = useState(() => localStorage.getItem("vigyl_welcome_dismissed") === "true");
   const navigate = useNavigate();
   const { data, loading, refresh } = useIntelligence();
   const { industries, signals, prospects, aiImpact } = data;
+  const { persona, profile } = useAuth();
 
   const getIndustryName = (id: string) => industries.find((i) => i.id === id)?.name ?? "Unknown";
   const getIndustrySlug = (id: string) => industries.find((i) => i.id === id)?.slug;
@@ -242,6 +245,73 @@ export default function IndustryDashboard() {
       <DashboardLayout>
         <GlobalSignalBanner />
 
+        {/* Welcome card — first-run experience */}
+        {!welcomeDismissed && (
+          <div className="mt-4 rounded-lg border border-primary/20 bg-gradient-to-r from-primary/[0.03] to-transparent p-5">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  <h2 className="text-sm font-bold text-foreground">Welcome to VIGYL</h2>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed mb-3">{persona.welcomeMessage}</p>
+                <div className="flex flex-wrap gap-2">
+                  {persona.heroFeature === "ai_impact" ? (
+                    <Link to="/ai-impact" className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90 transition-opacity">
+                      <Brain className="h-3 w-3" /> Explore AI Impact <ArrowRight className="h-3 w-3" />
+                    </Link>
+                  ) : persona.heroFeature === "signals" ? (
+                    <Link to="/signals" className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90 transition-opacity">
+                      <Radio className="h-3 w-3" /> View Signals <ArrowRight className="h-3 w-3" />
+                    </Link>
+                  ) : (
+                    <Link to="/prospects" className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90 transition-opacity">
+                      <Users className="h-3 w-3" /> View {persona.prospectLabel} <ArrowRight className="h-3 w-3" />
+                    </Link>
+                  )}
+                  <Link to="/settings" className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
+                    Customize Settings
+                  </Link>
+                </div>
+              </div>
+              <button onClick={() => { setWelcomeDismissed(true); localStorage.setItem("vigyl_welcome_dismissed", "true"); }} className="text-muted-foreground hover:text-foreground transition-colors p-1">
+                <XIcon className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* What Changed digest */}
+        {welcomeDismissed && signals.length > 0 && (() => {
+          const recentCount = signals.filter(s => {
+            const d = new Date(s.publishedAt);
+            const twoDaysAgo = new Date();
+            twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+            return d >= twoDaysAgo;
+          }).length;
+          const highScoreProspects = prospects.filter(p => p.vigylScore >= 80).length;
+          const decliningIndustries = industries.filter(i => i.trendDirection === "declining").length;
+          if (recentCount === 0 && highScoreProspects === 0) return null;
+          return (
+            <div className="mt-4 rounded-md bg-secondary/60 px-4 py-3 flex flex-wrap items-center gap-x-4 gap-y-1">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Snapshot</span>
+              {recentCount > 0 && (
+                <Link to="/signals" className="text-xs text-primary hover:text-primary/80 font-medium transition-colors">
+                  {recentCount} new signal{recentCount !== 1 ? "s" : ""}
+                </Link>
+              )}
+              {highScoreProspects > 0 && (
+                <Link to="/prospects" className="text-xs text-primary hover:text-primary/80 font-medium transition-colors">
+                  {highScoreProspects} high-scoring {persona.prospectLabel.toLowerCase()}
+                </Link>
+              )}
+              {decliningIndustries > 0 && (
+                <span className="text-xs text-amber-600 font-medium">{decliningIndustries} declining industr{decliningIndustries !== 1 ? "ies" : "y"}</span>
+              )}
+            </div>
+          );
+        })()}
+
         {/* Header */}
         <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -299,7 +369,7 @@ export default function IndustryDashboard() {
               </Link>
               <Link to="/pipeline" className="rounded-lg border border-border bg-card p-3 hover:border-primary/30 transition-colors group">
                 <div className="flex items-center justify-between">
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Active Pipeline</p>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Active {persona.pipelineLabel}</p>
                   <Briefcase className="h-3.5 w-3.5 text-primary opacity-50 group-hover:opacity-100 transition-opacity" />
                 </div>
                 <p className="text-2xl font-mono font-bold text-primary mt-1">{activePipeline}</p>
@@ -493,7 +563,7 @@ export default function IndustryDashboard() {
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
                         <Briefcase className="h-4 w-4 text-primary" />
-                        <h2 className="text-sm font-semibold text-foreground">Pipeline Activity</h2>
+                        <h2 className="text-sm font-semibold text-foreground">{persona.pipelineLabel} Activity</h2>
                       </div>
                       <Link to="/pipeline" className="text-xs font-medium text-primary hover:text-primary/80 transition-colors flex items-center gap-1">
                         View all <ArrowRight className="h-3 w-3" />
@@ -541,7 +611,7 @@ export default function IndustryDashboard() {
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
                       <Users className="h-4 w-4 text-primary" />
-                      <h2 className="text-sm font-semibold text-foreground">Top Prospects</h2>
+                      <h2 className="text-sm font-semibold text-foreground">Top {persona.prospectLabel}</h2>
                     </div>
                     <Link to="/prospects" className="text-xs font-medium text-primary hover:text-primary/80 transition-colors flex items-center gap-1">
                       View all <ArrowRight className="h-3 w-3" />
@@ -568,7 +638,7 @@ export default function IndustryDashboard() {
                           </div>
                         </div>
                         <p className="text-[10px] text-muted-foreground line-clamp-1">
-                          <span className="font-medium text-foreground/70">Why now:</span> {p.whyNow.split(".")[0]}.
+                          <span className="font-medium text-foreground/70">{persona.whyNowLabel}:</span> {p.whyNow.split(".")[0]}.
                         </p>
                         <div className="mt-1.5 flex items-center gap-2">
                           <span className="text-[10px] text-muted-foreground">{getIndustryName(p.industryId)}</span>

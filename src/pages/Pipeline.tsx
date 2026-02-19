@@ -14,6 +14,8 @@ import {
   pipelineStageLabels, PipelineStage, Prospect, Industry, Signal
 } from "@/data/mockData";
 import AskArgus from "@/components/AskArgus";
+import { useAuth } from "@/contexts/AuthContext";
+import { getStageLabels } from "@/lib/personas";
 
 const stageOrder: PipelineStage[] = ["researching", "contacted", "meeting_scheduled", "proposal_sent", "won", "lost"];
 
@@ -292,6 +294,8 @@ export default function Pipeline() {
   const { data } = useIntelligence();
   const { prospects, industries, signals } = data;
   const [localProspects, setLocalProspects] = useState<Prospect[] | null>(null);
+  const { persona } = useAuth();
+  const stageLabels = useMemo(() => getStageLabels(persona), [persona]);
 
   const effectiveProspects = localProspects || prospects;
 
@@ -311,10 +315,10 @@ export default function Pipeline() {
 
   const columns = useMemo(() => stageOrder.map((stage) => ({
     stage,
-    label: pipelineStageLabels[stage],
+    label: stageLabels[stage] || pipelineStageLabels[stage],
     prospects: effectiveProspects.filter((p) => p.pipelineStage === stage),
     color: stageColors[stage],
-  })), [effectiveProspects]);
+  })), [effectiveProspects, stageLabels]);
 
   const activeCount = effectiveProspects.filter((p) => !["researching", "won", "lost"].includes(p.pipelineStage)).length;
   const wonCount = effectiveProspects.filter((p) => p.pipelineStage === "won").length;
@@ -324,13 +328,13 @@ export default function Pipeline() {
       <DashboardLayout>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-lg font-bold text-foreground">Pipeline</h1>
+            <h1 className="text-lg font-bold text-foreground">{persona.pipelineLabel}</h1>
             <p className="mt-1 text-xs text-muted-foreground">
-              {effectiveProspects.length} prospects · {activeCount} active · {wonCount} won
+              {effectiveProspects.length} total · {activeCount} active · {wonCount} {stageLabels.won?.toLowerCase() || "won"}
             </p>
           </div>
           <Link to="/prospects" className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
-            <Users className="h-3.5 w-3.5" /> Find Prospects
+            <Users className="h-3.5 w-3.5" /> Find {persona.prospectLabel}
           </Link>
         </div>
 

@@ -200,6 +200,9 @@ export default function Settings() {
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
   const [targetIndustries, setTargetIndustries] = useState<string[]>([]);
+  const [entityType, setEntityType] = useState("");
+  const [userPersona, setUserPersona] = useState("");
+  const [aiMaturity, setAiMaturity] = useState("");
 
   // Re-analysis
   const [recommendedIndustries, setRecommendedIndustries] = useState<RecommendedIndustry[]>([]);
@@ -217,6 +220,9 @@ export default function Settings() {
       setCity(profile.location_city || "");
       setState(profile.location_state || "");
       setTargetIndustries(profile.target_industries || []);
+      setEntityType((profile as any).entity_type || "");
+      setUserPersona((profile as any).user_persona || "");
+      setAiMaturity((profile as any).ai_maturity_self || "");
     }
   }, [profile]);
 
@@ -309,6 +315,9 @@ export default function Settings() {
           location_city: city,
           location_state: state,
           target_industries: updatedIndustries,
+          entity_type: entityType || null,
+          user_persona: userPersona || null,
+          ai_maturity_self: aiMaturity || null,
         })
         .eq("user_id", user.id);
 
@@ -483,6 +492,57 @@ export default function Settings() {
                       placeholder="Describe what your company does, who you sell to, and what problems you solve..."
                       className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground resize-none placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                     />
+                  </div>
+                </div>
+              </div>
+
+              {/* Target industries */}
+              <div className="rounded-lg border border-border bg-card p-6">
+                <h3 className="text-sm font-semibold text-foreground mb-1">Business Context</h3>
+                <p className="text-xs text-muted-foreground mb-4">These shape how VIGYL presents intelligence and labels features for you.</p>
+                <div className="space-y-4">
+                  <div>
+                    <label className="mb-2 block text-xs font-medium text-foreground">Business Model</label>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { value: "b2b", label: "B2B" }, { value: "b2c", label: "B2C" }, { value: "d2c", label: "D2C" },
+                        { value: "government", label: "Government" }, { value: "private", label: "Private" }, { value: "nonprofit", label: "Nonprofit" },
+                      ].map((opt) => (
+                        <button key={opt.value} type="button" onClick={() => setEntityType(opt.value)}
+                          className={`rounded-md border px-3 py-1.5 text-xs font-medium transition-colors ${entityType === opt.value ? "border-primary bg-primary/5 text-foreground" : "border-border text-muted-foreground hover:border-primary/30"}`}>
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="mb-2 block text-xs font-medium text-foreground">Your Role Focus</label>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { value: "sales", label: "Sales / BD" }, { value: "founder", label: "Founder / CEO" }, { value: "executive", label: "Executive" },
+                        { value: "hr", label: "HR / People Ops" }, { value: "job_seeker", label: "Job Seeker" }, { value: "investor", label: "Investor" },
+                        { value: "consultant", label: "Consultant" }, { value: "analyst", label: "Analyst" }, { value: "lobbyist", label: "Policy / Lobbying" },
+                      ].map((opt) => (
+                        <button key={opt.value} type="button" onClick={() => setUserPersona(opt.value)}
+                          className={`rounded-md border px-3 py-1.5 text-xs font-medium transition-colors ${userPersona === opt.value ? "border-primary bg-primary/5 text-foreground" : "border-border text-muted-foreground hover:border-primary/30"}`}>
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="mb-2 block text-xs font-medium text-foreground">AI Maturity</label>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { value: "exploring", label: "🔍 Exploring" }, { value: "piloting", label: "🧪 Piloting" },
+                        { value: "scaling", label: "📈 Scaling" }, { value: "optimizing", label: "⚙️ Optimizing" }, { value: "leading", label: "🚀 Leading" },
+                      ].map((opt) => (
+                        <button key={opt.value} type="button" onClick={() => setAiMaturity(opt.value)}
+                          className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${aiMaturity === opt.value ? "border-primary bg-primary/5 text-foreground" : "border-border text-muted-foreground hover:border-primary/30"}`}>
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>

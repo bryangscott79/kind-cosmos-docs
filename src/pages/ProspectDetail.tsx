@@ -10,6 +10,7 @@ import {
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import IntelligenceLoader from "@/components/IntelligenceLoader";
 import { useIntelligence } from "@/contexts/IntelligenceContext";
+import { useAuth } from "@/contexts/AuthContext";
 import AskArgus from "@/components/AskArgus";
 import {
   getScoreColorHsl, getPressureLabel, pipelineStageLabels,
@@ -61,6 +62,7 @@ export default function ProspectDetail() {
   const { id } = useParams<{ id: string }>();
   const { data, loading, isUsingSeedData } = useIntelligence();
   const { prospects, industries, signals, aiImpact } = data;
+  const { persona } = useAuth();
 
   const prospect = prospects.find(p => p.id === id);
 
@@ -71,7 +73,7 @@ export default function ProspectDetail() {
         <DashboardLayout>
           <div className="space-y-4">
             <Link to="/prospects" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
-              <ArrowLeft className="h-3.5 w-3.5" /> Back to Prospects
+              <ArrowLeft className="h-3.5 w-3.5" /> Back
             </Link>
             <div className="rounded-xl border border-border bg-card p-8 flex flex-col items-center gap-3">
               <Loader2 className="h-5 w-5 animate-spin text-primary" />
@@ -116,7 +118,7 @@ ${impactData ? `Industry AI Automation: ${impactData.automationRate}%, Opportuni
         <div className="space-y-6">
           {/* Back nav */}
           <Link to="/prospects" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="h-3.5 w-3.5" /> Back to Prospects
+            <ArrowLeft className="h-3.5 w-3.5" /> Back
           </Link>
 
           {/* Hero card */}
@@ -152,7 +154,7 @@ ${impactData ? `Industry AI Automation: ${impactData.automationRate}%, Opportuni
               </div>
               <div className="shrink-0">
                 <ScoreRing score={prospect.vigylScore} />
-                <p className="text-[9px] text-center text-muted-foreground mt-1">VIGYL Score</p>
+                <p className="text-[9px] text-center text-muted-foreground mt-1">{persona.scoreLabel}</p>
               </div>
             </div>
 
@@ -197,7 +199,7 @@ ${impactData ? `Industry AI Automation: ${impactData.automationRate}%, Opportuni
             <div className="lg:col-span-2 space-y-6">
               {/* Why Now */}
               <div className="rounded-xl border border-border bg-card p-5">
-                <SectionHeader icon={<Clock className="h-4 w-4 text-primary" />} title="Why Now" />
+                <SectionHeader icon={<Clock className="h-4 w-4 text-primary" />} title={persona.whyNowLabel} />
                 <p className="text-sm text-foreground leading-relaxed">{prospect.whyNow}</p>
               </div>
 

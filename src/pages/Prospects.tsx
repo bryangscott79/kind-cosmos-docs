@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Search, MapPin, Building2, Globe2, Star, Loader2, ChevronLeft, ChevronRight, Sparkles, Navigation, RefreshCw } from "lucide-react";
+import { Search, MapPin, Building2, Globe2, Star, Loader2, ChevronLeft, ChevronRight, Sparkles, Navigation, RefreshCw, Download } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import ProspectCard from "@/components/ProspectCard";
 import IntelligenceLoader from "@/components/IntelligenceLoader";
@@ -159,7 +159,7 @@ export default function Prospects() {
   const industryParam = searchParams.get("industry") || "all";
   const { data, refresh } = useIntelligence();
   const { prospects, industries } = data;
-  const { profile } = useAuth();
+  const { profile, persona } = useAuth();
   const { toast } = useToast();
 
   const [search, setSearch] = useState("");
@@ -251,6 +251,34 @@ export default function Prospects() {
 
   const activeIndustry = industries.find(i => i.id === industryFilter);
 
+  const exportCSV = () => {
+    const headers = ["Company", "Industry", "Location", "Revenue", "Employees", `${persona.scoreLabel}`, "Pressure Response", persona.whyNowLabel, "Decision Makers", "Scope"];
+    const rows = filtered.map(p => {
+      const ind = industries.find(i => i.id === p.industryId);
+      return [
+        p.companyName,
+        ind?.name || "",
+        `${p.location.city}, ${p.location.state}`,
+        p.annualRevenue,
+        p.employeeCount,
+        p.vigylScore,
+        p.pressureResponse.replace("_", " "),
+        `"${p.whyNow.replace(/"/g, '""')}"`,
+        p.decisionMakers.map(d => `${d.name} (${d.title})`).join("; "),
+        p.scope || "",
+      ];
+    });
+    const csv = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `vigyl-${persona.prospectLabel.toLowerCase().replace(/\s+/g, "-")}-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: "Exported", description: `${filtered.length} records exported to CSV.` });
+  };
+
   const analyzeDreamClient = async () => {
     if (!dreamInput.trim() || !profile) return;
     setDreamLoading(true);
@@ -275,14 +303,21 @@ export default function Prospects() {
   return (
     <IntelligenceLoader>
       <DashboardLayout>
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Prospect Engine</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {activeIndustry
-              ? <><span className="font-medium text-foreground">{filtered.length} prospects</span> in {activeIndustry.name}</>
-              : <><span className="font-medium text-foreground">{filtered.length} prospects</span> across all industries</>
-            }
-          </p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">{persona.prospectLabel}</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {activeIndustry
+                ? <><span className="font-medium text-foreground">{filtered.length}</span> in {activeIndustry.name}</>
+                : <><span className="font-medium text-foreground">{filtered.length}</span> across all industries</>
+              }
+            </p>
+          </div>
+          {filtered.length > 0 && (
+            <button onClick={exportCSV} className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors shrink-0">
+              <Download className="h-3.5 w-3.5" /> Export CSV
+            </button>
+          )}
         </div>
 
         {/* Local context banner with radius slider */}

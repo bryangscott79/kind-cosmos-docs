@@ -6,36 +6,40 @@ import { TIERS, hasAccess, FEATURE_ACCESS, TierKey } from "@/lib/tiers";
 import { useIntelligence } from "@/contexts/IntelligenceContext";
 import { useState, useEffect, useMemo } from "react";
 
-const navSections = [
-  {
-    label: "Intelligence",
-    items: [
-      { label: "Briefing", path: "/industries", icon: BarChart3, feature: "industries" },
-      { label: "Signals", path: "/signals", icon: Radio, feature: "signals" },
-      { label: "AI Impact", path: "/ai-impact", icon: Brain, feature: "ai_impact" },
-    ],
-  },
-  {
-    label: "Sales",
-    items: [
-      { label: "Prospects", path: "/prospects", icon: Users, feature: "prospects" },
-      { label: "Pipeline", path: "/pipeline", icon: Kanban, feature: "pipeline" },
-      { label: "Outreach", path: "/outreach", icon: PenTool, feature: "outreach" },
-      { label: "Reports", path: "/reports", icon: FileText, feature: "deep_reports" },
-    ],
-  },
-  {
-    label: "Account",
-    items: [
-      { label: "Settings", path: "/settings", icon: Settings, feature: "settings" },
-    ],
-  },
-];
+function useNavSections() {
+  const { persona } = useAuth();
+  return useMemo(() => [
+    {
+      label: "Intelligence",
+      items: [
+        { label: "Briefing", path: "/industries", icon: BarChart3, feature: "industries" },
+        { label: "Signals", path: "/signals", icon: Radio, feature: "signals" },
+        { label: "AI Impact", path: "/ai-impact", icon: Brain, feature: "ai_impact" },
+      ],
+    },
+    {
+      label: persona.navGroupLabel,
+      items: [
+        { label: persona.prospectLabel, path: "/prospects", icon: Users, feature: "prospects" },
+        { label: persona.pipelineLabel, path: "/pipeline", icon: Kanban, feature: "pipeline" },
+        { label: persona.outreachLabel, path: "/outreach", icon: PenTool, feature: "outreach" },
+        { label: "Reports", path: "/reports", icon: FileText, feature: "deep_reports" },
+      ],
+    },
+    {
+      label: "Account",
+      items: [
+        { label: "Settings", path: "/settings", icon: Settings, feature: "settings" },
+      ],
+    },
+  ], [persona]);
+}
 
 export default function AppSidebar() {
   const location = useLocation();
   const { tier, profile, signOut, isAdmin } = useAuth();
   const { data } = useIntelligence();
+  const navSections = useNavSections();
   const currentTierInfo = TIERS[tier];
   const [mobileOpen, setMobileOpen] = useState(false);
 

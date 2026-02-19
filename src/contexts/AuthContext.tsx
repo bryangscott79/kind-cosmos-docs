@@ -1,7 +1,8 @@
-import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
+import { createContext, useContext, useEffect, useState, useMemo, ReactNode, useCallback } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { TierKey, getTierFromProductId } from "@/lib/tiers";
+import { PersonaConfig, getPersonaConfig } from "@/lib/personas";
 
 interface Profile {
   id: string;
@@ -17,6 +18,9 @@ interface Profile {
   location_city: string | null;
   location_state: string | null;
   location_country: string | null;
+  entity_type: string | null;
+  user_persona: string | null;
+  ai_maturity_self: string | null;
 }
 
 interface AuthContextType {
@@ -25,6 +29,7 @@ interface AuthContextType {
   profile: Profile | null;
   loading: boolean;
   tier: TierKey;
+  persona: PersonaConfig;
   subscriptionEnd: string | null;
   isAdmin: boolean;
   signOut: () => Promise<void>;
@@ -135,8 +140,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsAdmin(false);
   };
 
+  const persona = useMemo(() => getPersonaConfig(profile?.user_persona), [profile?.user_persona]);
+
   return (
-    <AuthContext.Provider value={{ session, user, profile, loading, tier, subscriptionEnd, isAdmin, signOut, refreshProfile, refreshSubscription }}>
+    <AuthContext.Provider value={{ session, user, profile, loading, tier, persona, subscriptionEnd, isAdmin, signOut, refreshProfile, refreshSubscription }}>
       {children}
     </AuthContext.Provider>
   );

@@ -132,6 +132,9 @@ export default function Onboarding() {
           business_summary: businessSummary,
           ai_summary: aiSummary,
           target_industries: accepted,
+          entity_type: entityType || null,
+          user_persona: userPersona || null,
+          ai_maturity_self: aiMaturity || null,
           onboarding_completed: true,
         })
         .eq("user_id", session.user.id);
@@ -289,7 +292,7 @@ export default function Onboarding() {
           <div className="space-y-5">
             <h2 className="text-sm font-semibold text-foreground">Your Business Context</h2>
             <p className="text-xs text-muted-foreground -mt-3">
-              This helps VIGYL tailor AI impact insights to your specific situation.
+              This shapes how VIGYL labels features and what intelligence it prioritizes. You can update these anytime in Settings.
             </p>
 
             <div>
@@ -324,10 +327,11 @@ export default function Onboarding() {
               <label className="mb-2 block text-xs font-medium text-foreground">Your Role Focus</label>
               <div className="grid grid-cols-2 gap-2">
                 {([
-                  { value: "sales", label: "Sales" },
+                  { value: "sales", label: "Sales / BD" },
                   { value: "founder", label: "Founder / CEO" },
                   { value: "executive", label: "Executive" },
                   { value: "hr", label: "HR / People Ops" },
+                  { value: "job_seeker", label: "Job Seeker" },
                   { value: "investor", label: "Investor" },
                   { value: "consultant", label: "Consultant" },
                   { value: "analyst", label: "Analyst" },

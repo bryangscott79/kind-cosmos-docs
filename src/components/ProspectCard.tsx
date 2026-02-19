@@ -24,7 +24,7 @@ export default function ProspectCard({ prospect }: ProspectCardProps) {
   const { getSavedForProspect } = useSavedSignals();
   const { data } = useIntelligence();
   const { industries, signals: allSignals } = data;
-  const { user } = useAuth();
+  const { user, persona } = useAuth();
   const { toast } = useToast();
 
   const sendFeedback = async (type: "more" | "less") => {
@@ -85,7 +85,12 @@ export default function ProspectCard({ prospect }: ProspectCardProps) {
             </div>
           </div>
           <div className="flex flex-col items-end gap-1.5 shrink-0">
-            <span className="font-mono text-xl font-bold" style={{ color: scoreColor }}>{prospect.vigylScore}</span>
+            <span className="font-mono text-xl font-bold relative group" style={{ color: scoreColor }}>
+              {prospect.vigylScore}
+              <span className="absolute right-0 top-full mt-1 z-30 hidden group-hover:block w-48 rounded-md border border-border bg-popover px-3 py-2 text-[10px] text-popover-foreground font-normal shadow-md leading-relaxed">
+                {persona.scoreTip}
+              </span>
+            </span>
             <span className={`inline-flex rounded-full px-2 py-0.5 text-[9px] font-medium border ${pressureStyles[prospect.pressureResponse]}`}>
               {getPressureLabel(prospect.pressureResponse)}
             </span>
@@ -249,15 +254,15 @@ export default function ProspectCard({ prospect }: ProspectCardProps) {
           <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border">
             <Link to={`/prospects/${prospect.id}`} onClick={(e) => e.stopPropagation()}
               className="flex items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground transition-opacity hover:opacity-90">
-              View Dossier <ArrowRight className="h-3 w-3" />
+              {persona.dossierLabel} <ArrowRight className="h-3 w-3" />
             </Link>
             <Link to={`/outreach?prospect=${prospect.id}`} onClick={(e) => e.stopPropagation()}
               className="flex items-center justify-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-medium text-foreground hover:bg-accent transition-colors">
-              <Mail className="h-3 w-3" /> Outreach
+              <Mail className="h-3 w-3" /> {persona.outreachLabel}
             </Link>
-            <button onClick={(e) => { e.stopPropagation(); toast({ title: "Added to Pipeline", description: `${prospect.companyName} added to Researching stage.` }); }}
+            <button onClick={(e) => { e.stopPropagation(); toast({ title: `Added to ${persona.pipelineLabel}`, description: `${prospect.companyName} added to Researching stage.` }); }}
               className="flex items-center justify-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-medium text-foreground hover:bg-accent transition-colors">
-              Add to Pipeline
+              {persona.addToPipelineLabel}
             </button>
             <div onClick={(e) => e.stopPropagation()}>
               <AskArgus
