@@ -332,7 +332,7 @@ Make everything specific to the user's business capabilities and geography.`;
           },
           body: JSON.stringify({
             model: "openai/gpt-5-mini",
-            max_tokens: 16384,
+            max_completion_tokens: 16384,
             messages: [
               { role: "system", content: systemPrompt },
               { role: "user", content: userPrompt },
