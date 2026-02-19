@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useIntelligence } from "@/contexts/IntelligenceContext";
 import { supabase } from "@/integrations/supabase/client";
 import { track, EVENTS } from "@/lib/analytics";
 import type { Prospect } from "@/data/mockData";
@@ -26,6 +27,7 @@ interface ExploredVertical {
  */
 export function useExpandedProspects(existingProspects: Prospect[]) {
   const { user, profile } = useAuth();
+  const { effectiveUserId, isTeamMember } = useIntelligence();
   const [expandedProspects, setExpandedProspects] = useState<Prospect[]>([]);
   const [exploredVerticals, setExploredVerticals] = useState<ExploredVertical[]>([]);
   const [loading, setLoading] = useState(false);
@@ -33,15 +35,18 @@ export function useExpandedProspects(existingProspects: Prospect[]) {
   const [expandingScope, setExpandingScope] = useState<string | null>(null); // scope being expanded
   const [error, setError] = useState<string | null>(null);
 
+  // Use owner's ID for data access (team members see owner's data)
+  const dataUserId = effectiveUserId || user?.id;
+
   // Load existing expanded prospects from DB
   const loadExpanded = useCallback(async () => {
-    if (!user) return;
+    if (!dataUserId) return;
     setLoading(true);
     try {
       const { data, error: fetchError } = await (supabase
         .from("expanded_prospects" as any)
         .select("prospect_data")
-        .eq("user_id", user.id)
+        .eq("user_id", dataUserId)
         .order("created_at", { ascending: false }) as any);
 
       if (fetchError) throw fetchError;
@@ -53,7 +58,7 @@ export function useExpandedProspects(existingProspects: Prospect[]) {
       const { data: verticals } = await (supabase
         .from("explored_verticals" as any)
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", dataUserId)
         .order("last_expanded_at", { ascending: false }) as any);
 
       setExploredVerticals(verticals || []);
@@ -62,7 +67,7 @@ export function useExpandedProspects(existingProspects: Prospect[]) {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [dataUserId]);
 
   useEffect(() => { loadExpanded(); }, [loadExpanded]);
 

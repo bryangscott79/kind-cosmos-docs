@@ -26,6 +26,8 @@ interface IntelligenceContextType {
   hasData: boolean;
   isBackgroundRefreshing: boolean;
   isUsingSeedData: boolean;
+  effectiveUserId: string | null;
+  isTeamMember: boolean;
   // AI Impact generation (lives in context so it survives navigation)
   aiImpactGen: AiImpactGenState;
   generateAiImpact: (industriesToProcess?: { id: string; name: string }[]) => void;
@@ -47,6 +49,8 @@ const IntelligenceContext = createContext<IntelligenceContextType>({
   hasData: false,
   isBackgroundRefreshing: false,
   isUsingSeedData: false,
+  effectiveUserId: null,
+  isTeamMember: false,
   aiImpactGen: { generating: false, progress: { current: 0, total: 0, industryName: "" }, error: null },
   generateAiImpact: () => {},
 });
@@ -59,6 +63,38 @@ export function IntelligenceProvider({ children }: { children: ReactNode }) {
   const [initialized, setInitialized] = useState(false);
   const [isBackgroundRefreshing, setIsBackgroundRefreshing] = useState(false);
   const [isUsingSeedData, setIsUsingSeedData] = useState(false);
+
+  // Team owner resolution: if user is a team member, use the owner's data
+  const [effectiveUserId, setEffectiveUserId] = useState<string | null>(null);
+  const [isTeamMember, setIsTeamMember] = useState(false);
+
+  useEffect(() => {
+    if (!session?.user?.id) return;
+    const resolveOwner = async () => {
+      try {
+        const { data: membership } = await (supabase
+          .from("team_members" as any)
+          .select("owner_id")
+          .eq("invited_user_id", session.user.id)
+          .eq("invite_status", "accepted")
+          .limit(1)
+          .maybeSingle() as any);
+
+        if (membership?.owner_id) {
+          setEffectiveUserId(membership.owner_id);
+          setIsTeamMember(true);
+          console.log("[Intelligence] Team member detected — using owner's data:", membership.owner_id);
+        } else {
+          setEffectiveUserId(session.user.id);
+          setIsTeamMember(false);
+        }
+      } catch {
+        setEffectiveUserId(session.user.id);
+        setIsTeamMember(false);
+      }
+    };
+    resolveOwner();
+  }, [session?.user?.id]);
 
   // AI Impact generation state (persists across navigation)
   const [aiImpactGen, setAiImpactGen] = useState<AiImpactGenState>({
@@ -79,12 +115,12 @@ export function IntelligenceProvider({ children }: { children: ReactNode }) {
 
   // Load cached data from database on mount
   const loadCachedData = useCallback(async () => {
-    if (!session?.user?.id) return false;
+    if (!effectiveUserId) return false;
     try {
       const { data: cached, error: cacheError } = await supabase
         .from("cached_intelligence")
         .select("intelligence_data, updated_at")
-        .eq("user_id", session.user.id)
+        .eq("user_id", effectiveUserId)
         .maybeSingle();
 
       if (cacheError) {
@@ -110,7 +146,7 @@ export function IntelligenceProvider({ children }: { children: ReactNode }) {
       console.error("Failed to load cached intelligence:", err);
       return false;
     }
-  }, [session?.user?.id]);
+  }, [effectiveUserId]);
 
   // Generate fresh intelligence from AI
   const generateFresh = useCallback(async (isBackground: boolean) => {
@@ -211,7 +247,7 @@ export function IntelligenceProvider({ children }: { children: ReactNode }) {
 
   // On mount: load cache first, then refresh in background
   useEffect(() => {
-    if (!profile || !session || initialized) return;
+    if (!profile || !session || initialized || !effectiveUserId) return;
 
     const init = async () => {
       setInitialized(true);
@@ -222,16 +258,22 @@ export function IntelligenceProvider({ children }: { children: ReactNode }) {
       if (hasCached) {
         setLoading(false);
         setIsUsingSeedData(false);
-        generateFresh(true);
+        // Only refresh if user is the owner (team members share owner's data)
+        if (!isTeamMember) {
+          generateFresh(true);
+        }
       } else {
         activateSeedFallback();
         setLoading(false);
-        await generateFresh(false);
+        // Only generate if user is the owner
+        if (!isTeamMember) {
+          await generateFresh(false);
+        }
       }
     };
 
     init();
-  }, [profile, session, initialized, loadCachedData, generateFresh, activateSeedFallback]);
+  }, [profile, session, initialized, effectiveUserId, isTeamMember, loadCachedData, generateFresh, activateSeedFallback]);
 
   const refresh = useCallback(async () => {
     const hasExistingData = data.industries.length > 0;
@@ -248,6 +290,8 @@ export function IntelligenceProvider({ children }: { children: ReactNode }) {
         hasData: data.industries.length > 0,
         isBackgroundRefreshing,
         isUsingSeedData,
+        effectiveUserId,
+        isTeamMember,
         aiImpactGen,
         generateAiImpact,
       }}
