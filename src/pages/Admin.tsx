@@ -224,7 +224,7 @@ export default function Admin() {
   }, [users]);
 
   if (!session) return <Navigate to="/auth" replace />;
-  if (!isAdmin) return <Navigate to="/industries" replace />;
+  if (!isAdmin) return <Navigate to="/dashboard" replace />;
 
   const tierKeys = Object.keys(TIERS) as TierKey[];
 

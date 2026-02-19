@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { BarChart3, Radio, Users, Kanban, PenTool, Settings, LogOut, CreditCard, Lock, Shield, Menu, X, FileText, Mail } from "lucide-react";
+import { BarChart3, Radio, Users, Kanban, PenTool, Settings, LogOut, CreditCard, Lock, Shield, Menu, X, FileText, Mail, LayoutDashboard } from "lucide-react";
 import vigylLogo from "@/assets/vigyl-logo.png";
 import { useAuth } from "@/contexts/AuthContext";
 import { TIERS, hasAccess, FEATURE_ACCESS, TierKey } from "@/lib/tiers";
@@ -12,6 +12,7 @@ function useNavSections() {
     {
       label: "Intelligence",
       items: [
+        { label: "Dashboard", subtitle: "Overview & key metrics", path: "/dashboard", icon: LayoutDashboard, feature: "industries" },
         { label: "Industry Health", subtitle: "Health scores, AI impact & trends", path: "/industries", icon: BarChart3, feature: "industries" },
         { label: "Signals", subtitle: "What's happening now", path: "/signals", icon: Radio, feature: "signals" },
       ],
@@ -76,9 +77,10 @@ export default function AppSidebar() {
             </p>
             <div className="space-y-0.5">
               {section.items.map((item) => {
-                const isActive = location.pathname === item.path || (item.path !== "/industries" && location.pathname.startsWith(item.path));
+                const isActive = location.pathname === item.path || (item.path !== "/industries" && item.path !== "/dashboard" && location.pathname.startsWith(item.path));
                 const isBriefing = item.path === "/industries" && (location.pathname === "/industries" || location.pathname.startsWith("/industries/"));
-                const active = isActive || isBriefing;
+                const isDashboard = item.path === "/dashboard" && location.pathname === "/dashboard";
+                const active = isActive || isBriefing || isDashboard;
                 const requiredTier = FEATURE_ACCESS[item.feature] as TierKey;
                 const locked = !hasAccess(tier, requiredTier);
                 const showBadge = item.path === "/signals" && newSignalCount > 0;

@@ -17,6 +17,7 @@ const Landing = lazy(() => import("./pages/Landing"));
 const Auth = lazy(() => import("./pages/Auth"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 const Pricing = lazy(() => import("./pages/Pricing"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
 const IndustryDashboard = lazy(() => import("./pages/IndustryDashboard"));
 const IndustryDetail = lazy(() => import("./pages/IndustryDetail"));
 const SignalFeed = lazy(() => import("./pages/SignalFeed"));
@@ -60,9 +61,9 @@ const App = () => (
               <Route path="/auth" element={<Auth />} />
               <Route path="/onboarding" element={<Onboarding />} />
               <Route path="/pricing" element={<Pricing />} />
+              <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/industries" element={<ProtectedRoute><IndustryDashboard /></ProtectedRoute>} />
               <Route path="/industries/:slug" element={<ProtectedRoute><IndustryDetail /></ProtectedRoute>} />
-              <Route path="/ai-impact" element={<ProtectedRoute><IndustryDashboard /></ProtectedRoute>} />
               <Route path="/signals" element={<ProtectedRoute><SignalFeed /></ProtectedRoute>} />
               <Route path="/prospects" element={<ProtectedRoute><TierGate requiredTier="starter" featureName="Prospect Engine"><Prospects /></TierGate></ProtectedRoute>} />
               <Route path="/prospects/:id" element={<ProtectedRoute><TierGate requiredTier="starter" featureName="Prospect Engine"><ProspectDetail /></TierGate></ProtectedRoute>} />

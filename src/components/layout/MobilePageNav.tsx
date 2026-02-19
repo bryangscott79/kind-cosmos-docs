@@ -1,7 +1,8 @@
 import { Link, useLocation } from "react-router-dom";
-import { BarChart3, Radio, Users, Kanban } from "lucide-react";
+import { BarChart3, Radio, Users, Kanban, LayoutDashboard } from "lucide-react";
 
 const tabs = [
+  { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
   { label: "Health", path: "/industries", icon: BarChart3 },
   { label: "Signals", path: "/signals", icon: Radio },
   { label: "Prospects", path: "/prospects", icon: Users },

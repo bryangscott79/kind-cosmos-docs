@@ -21,7 +21,7 @@ export default function Auth() {
 
   // If logged in, redirect to the intended page or default
   if (session && profile?.onboarding_completed) {
-    return <Navigate to={redirectTo || "/industries"} replace />;
+    return <Navigate to={redirectTo || "/dashboard"} replace />;
   }
   if (session && profile && !profile.onboarding_completed) return <Navigate to="/onboarding" replace />;
 
