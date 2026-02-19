@@ -62,9 +62,16 @@ export default function IndustryDetail() {
   const relatedProspects = prospects.filter((p) => p.industryId === industry.id).sort((a, b) => b.vigylScore - a.vigylScore);
 
   // Find AI Impact data for this industry
-  const impactData = aiImpact?.find(
-    (a) => a.industryId === industry.id || a.industryName.toLowerCase() === industry.name.toLowerCase()
-  );
+  const impactData = aiImpact?.find((a) => {
+    const slug = industry.slug || industry.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    const aSlug = (a.industryId || a.industryName || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    return (
+      a.industryId === industry.id ||
+      a.industryName?.toLowerCase() === industry.name.toLowerCase() ||
+      aSlug === slug ||
+      a.industryId === slug
+    );
+  });
 
   const factorScores = scoreFactors.map((f) => ({
     ...f,
