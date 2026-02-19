@@ -20,6 +20,8 @@ import { track, EVENTS } from "@/lib/analytics";
 import { supabase } from "@/integrations/supabase/client";
 import AskArgus from "@/components/AskArgus";
 import CrmPushButton from "@/components/CrmPushButton";
+import ProspectContacts from "@/components/prospect-detail/ProspectContacts";
+import ProspectDetailSidebar from "@/components/prospect-detail/ProspectDetailSidebar";
 import {
   getScoreColorHsl, getPressureLabel, pipelineStageLabels,
   getSignalTypeLabel, PipelineStage
@@ -140,9 +142,6 @@ export default function ProspectDetail() {
   const { persona, profile } = useAuth();
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
-  const [enrichedContacts, setEnrichedContacts] = useState<any[] | null>(null);
-  const [enriching, setEnriching] = useState(false);
-  const [enrichNotes, setEnrichNotes] = useState<string | null>(null);
 
   // Resolve prospect from intelligence data OR pipeline DB
   const { findProspect, loading: pipelineLoading } = usePipelineProspects(prospects);
@@ -150,34 +149,6 @@ export default function ProspectDetail() {
 
   // Team data for presentations
   const { members: teamMembers } = useTeamMembers();
-
-  const enrichContacts = useCallback(async () => {
-    if (!prospect || enriching) return;
-    setEnriching(true);
-    try {
-      const { data: result, error } = await supabase.functions.invoke("enrich-contacts", {
-        body: {
-          companyName: prospect.companyName,
-          industryContext: industries.find(i => i.id === prospect.industryId)?.name,
-          whyNow: prospect.whyNow,
-          userServices: profile?.business_summary || profile?.ai_summary || "",
-          existingContacts: prospect.decisionMakers,
-        },
-      });
-      if (error) throw error;
-      if (result?.contacts) {
-        setEnrichedContacts(result.contacts);
-        setEnrichNotes(result.researchNotes || null);
-        track(EVENTS.CONTACTS_ENRICHED, { company: prospect.companyName, count: result.contacts.length });
-        toast({ title: "Contacts enriched", description: `Found ${result.contacts.length} key contacts at ${prospect.companyName}.` });
-      }
-    } catch (err: any) {
-      console.error("Enrichment failed:", err);
-      toast({ title: "Enrichment failed", description: err.message || "Could not enrich contacts. Try again.", variant: "destructive" });
-    } finally {
-      setEnriching(false);
-    }
-  }, [prospect, enriching, industries, profile, toast]);
 
   // Track view — MUST be before any early returns to satisfy React hooks rules
   useEffect(() => {
@@ -213,16 +184,16 @@ export default function ProspectDetail() {
 
   const stageIdx = prospect ? stageOrder.indexOf(prospect.pipelineStage) : -1;
 
-  // Use enriched contacts if available, otherwise fall back to original + fix LinkedIn URLs
+  // Contacts with LinkedIn URL fixing (enrichment happens inside ProspectContacts)
   const displayContacts = useMemo(() => {
     if (!prospect) return [];
-    return enrichedContacts || prospect.decisionMakers.map(dm => ({
+    return prospect.decisionMakers.map(dm => ({
       ...dm,
       linkedinUrl: dm.linkedinUrl && dm.linkedinUrl !== "#"
         ? dm.linkedinUrl
         : `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(`${dm.title} ${prospect.companyName}`)}`,
     }));
-  }, [prospect, enrichedContacts]);
+  }, [prospect]);
 
   // Build Argus context
   const argusContext = prospect ? `Prospect Dossier: ${prospect.companyName}
@@ -392,85 +363,12 @@ ${impactData ? `Industry AI Automation: ${impactData.automationRate}%, Opportuni
               </div>
 
               {/* Key Contacts */}
-              <div className="rounded-xl border border-border bg-card p-5">
-                <div className="flex items-center justify-between mb-4">
-                  <SectionHeader icon={<Users className="h-4 w-4 text-primary" />} title="Key Contacts" badge={`${displayContacts.length}`} />
-                  <button
-                    onClick={enrichContacts}
-                    disabled={enriching}
-                    className="inline-flex items-center gap-1.5 rounded-md border border-primary/20 bg-primary/5 px-3 py-1.5 text-[10px] font-medium text-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
-                  >
-                    {enriching ? <Loader2 className="h-3 w-3 animate-spin" /> : <Search className="h-3 w-3" />}
-                    {enriching ? "Researching..." : enrichedContacts ? "Re-enrich" : "Find Real Contacts"}
-                  </button>
-                </div>
-
-                {enrichNotes && (
-                  <div className="mb-3 rounded-md bg-amber-500/5 border border-amber-500/10 px-3 py-2">
-                    <p className="text-[10px] text-amber-700 dark:text-amber-400 leading-relaxed">{enrichNotes}</p>
-                  </div>
-                )}
-
-                <div className="space-y-2">
-                  {displayContacts.map((dm, i) => {
-                    const isVerified = dm.verified === true;
-                    const linkedinUrl = dm.linkedinUrl && dm.linkedinUrl !== "#"
-                      ? dm.linkedinUrl
-                      : `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(`${dm.name} ${prospect.companyName}`)}`;
-
-                    return (
-                      <div key={i} className={`rounded-lg border p-3 transition-colors ${isVerified ? "border-emerald-500/20 bg-emerald-500/[0.02]" : "border-border"} hover:border-primary/20`}>
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-0.5">
-                              <p className="text-sm font-semibold text-foreground">{dm.name}</p>
-                              {isVerified ? (
-                                <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 text-[8px] font-medium text-emerald-600 dark:text-emerald-400">
-                                  <CheckCircle2 className="h-2 w-2" /> Verified
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center gap-0.5 rounded-full bg-secondary border border-border px-1.5 py-0.5 text-[8px] font-medium text-muted-foreground">
-                                  <CircleDashed className="h-2 w-2" /> Suggested
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-xs text-muted-foreground">{dm.title}</p>
-                            {dm.relevance && (
-                              <p className="text-[10px] text-muted-foreground/80 mt-1 leading-relaxed italic">
-                                {dm.relevance}
-                              </p>
-                            )}
-                            {dm.source && isVerified && (
-                              <p className="text-[9px] text-emerald-600/70 dark:text-emerald-400/70 mt-0.5">
-                                Source: {dm.source}
-                              </p>
-                            )}
-                            {dm.recentActivity && (
-                              <p className="text-[9px] text-primary/70 mt-0.5">
-                                Recent: {dm.recentActivity}
-                              </p>
-                            )}
-                          </div>
-                          <a href={linkedinUrl} target="_blank" rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 rounded-md bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 px-2.5 py-1.5 text-[10px] font-medium text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors shrink-0">
-                            {isVerified ? "LinkedIn" : "Search"} <ExternalLink className="h-2.5 w-2.5" />
-                          </a>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {displayContacts.length === 0 && (
-                  <div className="text-center py-6">
-                    <Users className="mx-auto h-6 w-6 text-muted-foreground/30 mb-2" />
-                    <p className="text-xs text-muted-foreground">No contacts identified yet.</p>
-                    <button onClick={enrichContacts} disabled={enriching} className="mt-2 text-xs font-medium text-primary hover:text-primary/80">
-                      {enriching ? "Researching..." : "Find contacts at this company"}
-                    </button>
-                  </div>
-                )}
-              </div>
+              <ProspectContacts
+                companyName={prospect.companyName}
+                industryName={industry?.name}
+                whyNow={prospect.whyNow}
+                contacts={prospect.decisionMakers}
+              />
 
               {/* Related Signals */}
               <div className="rounded-xl border border-border bg-card p-5">
@@ -563,111 +461,14 @@ ${impactData ? `Industry AI Automation: ${impactData.automationRate}%, Opportuni
             </div>
 
             {/* Sidebar */}
-            <div className="space-y-5">
-              {/* Outreach Playbook */}
-              <div className="rounded-xl border border-primary/20 bg-primary/[0.02] p-5">
-                <SectionHeader icon={<Target className="h-4 w-4 text-primary" />} title="Outreach Playbook" />
-                <div className="space-y-3">
-                  <div className="rounded-lg bg-card border border-border p-3">
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Primary Angle</p>
-                    <p className="text-xs text-foreground leading-relaxed">
-                      {prospect.pressureResponse === "growth_mode"
-                        ? `${prospect.companyName} is in growth mode — lead with competitive advantage and innovation. They're investing aggressively.`
-                        : prospect.pressureResponse === "contracting"
-                        ? `${prospect.companyName} is contracting — lead with ROI, efficiency, and risk reduction. Keep proposals lean.`
-                        : `${prospect.companyName} is investing strategically — show clear ROI with a phased approach.`}
-                    </p>
-                  </div>
-                  {displayContacts[0] && (
-                    <div className="rounded-lg bg-card border border-border p-3">
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Lead Contact</p>
-                      <p className="text-xs font-semibold text-foreground">{displayContacts[0].name}</p>
-                      <p className="text-[11px] text-muted-foreground">{displayContacts[0].title}</p>
-                      {displayContacts[0].verified && (
-                        <span className="inline-flex items-center gap-0.5 mt-1 text-[8px] text-emerald-600">
-                          <CheckCircle2 className="h-2 w-2" /> Verified
-                        </span>
-                      )}
-                    </div>
-                  )}
-                  {relatedSignals[0] && (
-                    <div className="rounded-lg bg-card border border-border p-3">
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Signal Hook</p>
-                      <p className="text-xs text-foreground leading-relaxed">
-                        Reference "{relatedSignals[0].title}" — shows you understand their market.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* AI Impact for Industry */}
-              {impactData && (
-                <div className="rounded-xl border border-border bg-card p-5">
-                  <SectionHeader icon={<Brain className="h-4 w-4 text-primary" />} title="Industry AI Impact" />
-                  <div className="space-y-2">
-                    <div className="grid grid-cols-3 gap-2">
-                      <div className="rounded-md bg-rose-50 border border-rose-200 p-2 text-center">
-                        <Bot className="h-3 w-3 text-rose-600 mx-auto" />
-                        <p className="text-sm font-mono font-bold text-rose-600">{impactData.aiLedFunctions.length}</p>
-                        <p className="text-[8px] text-rose-600/70">AI-Led</p>
-                      </div>
-                      <div className="rounded-md bg-violet-50 border border-violet-200 p-2 text-center">
-                        <Handshake className="h-3 w-3 text-violet-600 mx-auto" />
-                        <p className="text-sm font-mono font-bold text-violet-600">{impactData.collaborativeFunctions.length}</p>
-                        <p className="text-[8px] text-violet-600/70">Collab</p>
-                      </div>
-                      <div className="rounded-md bg-sky-50 border border-sky-200 p-2 text-center">
-                        <User className="h-3 w-3 text-sky-600 mx-auto" />
-                        <p className="text-sm font-mono font-bold text-sky-600">{impactData.humanLedFunctions.length}</p>
-                        <p className="text-[8px] text-sky-600/70">Human</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1 h-1.5 rounded-full overflow-hidden">
-                      <div className="h-full bg-rose-500 rounded-full" style={{ width: `${(impactData.aiLedFunctions.length / (impactData.aiLedFunctions.length + impactData.collaborativeFunctions.length + impactData.humanLedFunctions.length)) * 100}%` }} />
-                      <div className="h-full bg-violet-500 rounded-full" style={{ width: `${(impactData.collaborativeFunctions.length / (impactData.aiLedFunctions.length + impactData.collaborativeFunctions.length + impactData.humanLedFunctions.length)) * 100}%` }} />
-                      <div className="h-full bg-sky-500 rounded-full" style={{ width: `${(impactData.humanLedFunctions.length / (impactData.aiLedFunctions.length + impactData.collaborativeFunctions.length + impactData.humanLedFunctions.length)) * 100}%` }} />
-                    </div>
-                    <p className="text-[10px] text-muted-foreground text-center">{impactData.automationRate}% automated</p>
-                    <Link to="/ai-impact" className="text-[10px] text-primary font-medium hover:underline block text-center mt-1">
-                      View full AI impact →
-                    </Link>
-                  </div>
-                </div>
-              )}
-
-              {/* Notes */}
-              <div className="rounded-xl border border-border bg-card p-5">
-                <SectionHeader icon={<MessageSquare className="h-4 w-4 text-primary" />} title="Notes" />
-                <p className="text-xs text-muted-foreground leading-relaxed italic">
-                  {prospect.notes || "No notes yet. Add notes from the Pipeline view."}
-                </p>
-                {prospect.lastContacted && (
-                  <p className="text-[10px] text-muted-foreground mt-3 pt-2 border-t border-border">
-                    Last contacted: {new Date(prospect.lastContacted).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
-                  </p>
-                )}
-              </div>
-
-              {/* Same-Industry Prospects */}
-              {industryProspects.length > 0 && (
-                <div className="rounded-xl border border-border bg-card p-5">
-                  <SectionHeader icon={<Building2 className="h-4 w-4 text-primary" />} title={`More in ${industry?.name}`} badge={`${industryProspects.length}`} />
-                  <div className="space-y-1.5">
-                    {industryProspects.slice(0, 5).map(p => (
-                      <Link key={p.id} to={`/prospects/${p.id}`}
-                        className="flex items-center justify-between rounded-lg border border-border px-3 py-2 hover:border-primary/20 transition-colors">
-                        <div className="min-w-0">
-                          <p className="text-xs font-semibold text-foreground truncate">{p.companyName}</p>
-                          <p className="text-[9px] text-muted-foreground">{p.location.city}, {p.location.state}</p>
-                        </div>
-                        <span className="text-xs font-mono font-bold text-primary shrink-0 ml-2">{p.vigylScore}</span>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+            <ProspectDetailSidebar
+              prospect={prospect}
+              displayContacts={displayContacts}
+              relatedSignals={relatedSignals}
+              industry={industry}
+              impactData={impactData}
+              industryProspects={industryProspects}
+            />
           </div>
         </div>
       </DashboardLayout>
