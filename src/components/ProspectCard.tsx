@@ -136,23 +136,31 @@ export default function ProspectCard({ prospect }: ProspectCardProps) {
       {/* ── EXPANDED CONTENT ── */}
       {expanded && (
         <div className="px-5 pb-5 space-y-4 border-t border-border">
-          {/* Decision Makers */}
+          {/* Key Contacts */}
           {prospect.decisionMakers.length > 0 && (
             <div className="pt-3">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">Decision Makers</p>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">Key Contacts</p>
               <div className="space-y-1.5">
-                {prospect.decisionMakers.map((dm) => (
-                  <div key={dm.name} className="flex items-center justify-between rounded-md border border-border px-2.5 py-2">
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      <Users className="h-3 w-3 text-muted-foreground shrink-0" />
-                      <span className="text-xs font-medium text-foreground">{dm.name}</span>
-                      <span className="text-[10px] text-muted-foreground truncate">· {dm.title}</span>
+                {prospect.decisionMakers.map((dm) => {
+                  const url = dm.linkedinUrl && dm.linkedinUrl !== "#"
+                    ? dm.linkedinUrl
+                    : `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(`${dm.title} ${prospect.companyName}`)}`;
+                  return (
+                    <div key={dm.name + dm.title} className="flex items-center justify-between rounded-md border border-border px-2.5 py-2">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <Users className="h-3 w-3 text-muted-foreground shrink-0" />
+                        <span className="text-xs font-medium text-foreground">{dm.name}</span>
+                        <span className="text-[10px] text-muted-foreground truncate">· {dm.title}</span>
+                        {dm.verified && (
+                          <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-1 py-0.5 text-[7px] font-medium text-emerald-600 shrink-0">✓</span>
+                        )}
+                      </div>
+                      <a href={url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-muted-foreground hover:text-blue-600 transition-colors shrink-0" title={dm.verified ? "View on LinkedIn" : "Search LinkedIn"}>
+                        <Linkedin className="h-3.5 w-3.5" />
+                      </a>
                     </div>
-                    <a href={dm.linkedinUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-muted-foreground hover:text-blue-600 transition-colors shrink-0">
-                      <Linkedin className="h-3.5 w-3.5" />
-                    </a>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}

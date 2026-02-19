@@ -126,7 +126,16 @@ Generate diverse, high-quality intelligence. Be concise but specific.
     - Each prospect's "industryId" MUST match an industry you generated. An airline is NOT "Education". Match the prospect's ACTUAL business to the correct industry.
     - Include a MIX of company sizes and spread across at least 6 different industries
     - Include food & beverage, automotive, airlines, electronics, hospitality — not just tech!
-    - Each with a "Why Now" reason, decision makers, 2-3 recommended services, websiteUrl, 2-3 relatedLinks, and 2-3 competitors
+    - Each with a "Why Now" reason, key contacts, 2-3 recommended services, websiteUrl, 2-3 relatedLinks, and 2-3 competitors
+
+    DECISION MAKER RULES (CRITICAL):
+    - For each prospect, include 3-5 key contacts who would be relevant to the opportunity
+    - ONLY use names of real, publicly verifiable executives (C-suite, SVPs, VPs) you are CONFIDENT exist at this company from public knowledge
+    - If you are NOT confident a specific person holds a role, set name to the functional title (e.g. "Chief Digital Officer") and set verified to false
+    - For verified contacts, set verified to true and include a source (e.g. "Company leadership page", "SEC filing", "Press release")
+    - For linkedinUrl: generate a LinkedIn SEARCH URL like "https://www.linkedin.com/search/results/people/?keywords=Chief%20Digital%20Officer%20CompanyName" — NEVER use "#" or fake profile URLs
+    - Include a brief "relevance" explaining why this person matters for the specific opportunity
+    - Prioritize roles that align with the user's services and the prospect's "Why Now" trigger
 
 Make everything specific to the user's business capabilities and geography.`;
 
@@ -221,11 +230,14 @@ Make everything specific to the user's business capabilities and geography.`;
                       items: {
                         type: "object",
                         properties: {
-                          name: { type: "string" },
-                          title: { type: "string" },
-                          linkedinUrl: { type: "string" },
+                          name: { type: "string", description: "Real name if verified, or functional title if not (e.g. 'Chief Digital Officer')" },
+                          title: { type: "string", description: "Job title / role" },
+                          linkedinUrl: { type: "string", description: "LinkedIn SEARCH URL for this person/role at the company. Format: https://www.linkedin.com/search/results/people/?keywords=Title%20CompanyName" },
+                          verified: { type: "boolean", description: "true if you are confident this is a real person from public knowledge" },
+                          source: { type: "string", description: "Where you know this person from: 'Company website', 'SEC filing', 'Press release', 'Public knowledge', or empty if not verified" },
+                          relevance: { type: "string", description: "Brief reason why this person matters for this specific opportunity" },
                         },
-                        required: ["name", "title", "linkedinUrl"],
+                        required: ["name", "title", "linkedinUrl", "verified"],
                         additionalProperties: false,
                       },
                     },

@@ -21,7 +21,7 @@ serve(async (req) => {
       : "No specific signals available.";
 
     const decisionMakers = prospect.decisionMakers?.length
-      ? prospect.decisionMakers.map((d: any) => `${d.name} (${d.title})`).join(", ")
+      ? prospect.decisionMakers.map((d: any) => `${d.name} (${d.title})${d.verified ? " [verified]" : ""}`).join(", ")
       : "Unknown contacts";
 
     const userContext = userProfile

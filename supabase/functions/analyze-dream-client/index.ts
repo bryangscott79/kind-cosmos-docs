@@ -28,7 +28,12 @@ The user wants to sell to "${companyName}" or any of its divisions/subsidiaries.
 Research this company and:
 1. Identify 2-5 divisions, subsidiaries, or business units within "${companyName}" that would be the BEST fit for what the user sells
 2. For each division, explain WHY NOW is a good time to approach them (recent news, leadership changes, strategic shifts, pain points)
-3. Identify key decision makers at each division
+3. Identify key contacts at each division — follow these STRICT rules:
+   - Include 3-5 contacts per division: executives, VPs, directors who would influence or decide on purchasing the user's services
+   - ONLY use real names if you are CONFIDENT they currently hold that role (from public knowledge, company leadership pages, press releases)
+   - If not confident about a specific name, use the functional title as the name (e.g. "Chief Digital Officer") and set verified=false
+   - For linkedinUrl, always generate a LinkedIn SEARCH URL: https://www.linkedin.com/search/results/people/?keywords=Title%20CompanyName
+   - Include a brief "relevance" for each contact explaining why they matter for this opportunity
 4. Recommend specific services the user could sell to each division
 5. Provide a fit score (0-100) for each division
 
@@ -64,11 +69,14 @@ Be specific, realistic, and actionable. Use real division names when possible.`;
                       items: {
                         type: "object",
                         properties: {
-                          name: { type: "string" },
-                          title: { type: "string" },
-                          linkedinUrl: { type: "string" },
+                          name: { type: "string", description: "Real name if verified, or functional title if not" },
+                          title: { type: "string", description: "Job title / role" },
+                          linkedinUrl: { type: "string", description: "LinkedIn SEARCH URL: https://www.linkedin.com/search/results/people/?keywords=Title%20CompanyName" },
+                          verified: { type: "boolean", description: "true only if confident this is a real, current person" },
+                          source: { type: "string", description: "Source of verification or empty" },
+                          relevance: { type: "string", description: "Why this person matters for the opportunity" },
                         },
-                        required: ["name", "title", "linkedinUrl"],
+                        required: ["name", "title", "linkedinUrl", "verified"],
                         additionalProperties: false,
                       },
                     },
