@@ -38,6 +38,48 @@ export type Database = {
         }
         Relationships: []
       }
+      pipeline_items: {
+        Row: {
+          company_name: string
+          created_at: string
+          id: string
+          industry_name: string | null
+          last_contacted: string | null
+          notes: string | null
+          pipeline_stage: string
+          prospect_data: Json | null
+          updated_at: string
+          user_id: string
+          vigyl_score: number | null
+        }
+        Insert: {
+          company_name: string
+          created_at?: string
+          id?: string
+          industry_name?: string | null
+          last_contacted?: string | null
+          notes?: string | null
+          pipeline_stage?: string
+          prospect_data?: Json | null
+          updated_at?: string
+          user_id: string
+          vigyl_score?: number | null
+        }
+        Update: {
+          company_name?: string
+          created_at?: string
+          id?: string
+          industry_name?: string | null
+          last_contacted?: string | null
+          notes?: string | null
+          pipeline_stage?: string
+          prospect_data?: Json | null
+          updated_at?: string
+          user_id?: string
+          vigyl_score?: number | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           ai_maturity_self: string | null

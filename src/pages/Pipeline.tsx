@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   Users, Radio, Calendar, MessageSquare, ExternalLink,
@@ -9,6 +9,7 @@ import {
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import IntelligenceLoader from "@/components/IntelligenceLoader";
 import { useIntelligence } from "@/contexts/IntelligenceContext";
+import { supabase } from "@/integrations/supabase/client";
 import {
   getScoreColor, getPressureColor, getPressureLabel,
   pipelineStageLabels, PipelineStage, Prospect, Industry, Signal
@@ -296,43 +297,102 @@ export default function Pipeline() {
   const { data } = useIntelligence();
   const { prospects, industries, signals } = data;
   const [localProspects, setLocalProspects] = useState<Prospect[] | null>(null);
-  const { persona } = useAuth();
+  const [dbItems, setDbItems] = useState<any[]>([]);
+  const { user, persona } = useAuth();
   const { toast } = useToast();
   const stageLabels = useMemo(() => getStageLabels(persona), [persona]);
 
-  const effectiveProspects = localProspects || prospects;
+  // Load persisted pipeline items from DB
+  useEffect(() => {
+    if (!user) return;
+    const load = async () => {
+      const { data: items } = await supabase
+        .from("pipeline_items")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false }) as any;
+      if (items) setDbItems(items);
+    };
+    load();
+  }, [user]);
 
-  const moveProspect = useCallback((prospectId: string, newStage: PipelineStage) => {
-    const current = (localProspects || prospects).find(p => p.id === prospectId);
+  // Convert DB items to Prospect shape for display
+  const dbProspects: Prospect[] = useMemo(() => dbItems.map((item: any) => {
+    const pd = item.prospect_data || {};
+    return {
+      id: `db-${item.id}`,
+      _dbId: item.id,
+      companyName: item.company_name,
+      industryId: item.industry_name || "",
+      vigylScore: item.vigyl_score || 0,
+      pipelineStage: (item.pipeline_stage || "researching") as PipelineStage,
+      whyNow: pd.whyNow || "",
+      annualRevenue: pd.annualRevenue || "Unknown",
+      employeeCount: pd.employeeCount || 0,
+      location: pd.location || { city: "", state: "", country: "" },
+      pressureResponse: pd.pressureResponse || "selective_investing",
+      decisionMakers: pd.decisionMakers || [],
+      relatedSignals: [],
+      notes: item.notes || "",
+      lastContacted: item.last_contacted || undefined,
+      isDreamClient: pd.isDreamClient || false,
+    } as Prospect & { _dbId: string };
+  }), [dbItems]);
+
+  // Merge: DB items + AI-generated items (deduplicate by company name)
+  const mergedProspects = useMemo(() => {
+    const dbNames = new Set(dbProspects.map(p => p.companyName.toLowerCase()));
+    const aiOnly = prospects.filter(p => !dbNames.has(p.companyName.toLowerCase()));
+    return [...dbProspects, ...aiOnly];
+  }, [dbProspects, prospects]);
+
+  const effectiveProspects = localProspects || mergedProspects;
+
+  const moveProspect = useCallback(async (prospectId: string, newStage: PipelineStage) => {
+    const current = (localProspects || mergedProspects).find(p => p.id === prospectId);
     const prevStage = current?.pipelineStage;
     
     setLocalProspects((prev) => {
-      const list = prev || [...prospects];
+      const list = prev || [...mergedProspects];
       return list.map((p) => (p.id === prospectId ? { ...p, pipelineStage: newStage } : p));
     });
 
-    // Show undo toast for stage changes
+    // Persist to DB if it's a DB item
+    if (prospectId.startsWith("db-")) {
+      const dbId = prospectId.replace("db-", "");
+      await supabase.from("pipeline_items").update({ pipeline_stage: newStage } as any).eq("id", dbId);
+    }
+
     if (prevStage && prevStage !== newStage) {
       const label = stageLabels[newStage] || pipelineStageLabels[newStage];
       toast({
         title: `Moved to ${label}`,
         description: `${current?.companyName || "Prospect"} → ${label}`,
-        action: <ToastAction altText="Undo" onClick={() => {
+        action: <ToastAction altText="Undo" onClick={async () => {
           setLocalProspects((prev) => {
-            const list = prev || [...prospects];
+            const list = prev || [...mergedProspects];
             return list.map((p) => (p.id === prospectId ? { ...p, pipelineStage: prevStage } : p));
           });
+          if (prospectId.startsWith("db-")) {
+            const dbId = prospectId.replace("db-", "");
+            await supabase.from("pipeline_items").update({ pipeline_stage: prevStage } as any).eq("id", dbId);
+          }
         }}>Undo</ToastAction>,
       });
     }
-  }, [prospects, localProspects, stageLabels, toast]);
+  }, [mergedProspects, localProspects, stageLabels, toast]);
 
-  const updateNotes = useCallback((prospectId: string, notes: string) => {
+  const updateNotes = useCallback(async (prospectId: string, notes: string) => {
     setLocalProspects((prev) => {
-      const list = prev || [...prospects];
+      const list = prev || [...mergedProspects];
       return list.map((p) => (p.id === prospectId ? { ...p, notes } : p));
     });
-  }, [prospects]);
+    // Persist to DB if it's a DB item
+    if (prospectId.startsWith("db-")) {
+      const dbId = prospectId.replace("db-", "");
+      await supabase.from("pipeline_items").update({ notes } as any).eq("id", dbId);
+    }
+  }, [mergedProspects]);
 
   const columns = useMemo(() => stageOrder.map((stage) => ({
     stage,

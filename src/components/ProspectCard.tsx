@@ -273,7 +273,32 @@ export default function ProspectCard({ prospect }: ProspectCardProps) {
               className="flex items-center justify-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-medium text-foreground hover:bg-accent transition-colors">
               <Mail className="h-3 w-3" /> {persona.outreachLabel}
             </Link>
-            <button onClick={(e) => { e.stopPropagation(); toast({ title: `Added to ${persona.pipelineLabel}`, description: `${prospect.companyName} added to Researching stage.` }); }}
+            <button onClick={async (e) => {
+              e.stopPropagation();
+              if (!user) { toast({ title: "Sign in required", variant: "destructive" }); return; }
+              try {
+                const { error } = await supabase.from("pipeline_items").insert({
+                  user_id: user.id,
+                  company_name: prospect.companyName,
+                  industry_name: industry?.name || prospect.industryId,
+                  pipeline_stage: "researching",
+                  vigyl_score: prospect.vigylScore,
+                  prospect_data: {
+                    whyNow: prospect.whyNow,
+                    annualRevenue: prospect.annualRevenue,
+                    employeeCount: prospect.employeeCount,
+                    location: prospect.location,
+                    pressureResponse: prospect.pressureResponse,
+                    decisionMakers: prospect.decisionMakers,
+                    isDreamClient: prospect.isDreamClient || false,
+                  },
+                } as any);
+                if (error) throw error;
+                toast({ title: `Added to ${persona.pipelineLabel}`, description: `${prospect.companyName} added to Researching stage.` });
+              } catch (err: any) {
+                toast({ title: "Failed to track", description: err.message, variant: "destructive" });
+              }
+            }}
               className="flex items-center justify-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-medium text-foreground hover:bg-accent transition-colors">
               {persona.addToPipelineLabel}
             </button>
