@@ -6,6 +6,7 @@ import HealthScoreGauge from "@/components/HealthScoreGauge";
 import SignalCard from "@/components/SignalCard";
 import IntelligenceLoader from "@/components/IntelligenceLoader";
 import { useIntelligence } from "@/contexts/IntelligenceContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { getScoreColorHsl, getTrendIcon } from "@/data/mockData";
 import AskArgus from "@/components/AskArgus";
 import { XAxis, YAxis, ResponsiveContainer, Tooltip, Area, AreaChart } from "recharts";
@@ -40,6 +41,7 @@ export default function IndustryDetail() {
   const { slug } = useParams();
   const { data } = useIntelligence();
   const { industries, signals, prospects, aiImpact } = data;
+  const { persona } = useAuth();
 
   const industry = industries.find((i) => i.slug === slug);
 
@@ -235,7 +237,7 @@ export default function IndustryDetail() {
           {/* Right sidebar */}
           <div className="space-y-6">
             {/* Prospects in this industry */}
-            <CollapsibleSection title="Prospects" icon={<Users className="h-4 w-4 text-primary" />} defaultOpen={true} badge={`${relatedProspects.length}`}>
+            <CollapsibleSection title={persona.prospectLabel} icon={<Users className="h-4 w-4 text-primary" />} defaultOpen={true} badge={`${relatedProspects.length}`}>
               {relatedProspects.length > 0 ? (
                 <div className="space-y-2">
                   {relatedProspects.slice(0, 6).map((p) => (
@@ -299,7 +301,7 @@ export default function IndustryDetail() {
               to={`/prospects?industry=${industry.id}`}
               className="block w-full rounded-md bg-primary px-4 py-2.5 text-center text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
             >
-              Find Prospects in {industry.name}
+              Find {persona.prospectLabel} in {industry.name}
             </Link>
           </div>
         </div>

@@ -4,7 +4,7 @@ import {
   FileText, Building2, Users, BarChart3, Calendar, Sparkles, Lock, ArrowRight,
   Loader2, Brain, ArrowLeft, TrendingUp, TrendingDown, Minus, Bot, Handshake,
   User, Radio, MapPin, DollarSign, Briefcase, Clock, AlertTriangle, CheckCircle2,
-  Target, Lightbulb, Shield, Zap
+  Target, Lightbulb, Shield, Zap, Printer, Copy
 } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import IntelligenceLoader from "@/components/IntelligenceLoader";
@@ -607,14 +607,34 @@ export default function Reports() {
                 <h1 className="text-lg font-bold text-foreground">{viewingReport.title}</h1>
                 <p className="text-[10px] text-muted-foreground mt-1">Generated {new Date(viewingReport.createdAt).toLocaleString()}</p>
               </div>
-              <AskArgus
-                context={`Report: ${viewingReport.title}\nType: ${viewingReport.type}\nGenerated: ${new Date(viewingReport.createdAt).toLocaleString()}\n\nThis is a ${viewingReport.type.replace(/_/g, " ")} report from the VIGYL platform. The user is viewing this report and may want to discuss strategy, drill deeper into specific findings, or get actionable next steps.`}
-                label={viewingReport.title}
-                greeting={`I can see your ${viewingReport.title.split(":")[0]}. What would you like to dig into? I can help with strategy, talking points, competitive angles, or next steps.`}
-                compact
-              />
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={() => {
+                    const el = document.getElementById("report-content");
+                    if (el) {
+                      const text = el.innerText;
+                      navigator.clipboard.writeText(`${viewingReport.title}\n${new Date(viewingReport.createdAt).toLocaleString()}\n\n${text}`);
+                    }
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-[10px] font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                >
+                  <Copy className="h-3 w-3" /> Copy
+                </button>
+                <button
+                  onClick={() => window.print()}
+                  className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-[10px] font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                >
+                  <Printer className="h-3 w-3" /> Print / PDF
+                </button>
+                <AskArgus
+                  context={`Report: ${viewingReport.title}\nType: ${viewingReport.type}\nGenerated: ${new Date(viewingReport.createdAt).toLocaleString()}\n\nThis is a ${viewingReport.type.replace(/_/g, " ")} report from the VIGYL platform. The user is viewing this report and may want to discuss strategy, drill deeper into specific findings, or get actionable next steps.`}
+                  label={viewingReport.title}
+                  greeting={`I can see your ${viewingReport.title.split(":")[0]}. What would you like to dig into? I can help with strategy, talking points, competitive angles, or next steps.`}
+                  compact
+                />
+              </div>
             </div>
-            <div className="rounded-xl border border-border bg-card p-6">
+            <div id="report-content" className="rounded-xl border border-border bg-card p-6 print:border-0 print:shadow-none">
               {viewingReport.content}
             </div>
           </div>

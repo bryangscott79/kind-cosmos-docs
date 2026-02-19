@@ -16,6 +16,8 @@ import {
 import AskArgus from "@/components/AskArgus";
 import { useAuth } from "@/contexts/AuthContext";
 import { getStageLabels } from "@/lib/personas";
+import { useToast } from "@/hooks/use-toast";
+import { ToastAction } from "@/components/ui/toast";
 
 const stageOrder: PipelineStage[] = ["researching", "contacted", "meeting_scheduled", "proposal_sent", "won", "lost"];
 
@@ -89,9 +91,9 @@ function PipelineCard({
         {/* Meta row */}
         <div className="mt-2 flex items-center justify-between">
           <span className={`inline-flex rounded-full px-1.5 py-0.5 text-[9px] font-medium ${
-            prospect.pressureResponse === "growth_mode" ? "bg-emerald-100 text-emerald-700" :
-            prospect.pressureResponse === "contracting" ? "bg-rose-100 text-rose-700" :
-            "bg-blue-100 text-blue-700"
+            prospect.pressureResponse === "growth_mode" ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" :
+            prospect.pressureResponse === "contracting" ? "bg-rose-500/15 text-rose-600 dark:text-rose-400" :
+            "bg-blue-500/15 text-blue-600 dark:text-blue-400"
           }`}>
             {getPressureLabel(prospect.pressureResponse)}
           </span>
@@ -253,7 +255,7 @@ function PipelineCard({
                 onClick={() => onMove(stage)}
                 className={`rounded-md px-2 py-1 text-[9px] font-medium transition-colors ${
                   stage === "won"
-                    ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
+                    ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/25"
                     : "border border-border text-muted-foreground hover:text-foreground hover:bg-accent"
                 }`}
               >
@@ -263,7 +265,7 @@ function PipelineCard({
             {prospect.pipelineStage !== "lost" && (
               <button
                 onClick={() => onMove("lost")}
-                className="rounded-md px-2 py-1 text-[9px] font-medium bg-rose-100 text-rose-600 hover:bg-rose-200 transition-colors ml-auto"
+                className="rounded-md px-2 py-1 text-[9px] font-medium bg-rose-500/15 text-rose-600 dark:text-rose-400 hover:bg-rose-500/25 transition-colors ml-auto"
               >
                 Mark Lost
               </button>
@@ -295,16 +297,35 @@ export default function Pipeline() {
   const { prospects, industries, signals } = data;
   const [localProspects, setLocalProspects] = useState<Prospect[] | null>(null);
   const { persona } = useAuth();
+  const { toast } = useToast();
   const stageLabels = useMemo(() => getStageLabels(persona), [persona]);
 
   const effectiveProspects = localProspects || prospects;
 
   const moveProspect = useCallback((prospectId: string, newStage: PipelineStage) => {
+    const current = (localProspects || prospects).find(p => p.id === prospectId);
+    const prevStage = current?.pipelineStage;
+    
     setLocalProspects((prev) => {
       const list = prev || [...prospects];
       return list.map((p) => (p.id === prospectId ? { ...p, pipelineStage: newStage } : p));
     });
-  }, [prospects]);
+
+    // Show undo toast for stage changes
+    if (prevStage && prevStage !== newStage) {
+      const label = stageLabels[newStage] || pipelineStageLabels[newStage];
+      toast({
+        title: `Moved to ${label}`,
+        description: `${current?.companyName || "Prospect"} → ${label}`,
+        action: <ToastAction altText="Undo" onClick={() => {
+          setLocalProspects((prev) => {
+            const list = prev || [...prospects];
+            return list.map((p) => (p.id === prospectId ? { ...p, pipelineStage: prevStage } : p));
+          });
+        }}>Undo</ToastAction>,
+      });
+    }
+  }, [prospects, localProspects, stageLabels, toast]);
 
   const updateNotes = useCallback((prospectId: string, notes: string) => {
     setLocalProspects((prev) => {

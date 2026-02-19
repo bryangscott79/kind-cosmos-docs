@@ -76,3 +76,20 @@
     font-family: var(--font-mono);
   }
 }
+
+/* Print styles */
+@media print {
+  [data-sidebar], nav, header, .no-print, button, .fixed {
+    display: none !important;
+  }
+  body, main, .print\:border-0 {
+    margin: 0;
+    padding: 0;
+    border: none !important;
+    box-shadow: none !important;
+  }
+  #report-content {
+    border: none !important;
+    padding: 0 !important;
+  }
+}

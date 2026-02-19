@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import {
   Users, Linkedin, MapPin, DollarSign, Building2, Radio,
   ChevronDown, ExternalLink, ThumbsUp, ThumbsDown, Loader2,
-  Globe, Swords, Mail, ArrowRight
+  Globe, Swords, Mail, ArrowRight, Copy
 } from "lucide-react";
 import { Prospect, getPressureLabel, getScoreColorHsl } from "@/data/mockData";
 import { useSavedSignals } from "@/hooks/useSavedSignals";
@@ -55,9 +55,9 @@ export default function ProspectCard({ prospect }: ProspectCardProps) {
     .filter(Boolean);
 
   const pressureStyles: Record<string, string> = {
-    growth_mode: "bg-green-50 text-green-700 border-green-200",
-    strategic_investment: "bg-yellow-50 text-yellow-700 border-yellow-200",
-    contracting: "bg-red-50 text-red-700 border-red-200",
+    growth_mode: "bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20",
+    strategic_investment: "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/20",
+    contracting: "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20",
   };
 
   return (
@@ -236,15 +236,15 @@ export default function ProspectCard({ prospect }: ProspectCardProps) {
             <span className="text-[10px] text-muted-foreground mr-auto">Prospect quality?</span>
             <button onClick={(e) => { e.stopPropagation(); sendFeedback("more"); }} disabled={!!feedbackGiven || !!feedbackSending}
               className={`flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-medium transition-colors ${
-                feedbackGiven === "more" ? "bg-green-100 text-green-700 border border-green-200"
-                : "border border-border text-muted-foreground hover:text-green-700 hover:border-green-200 hover:bg-green-50"
+                feedbackGiven === "more" ? "bg-green-500/15 text-green-600 dark:text-green-400 border border-green-500/25"
+                : "border border-border text-muted-foreground hover:text-green-600 hover:border-green-500/30 hover:bg-green-500/10"
               } disabled:opacity-50`}>
               {feedbackSending === "more" ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <ThumbsUp className="h-2.5 w-2.5" />} More
             </button>
             <button onClick={(e) => { e.stopPropagation(); sendFeedback("less"); }} disabled={!!feedbackGiven || !!feedbackSending}
               className={`flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-medium transition-colors ${
-                feedbackGiven === "less" ? "bg-red-100 text-red-700 border border-red-200"
-                : "border border-border text-muted-foreground hover:text-red-700 hover:border-red-200 hover:bg-red-50"
+                feedbackGiven === "less" ? "bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/25"
+                : "border border-border text-muted-foreground hover:text-red-600 hover:border-red-500/30 hover:bg-red-500/10"
               } disabled:opacity-50`}>
               {feedbackSending === "less" ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <ThumbsDown className="h-2.5 w-2.5" />} Less
             </button>
@@ -273,6 +273,27 @@ export default function ProspectCard({ prospect }: ProspectCardProps) {
               />
             </div>
           </div>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              const text = [
+                `Company: ${prospect.companyName}`,
+                `Industry: ${industry?.name || "Unknown"}`,
+                `Revenue: ${prospect.annualRevenue}`,
+                `Employees: ${prospect.employeeCount.toLocaleString()}`,
+                `Location: ${prospect.location.city}, ${prospect.location.state}`,
+                `Score: ${prospect.vigylScore}/100`,
+                `Status: ${getPressureLabel(prospect.pressureResponse)}`,
+                `Why Now: ${prospect.whyNow}`,
+                prospect.decisionMakers.length > 0 ? `Contacts: ${prospect.decisionMakers.map(d => `${d.name} (${d.title})`).join("; ")}` : "",
+              ].filter(Boolean).join("\n");
+              navigator.clipboard.writeText(text);
+              toast({ title: "Copied to clipboard", description: "Paste into your CRM or notes." });
+            }}
+            className="flex items-center justify-center gap-1.5 w-full rounded-md py-1.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Copy className="h-2.5 w-2.5" /> Copy for CRM
+          </button>
         </div>
       )}
     </div>

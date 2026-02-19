@@ -18,15 +18,15 @@ import { getSignalTypeLabel } from "@/data/mockData";
 import AskArgus from "@/components/AskArgus";
 
 const signalTypeColors: Record<string, string> = {
-  political: "bg-purple-100 text-purple-700 border-purple-200",
-  regulatory: "bg-blue-100 text-blue-700 border-blue-200",
-  economic: "bg-emerald-100 text-emerald-700 border-emerald-200",
-  hiring: "bg-amber-100 text-amber-700 border-amber-200",
-  tech: "bg-cyan-100 text-cyan-700 border-cyan-200",
-  supply_chain: "bg-rose-100 text-rose-700 border-rose-200",
-  social: "bg-pink-100 text-pink-700 border-pink-200",
-  competitive: "bg-slate-100 text-slate-700 border-slate-200",
-  environmental: "bg-lime-100 text-lime-700 border-lime-200",
+  political: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20",
+  regulatory: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
+  economic: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
+  hiring: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
+  tech: "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20",
+  supply_chain: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20",
+  social: "bg-pink-500/10 text-pink-600 dark:text-pink-400 border-pink-500/20",
+  competitive: "bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20",
+  environmental: "bg-lime-500/10 text-lime-600 dark:text-lime-400 border-lime-500/20",
 };
 
 const sentimentIcon = (s: string) => {
@@ -644,9 +644,9 @@ export default function IndustryDashboard() {
                           <span className="text-[10px] text-muted-foreground">{getIndustryName(p.industryId)}</span>
                           <span className="text-[10px] text-muted-foreground">·</span>
                           <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${
-                            p.pressureResponse === "growth_mode" ? "bg-green-100 text-green-700" :
-                            p.pressureResponse === "contracting" ? "bg-red-100 text-red-700" :
-                            "bg-blue-100 text-blue-700"
+                            p.pressureResponse === "growth_mode" ? "bg-green-500/15 text-green-600 dark:text-green-400" :
+                            p.pressureResponse === "contracting" ? "bg-red-500/15 text-red-600 dark:text-red-400" :
+                            "bg-blue-500/15 text-blue-600 dark:text-blue-400"
                           }`}>
                             {p.pressureResponse.replace("_", " ")}
                           </span>

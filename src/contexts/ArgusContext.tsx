@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useCallback, ReactNode } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ArgusMessage {
   role: "user" | "assistant";
@@ -37,6 +38,7 @@ export function ArgusProvider({ children }: { children: ReactNode }) {
   const [context, setContext] = useState("");
   const [contextLabel, setContextLabel] = useState("");
   const [sending, setSending] = useState(false);
+  const { persona } = useAuth();
 
   const open = useCallback((ctx?: string, label?: string, greeting?: string) => {
     if (ctx) setContext(ctx);
@@ -67,7 +69,7 @@ export function ArgusProvider({ children }: { children: ReactNode }) {
       const allMessages = [...messages, userMsg].map(m => ({ role: m.role, content: m.content }));
 
       const { data: result, error } = await supabase.functions.invoke("argus-chat", {
-        body: { messages: allMessages, context },
+        body: { messages: allMessages, context, persona: persona.key },
       });
 
       if (error) throw new Error(error.message);
@@ -83,7 +85,7 @@ export function ArgusProvider({ children }: { children: ReactNode }) {
     } finally {
       setSending(false);
     }
-  }, [messages, context]);
+  }, [messages, context, persona]);
 
   return (
     <ArgusContext.Provider value={{ isOpen, messages, context, contextLabel, open, close, toggle, sendMessage, sending, clear }}>

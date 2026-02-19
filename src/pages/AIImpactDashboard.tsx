@@ -5,7 +5,7 @@ import {
   ArrowLeft, ArrowRight, ChevronDown, ChevronUp, BarChart3,
   TrendingUp, TrendingDown, Minus, Search, Columns2, X,
   Zap, Shield, DollarSign, Lightbulb, HelpCircle, Radio,
-  Users, Target, Building2, ExternalLink, Calendar, Lock, CreditCard
+  Users, Target, Building2, ExternalLink, Calendar, Lock, CreditCard, Share2
 } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import IntelligenceLoader from "@/components/IntelligenceLoader";
@@ -13,6 +13,7 @@ import { useIntelligence } from "@/contexts/IntelligenceContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { hasAccess } from "@/lib/tiers";
 import type { AIZone, AIFunction, AIImpactAnalysis, Signal, Prospect, Industry } from "@/data/mockData";
+import ShareableAIReport from "@/components/ShareableAIReport";
 
 const ZONE_CONFIG: Record<AIZone, { label: string; color: string; bg: string; border: string; icon: typeof Bot; accent: string }> = {
   ai_led: { label: "AI-Led", color: "text-rose-600", bg: "bg-rose-50", border: "border-rose-200", icon: Bot, accent: "from-rose-500 to-rose-600" },
@@ -206,6 +207,7 @@ function DetailView({ analysis, onBack, prospects, signals, industries }: {
 }) {
   const navigate = useNavigate();
   const [activeZone, setActiveZone] = useState<AIZone | "all">("all");
+  const [showShare, setShowShare] = useState(false);
   const allFunctions = useMemo(() => [...analysis.aiLedFunctions, ...analysis.collaborativeFunctions, ...analysis.humanLedFunctions], [analysis]);
   const filteredFunctions = activeZone === "all" ? allFunctions : allFunctions.filter((f) => f.zone === activeZone);
 
@@ -263,6 +265,7 @@ function DetailView({ analysis, onBack, prospects, signals, industries }: {
 
   return (
     <div className="space-y-6">
+      {showShare && <ShareableAIReport analysis={analysis} onClose={() => setShowShare(false)} />}
       <div>
         <button onClick={onBack} className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-2"><ArrowLeft className="h-3.5 w-3.5" /> All Industries</button>
         <div className="flex items-start justify-between gap-4">
@@ -270,7 +273,15 @@ function DetailView({ analysis, onBack, prospects, signals, industries }: {
             <h2 className="text-xl font-bold text-foreground">{analysis.industryName}</h2>
             <p className="text-xs text-muted-foreground mt-0.5">{allFunctions.length} business functions analyzed · {analysis.automationRate}% overall automation</p>
           </div>
-          <AutomationGauge value={analysis.automationRate} size="md" />
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => setShowShare(true)}
+              className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+            >
+              <Share2 className="h-3 w-3" /> Share
+            </button>
+            <AutomationGauge value={analysis.automationRate} size="md" />
+          </div>
         </div>
       </div>
 

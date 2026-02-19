@@ -395,6 +395,13 @@ export default function Onboarding() {
                 Continue <ArrowRight className="h-4 w-4" />
               </button>
             </div>
+            <button
+              type="button"
+              onClick={() => { setEntityType(""); setUserPersona(""); setAiMaturity(""); setStep(3); }}
+              className="w-full text-center text-[11px] text-muted-foreground hover:text-foreground transition-colors py-1"
+            >
+              Skip for now — you can set this later in Settings
+            </button>
           </div>
         )}
 

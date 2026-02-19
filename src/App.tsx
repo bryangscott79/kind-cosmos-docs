@@ -9,6 +9,7 @@ import { ArgusProvider } from "@/contexts/ArgusContext";
 import ArgusChat from "@/components/ArgusChat";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import TierGate from "@/components/TierGate";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import Onboarding from "./pages/Onboarding";
@@ -37,6 +38,7 @@ const App = () => (
         <AuthProvider>
           <IntelligenceProvider>
             <ArgusProvider>
+            <ErrorBoundary fallbackMessage="Something went wrong loading this page. Try refreshing.">
             <Routes>
               <Route path="/" element={<Landing />} />
               <Route path="/auth" element={<Auth />} />
@@ -49,12 +51,13 @@ const App = () => (
               <Route path="/prospects" element={<ProtectedRoute><TierGate requiredTier="starter" featureName="Prospect Engine"><Prospects /></TierGate></ProtectedRoute>} />
               <Route path="/prospects/:id" element={<ProtectedRoute><TierGate requiredTier="starter" featureName="Prospect Engine"><ProspectDetail /></TierGate></ProtectedRoute>} />
               <Route path="/pipeline" element={<ProtectedRoute><TierGate requiredTier="pro" featureName="Pipeline"><Pipeline /></TierGate></ProtectedRoute>} />
-              <Route path="/outreach" element={<ProtectedRoute><TierGate requiredTier="pro" featureName="Outreach"><Outreach /></TierGate></ProtectedRoute>} />
+              <Route path="/outreach" element={<ProtectedRoute><TierGate requiredTier="starter" featureName="Outreach"><Outreach /></TierGate></ProtectedRoute>} />
               <Route path="/reports" element={<ProtectedRoute><TierGate requiredTier="starter" featureName="Reports"><Reports /></TierGate></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               <Route path="/admin" element={<Admin />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
+            </ErrorBoundary>
             <ArgusChat />
             </ArgusProvider>
           </IntelligenceProvider>
