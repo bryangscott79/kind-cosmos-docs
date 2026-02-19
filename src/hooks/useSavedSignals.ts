@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { track, EVENTS } from "@/lib/analytics";
 
 export interface SavedSignal {
   id: string;
@@ -56,6 +57,7 @@ export function useSavedSignals() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["saved-signals"] });
+      track(EVENTS.SIGNAL_SAVED);
       toast({ title: "Signal saved", description: "Signal linked to opportunity." });
     },
     onError: (err: any) => {

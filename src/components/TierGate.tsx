@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { TierKey, hasAccess, TIERS } from "@/lib/tiers";
 import { Lock, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
+import { track, EVENTS } from "@/lib/analytics";
 
 interface TierGateProps {
   requiredTier: TierKey;
@@ -34,6 +35,7 @@ export default function TierGate({ requiredTier, children, featureName }: TierGa
         </p>
         <Link
           to="/pricing"
+          onClick={() => track(EVENTS.UPGRADE_CLICKED, { requiredTier, feature: featureName })}
           className="mt-6 inline-flex items-center gap-2 rounded-md bg-gradient-to-r from-brand-blue to-brand-purple px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
         >
           View Plans <ArrowRight className="h-4 w-4" />

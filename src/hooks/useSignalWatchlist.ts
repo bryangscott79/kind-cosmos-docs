@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
+import { track, EVENTS } from "@/lib/analytics";
 
 export interface WatchRule {
   id: string;
@@ -29,6 +30,7 @@ export function useSignalWatchlist() {
   const addRule = useCallback((signalType: string, industryId?: string) => {
     const exists = rules.some(r => r.signalType === signalType && r.industryId === (industryId || undefined));
     if (exists) return;
+    track(EVENTS.SIGNAL_WATCHLIST_ADDED, { signalType, industryId });
     setRules(prev => [...prev, {
       id: `wr_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
       signalType,

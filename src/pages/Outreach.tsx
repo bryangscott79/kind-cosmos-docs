@@ -128,6 +128,7 @@ export default function Outreach() {
   const handleCopy = () => {
     navigator.clipboard.writeText((generatedSubject ? `Subject: ${generatedSubject}\n\n` : "") + generatedContent);
     setCopied(true);
+    track(EVENTS.OUTREACH_COPIED, { company: selectedProspect?.companyName, type: contentType });
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -202,7 +203,7 @@ export default function Outreach() {
                 <button onClick={handleCopy} disabled={!generatedContent} className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-medium text-foreground hover:bg-accent transition-colors disabled:opacity-50">
                   {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}{copied ? "Copied" : "Copy"}
                 </button>
-                <button onClick={() => setMarkedSent(true)} disabled={!generatedContent || markedSent}
+                <button onClick={() => { setMarkedSent(true); track(EVENTS.OUTREACH_MARKED_SENT, { company: selectedProspect?.companyName, type: contentType }); }} disabled={!generatedContent || markedSent}
                   className={`inline-flex items-center gap-1.5 rounded-md border px-3 py-2 text-xs font-medium transition-colors disabled:opacity-50 ${markedSent ? "border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300" : "border-border text-foreground hover:bg-accent"}`}>
                   {markedSent ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Send className="h-3.5 w-3.5" />}
                   {markedSent ? "Done ✓" : persona.key === "job_seeker" ? "Mark Applied" : "Mark Sent"}

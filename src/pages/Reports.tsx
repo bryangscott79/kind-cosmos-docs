@@ -16,6 +16,7 @@ import {
   getScoreColorHsl, getPressureLabel, pipelineStageLabels, getSignalTypeLabel
 } from "@/data/mockData";
 import AskArgus from "@/components/AskArgus";
+import { track, EVENTS } from "@/lib/analytics";
 import { useReportHistory } from "@/hooks/useReportHistory";
 
 // ─── Report type config ───
@@ -590,6 +591,7 @@ export default function Reports() {
       };
       setGeneratedReports(prev => [report, ...prev]);
       setViewingReport(report);
+      track(EVENTS.REPORT_GENERATED, { type: selectedReport, title });
       addHistoryEntry(selectedReport, title, {
         industryId: selectedIndustry || undefined,
         prospectId: selectedProspect || undefined,
@@ -620,6 +622,7 @@ export default function Reports() {
                     if (el) {
                       const text = el.innerText;
                       navigator.clipboard.writeText(`${viewingReport.title}\n${new Date(viewingReport.createdAt).toLocaleString()}\n\n${text}`);
+                      track(EVENTS.REPORT_SHARED, { type: viewingReport.type, method: "copy" });
                     }
                   }}
                   className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-[10px] font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
@@ -627,7 +630,7 @@ export default function Reports() {
                   <Copy className="h-3 w-3" /> Copy
                 </button>
                 <button
-                  onClick={() => window.print()}
+                  onClick={() => { window.print(); track(EVENTS.REPORT_EXPORTED, { type: viewingReport.type, method: "print" }); }}
                   className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-[10px] font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
                 >
                   <Printer className="h-3 w-3" /> Print / PDF

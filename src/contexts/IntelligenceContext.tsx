@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { track, EVENTS } from "@/lib/analytics";
 import type { Industry, Signal, Prospect, AIImpactAnalysis } from "@/data/mockData";
 import { industries as seedIndustries, signals as seedSignals, prospects as seedProspects } from "@/data/mockData";
 
@@ -133,6 +134,11 @@ export function IntelligenceProvider({ children }: { children: ReactNode }) {
 
       setData(result.data);
       setIsUsingSeedData(false);
+      track(isBackground ? EVENTS.INTELLIGENCE_REFRESHED : EVENTS.INTELLIGENCE_GENERATED, {
+        industries: result.data.industries?.length,
+        prospects: result.data.prospects?.length,
+        signals: result.data.signals?.length,
+      });
     } catch (err: any) {
       console.error("Intelligence generation error:", err);
       if (!isBackground) {

@@ -345,6 +345,7 @@ export default function Prospects() {
     a.click();
     URL.revokeObjectURL(url);
     toast({ title: "Exported", description: `${selected.length} prospects exported.` });
+    track(EVENTS.SIGNALS_EXPORTED, { type: "bulk_prospects", count: selected.length });
   }, [filtered, selectedIds, industries, toast]);
 
   // Group by scope
@@ -380,6 +381,7 @@ export default function Prospects() {
     a.click();
     URL.revokeObjectURL(url);
     toast({ title: "Exported", description: `${filtered.length} records exported to CSV.` });
+    track(EVENTS.SIGNALS_EXPORTED, { type: "prospects", count: filtered.length });
   };
 
   const analyzeDreamClient = async () => {

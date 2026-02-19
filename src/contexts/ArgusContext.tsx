@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback, ReactNode } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { track, EVENTS } from "@/lib/analytics";
 
 interface ArgusMessage {
   role: "user" | "assistant";
@@ -63,6 +64,7 @@ export function ArgusProvider({ children }: { children: ReactNode }) {
     const userMsg: ArgusMessage = { role: "user", content: message };
     setMessages(prev => [...prev, userMsg]);
     setSending(true);
+    track(EVENTS.ARGUS_ASKED, { contextLabel: contextLabel || undefined });
 
     try {
       const { supabase } = await import("@/integrations/supabase/client");

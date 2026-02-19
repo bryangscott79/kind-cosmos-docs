@@ -93,7 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
@@ -102,6 +102,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             refreshSubscription();
             checkAdminRole(session.user.id);
             identify(session.user.id, { email: session.user.email || undefined });
+            if (event === "SIGNED_IN") track(EVENTS.SIGNED_IN);
+            if (event === "USER_UPDATED") { /* profile change, no track needed */ }
           }, 0);
         } else {
           setProfile(null);

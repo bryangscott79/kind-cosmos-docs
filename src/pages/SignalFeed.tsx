@@ -6,6 +6,7 @@ import SignalCard from "@/components/SignalCard";
 import GlobalSignalBanner from "@/components/GlobalSignalBanner";
 import IntelligenceLoader from "@/components/IntelligenceLoader";
 import { useIntelligence } from "@/contexts/IntelligenceContext";
+import { track, EVENTS } from "@/lib/analytics";
 import { useSavedSignals } from "@/hooks/useSavedSignals";
 import { useSignalWatchlist } from "@/hooks/useSignalWatchlist";
 import { useToast } from "@/hooks/use-toast";
@@ -204,6 +205,7 @@ export default function SignalFeed() {
     a.click();
     URL.revokeObjectURL(url);
     toast({ title: "Exported", description: `${filtered.length} signals exported to CSV.` });
+    track(EVENTS.SIGNALS_EXPORTED, { count: filtered.length });
   };
 
   return (

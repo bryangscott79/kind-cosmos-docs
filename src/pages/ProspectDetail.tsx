@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useEffect } from "react";
 import { Link, useParams, Navigate } from "react-router-dom";
 import {
   ArrowLeft, Building2, MapPin, DollarSign, Users, Globe, Briefcase,
@@ -154,6 +154,7 @@ export default function ProspectDetail() {
       if (result?.contacts) {
         setEnrichedContacts(result.contacts);
         setEnrichNotes(result.researchNotes || null);
+        track(EVENTS.CONTACTS_ENRICHED, { company: prospect.companyName, count: result.contacts.length });
         toast({ title: "Contacts enriched", description: `Found ${result.contacts.length} key contacts at ${prospect.companyName}.` });
       }
     } catch (err: any) {
@@ -188,6 +189,11 @@ export default function ProspectDetail() {
 
   const industry = industries.find(i => i.id === prospect.industryId) 
     || industries.find(i => i.name.toLowerCase() === (prospect.industryId || "").toLowerCase());
+
+  // Track view
+  useEffect(() => {
+    if (prospect) track(EVENTS.PROSPECT_VIEWED, { company: prospect.companyName, score: prospect.vigylScore });
+  }, [prospect?.id]);
   const relatedSignals = signals.filter(s => prospect.relatedSignals?.includes(s.id));
   const industrySignals = signals.filter(s => s.industryTags.includes(prospect.industryId)).filter(s => !prospect.relatedSignals?.includes(s.id));
   const industryProspects = prospects.filter(p => p.industryId === prospect.industryId && p.id !== prospect.id).sort((a, b) => b.vigylScore - a.vigylScore);

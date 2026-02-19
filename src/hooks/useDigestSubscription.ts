@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { track, EVENTS } from "@/lib/analytics";
 
 export interface DigestSubscription {
   id: string;
@@ -50,6 +51,7 @@ export function useDigestSubscription() {
       });
       if (error) throw error;
       if (data?.subscription) setSubscription(data.subscription);
+      track(EVENTS.DIGEST_SUBSCRIBED, { frequency });
       return { success: true };
     } catch (e: any) {
       return { success: false, error: e.message };
@@ -84,6 +86,7 @@ export function useDigestSubscription() {
       });
       if (error) throw error;
       if (data?.subscription) setSubscription(data.subscription);
+      track(EVENTS.DIGEST_UNSUBSCRIBED);
       return { success: true };
     } catch (e: any) {
       return { success: false, error: e.message };

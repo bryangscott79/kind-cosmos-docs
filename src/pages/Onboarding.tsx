@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
+import { track, EVENTS } from "@/lib/analytics";
 import { Zap, Globe, Building2, MapPin, Users, Briefcase, ArrowRight, ArrowLeft, Loader2, Sparkles, Check, X, Target } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -140,6 +141,7 @@ export default function Onboarding() {
         .eq("user_id", session.user.id);
 
       if (error) throw error;
+      track(EVENTS.ONBOARDING_COMPLETED, { persona: userPersona, entityType, industries: accepted.length });
       await refreshProfile();
       navigate("/industries");
     } catch (err: any) {
