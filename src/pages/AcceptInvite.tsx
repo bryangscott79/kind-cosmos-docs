@@ -36,8 +36,8 @@ export default function AcceptInvite() {
 
     try {
       // Look up invite by token (public read policy)
-      const { data: inv, error: invErr } = await supabase
-        .from("team_invitations")
+      const { data: inv, error: invErr } = await (supabase
+        .from("team_invitations" as any) as any)
         .select("id, owner_id, email, status, expires_at, team_member_id")
         .eq("token", token)
         .maybeSingle() as any;
@@ -67,8 +67,8 @@ export default function AcceptInvite() {
       }
 
       // Get team member info
-      const { data: member } = await supabase
-        .from("team_members")
+      const { data: member } = await (supabase
+        .from("team_members" as any) as any)
         .select("name, title, owner_id")
         .eq("id", inv.team_member_id)
         .single() as any;
@@ -102,8 +102,8 @@ export default function AcceptInvite() {
 
     try {
       // Update invitation record
-      const { error: updErr } = await supabase
-        .from("team_invitations")
+      const { error: updErr } = await (supabase
+        .from("team_invitations" as any) as any)
         .update({
           status: "accepted",
           accepted_by: user.id,
@@ -114,8 +114,8 @@ export default function AcceptInvite() {
       if (updErr) throw updErr;
 
       // Update team member with invited_user_id
-      await supabase
-        .from("team_members")
+      await (supabase
+        .from("team_members" as any) as any)
         .update({
           invited_user_id: user.id,
           invite_status: "accepted",
