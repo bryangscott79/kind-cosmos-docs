@@ -12,7 +12,7 @@ function useNavSections() {
     {
       label: "Intelligence",
       items: [
-        { label: "Briefing", subtitle: "Health, AI impact & market intel", path: "/industries", icon: BarChart3, feature: "industries" },
+        { label: "Industry Health", subtitle: "Health scores, AI impact & trends", path: "/industries", icon: BarChart3, feature: "industries" },
         { label: "Signals", subtitle: "What's happening now", path: "/signals", icon: Radio, feature: "signals" },
       ],
     },

@@ -59,37 +59,31 @@ function VolatilityDots({ history, days }: { history: { date: string; score: num
   );
 }
 
-// AI Impact mini badge for inline display
+// AI Impact mini badge — displayed on its own row for clarity
 function AIImpactBadge({ impact }: { impact: AIImpactAnalysis }) {
   const automColor = impact.automationRate >= 70 ? "text-rose-600" : impact.automationRate >= 40 ? "text-amber-600" : "text-emerald-600";
-  const totalFn = impact.aiLedFunctions.length + impact.collaborativeFunctions.length + impact.humanLedFunctions.length;
   const dominantZone = impact.aiLedFunctions.length >= impact.collaborativeFunctions.length && impact.aiLedFunctions.length >= impact.humanLedFunctions.length
     ? "ai_led" : impact.collaborativeFunctions.length >= impact.humanLedFunctions.length ? "collaborative" : "human_led";
   const zoneConfig = {
     ai_led: { icon: Bot, color: "text-rose-500", label: "AI-Led" },
     collaborative: { icon: Handshake, color: "text-violet-500", label: "Collab" },
-    human_led: { icon: User, color: "text-sky-500", label: "Human" },
+    human_led: { icon: User, color: "text-sky-500", label: "Human-Led" },
   };
   const zone = zoneConfig[dominantZone];
   const ZoneIcon = zone.icon;
 
   return (
-    <div className="flex items-center gap-2">
-      {/* Automation rate mini bar */}
-      <div className="flex items-center gap-1.5">
-        <div className="w-10 h-1.5 rounded-full bg-secondary overflow-hidden">
+    <div className="flex items-center gap-2 text-[10px]">
+      <div className="flex items-center gap-1">
+        <div className="w-8 h-1.5 rounded-full bg-secondary overflow-hidden">
           <div className="h-full rounded-full bg-gradient-to-r from-rose-500 to-violet-500" style={{ width: `${impact.automationRate}%` }} />
         </div>
-        <span className={`text-[10px] font-mono font-bold ${automColor}`}>{impact.automationRate}%</span>
+        <span className={`font-mono font-bold ${automColor}`}>{impact.automationRate}%</span>
       </div>
-      {/* Dominant zone */}
-      <span className={`hidden sm:flex items-center gap-0.5 text-[9px] font-medium ${zone.color}`}>
+      <span className={`flex items-center gap-0.5 font-medium ${zone.color}`}>
         <ZoneIcon className="h-2.5 w-2.5" />{zone.label}
       </span>
-      {/* Opportunity score */}
-      <span className="hidden md:inline text-[9px] text-violet-600 font-medium">
-        Opp:{impact.collaborativeOpportunityIndex}
-      </span>
+      <span className="text-violet-600 font-medium">Opp:{impact.collaborativeOpportunityIndex}</span>
     </div>
   );
 }
@@ -137,7 +131,7 @@ export default function IndustryHealthTimeline({ industries, aiImpact, generatin
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <BarChart3 className="h-4 w-4 text-primary" />
-          <h2 className="text-sm font-semibold text-foreground">Industry Health & AI Impact</h2>
+          <h2 className="text-sm font-semibold text-foreground">Industry Health</h2>
         </div>
         <div className="flex items-center gap-2">
           {/* AI Impact generation button */}
@@ -225,36 +219,42 @@ function IndustryHealthRow({ industry, trend, days, impact }: {
     <div className="group">
       <Link
         to={`/industries/${industry.slug}`}
-        className="flex items-center justify-between rounded-lg border border-border bg-card p-3 hover:border-primary/20 transition-colors"
+        className="block rounded-lg border border-border bg-card p-3 hover:border-primary/20 transition-colors"
         onMouseEnter={() => setShowContext(true)}
         onMouseLeave={() => setShowContext(false)}
       >
-        <div className="flex items-center gap-3 min-w-0 flex-1">
-          <TrendIcon className={`h-3.5 w-3.5 ${trendColor} shrink-0`} />
-          <div className="min-w-0 flex-1">
-            <span className="text-sm font-medium text-foreground truncate block">{industry.name}</span>
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className={`text-[10px] font-medium ${trendLabelColor}`}>{trendLabel}</span>
-              {isBlip && (
-                <span className="text-[9px] px-1 py-0 rounded bg-amber-500/10 border border-amber-500/20 text-amber-600 font-medium">blip</span>
-              )}
-              {/* Inline AI Impact data */}
-              {impact && <AIImpactBadge impact={impact} />}
-            </div>
+        {/* Row 1: Name + Score */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+            <TrendIcon className={`h-3.5 w-3.5 ${trendColor} shrink-0`} />
+            <span className="text-sm font-medium text-foreground truncate">{industry.name}</span>
+          </div>
+          <div className="flex items-center gap-2.5 shrink-0">
+            {delta !== 0 && (
+              <span className={`text-[10px] font-mono font-semibold ${deltaColor}`}>{delta > 0 ? "+" : ""}{delta}</span>
+            )}
+            {sparkData.length > 2 && (
+              <div className="w-16 hidden sm:block">
+                <Sparkline data={sparkData} healthScore={industry.healthScore} width={64} height={20} />
+              </div>
+            )}
+            <span className="text-lg font-mono font-bold text-foreground w-8 text-right">{industry.healthScore}</span>
           </div>
         </div>
-        <div className="flex items-center gap-3 shrink-0">
-          {delta !== 0 && (
-            <span className={`text-[10px] font-mono font-semibold ${deltaColor}`}>{delta > 0 ? "+" : ""}{delta}</span>
-          )}
-          {sparkData.length > 2 && (
-            <div className="w-16 hidden sm:block">
-              <Sparkline data={sparkData} healthScore={industry.healthScore} width={64} height={24} />
-            </div>
-          )}
-          <span className="text-sm font-mono font-bold text-foreground w-7 text-right">{industry.healthScore}</span>
+
+        {/* Row 2: Trend label + AI impact */}
+        <div className="mt-1.5 flex items-center justify-between gap-2 ml-6">
+          <div className="flex items-center gap-2">
+            <span className={`text-[10px] font-medium ${trendLabelColor}`}>{trendLabel}</span>
+            {isBlip && (
+              <span className="text-[9px] px-1 rounded bg-amber-500/10 border border-amber-500/20 text-amber-600 font-medium">blip</span>
+            )}
+          </div>
+          {impact && <AIImpactBadge impact={impact} />}
         </div>
       </Link>
+
+      {/* Hover context row */}
       {showContext && (
         <div className="mt-1 ml-8 flex items-center gap-2 px-1 animate-in fade-in duration-200">
           <Info className="h-3 w-3 text-muted-foreground shrink-0" />
@@ -266,17 +266,6 @@ function IndustryHealthRow({ industry, trend, days, impact }: {
               <span className="text-[10px] text-muted-foreground">·</span>
               <span className="text-[10px] text-muted-foreground">
                 90d: <span className={trend.longDelta > 0 ? "text-emerald-600" : "text-rose-500"}>{trend.longDelta > 0 ? "+" : ""}{trend.longDelta}</span>
-              </span>
-            </>
-          )}
-          {impact && (
-            <>
-              <span className="text-[10px] text-muted-foreground">·</span>
-              <span className="text-[10px] text-muted-foreground">
-                Displace: <span className="text-rose-500 font-medium">{impact.jobDisplacementIndex}</span>
-              </span>
-              <span className="text-[10px] text-muted-foreground">
-                Resilience: <span className="text-sky-500 font-medium">{impact.humanResilienceScore}</span>
               </span>
             </>
           )}
