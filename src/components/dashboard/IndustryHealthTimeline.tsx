@@ -25,18 +25,19 @@ function getTrendContext(
 } {
   const history = industry.scoreHistory || [];
   const len = history.length;
+  const currentScore = len > 0 ? history[len - 1].score : industry.healthScore;
 
   // Current delta for the selected timeframe
   const startIdx = Math.max(0, len - days);
-  const delta = len > 0 ? industry.healthScore - (history[startIdx]?.score ?? industry.healthScore) : 0;
+  const delta = len > 0 ? currentScore - (history[startIdx]?.score ?? currentScore) : 0;
 
   // Short-term delta (last 7 days)
   const shortStartIdx = Math.max(0, len - 7);
-  const shortDelta = len > 0 ? industry.healthScore - (history[shortStartIdx]?.score ?? industry.healthScore) : 0;
+  const shortDelta = len > 0 ? currentScore - (history[shortStartIdx]?.score ?? currentScore) : 0;
 
   // Long-term delta (full history available)
   const longStartIdx = 0;
-  const longDelta = len > 1 ? industry.healthScore - history[longStartIdx].score : 0;
+  const longDelta = len > 1 ? currentScore - history[longStartIdx].score : 0;
 
   // Determine if this is a blip or sustained trend
   // A "blip" = short-term and long-term trends diverge

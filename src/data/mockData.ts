@@ -175,31 +175,84 @@ export function getMaturityLabel(maturity: AIMaturity): string {
   return labels[maturity];
 }
 
-function generateScoreHistory(base: number): { date: string; score: number }[] {
+// Seeded random for deterministic history across renders
+function seededRandom(seed: number): () => number {
+  let s = seed;
+  return () => {
+    s = (s * 16807 + 0) % 2147483647;
+    return s / 2147483647;
+  };
+}
+
+function generateScoreHistory(
+  base: number,
+  trendDirection: "improving" | "declining" | "stable" = "stable",
+  seed: number = 42
+): { date: string; score: number }[] {
+  const rng = seededRandom(seed + base * 1000);
   const history: { date: string; score: number }[] = [];
-  let score = base - 15 + Math.random() * 20;
+
+  // Create distinct phases so timeframes tell different stories:
+  // Phase 1 (days 90-60): initial trend
+  // Phase 2 (days 60-30): mid-term shift
+  // Phase 3 (days 30-0): recent trend (may diverge from long-term)
+
+  // Determine phase biases based on trendDirection
+  let phase1Bias: number, phase2Bias: number, phase3Bias: number;
+  if (trendDirection === "improving") {
+    // Long-term up, but maybe a dip in the middle
+    phase1Bias = -0.15; // started lower
+    phase2Bias = 0.05;  // some recovery
+    phase3Bias = 0.25;  // strong recent improvement
+  } else if (trendDirection === "declining") {
+    // Long-term down, possibly with a bounce in the middle
+    phase1Bias = 0.1;   // started higher
+    phase2Bias = -0.1;  // started declining
+    phase3Bias = -0.2;  // accelerating decline
+  } else {
+    // Stable but with a recent wobble
+    phase1Bias = 0.05;
+    phase2Bias = -0.05;
+    phase3Bias = 0.02;
+  }
+
+  // Start score: work backward from base so the last entry ≈ base
+  let score = base - (phase1Bias + phase2Bias + phase3Bias) * 30;
+  score = Math.max(10, Math.min(95, score));
+
   for (let i = 89; i >= 0; i--) {
     const date = new Date();
     date.setDate(date.getDate() - i);
-    score = Math.max(5, Math.min(95, score + (Math.random() - 0.47) * 4));
+
+    // Select phase bias
+    const daysAgo = i;
+    let bias: number;
+    if (daysAgo >= 60) bias = phase1Bias;
+    else if (daysAgo >= 30) bias = phase2Bias;
+    else bias = phase3Bias;
+
+    // Add noise + directional bias
+    const noise = (rng() - 0.5) * 5;
+    score = Math.max(5, Math.min(98, score + bias + noise));
     history.push({ date: date.toISOString().split("T")[0], score: Math.round(score) });
   }
+
   return history;
 }
 
 export const industries: Industry[] = [
-  { id: "1", name: "Cybersecurity", slug: "cybersecurity", healthScore: 88, trendDirection: "improving", topSignals: ["Federal cyber mandate expands to contractors", "AI-driven threat detection funding +40%", "Critical infrastructure attacks up 65% YoY"], scoreHistory: generateScoreHistory(88) },
-  { id: "2", name: "Healthcare IT", slug: "healthcare-it", healthScore: 76, trendDirection: "improving", topSignals: ["CMS interoperability rules take effect", "Telehealth reimbursement made permanent", "EHR modernization wave accelerates"], scoreHistory: generateScoreHistory(76) },
-  { id: "3", name: "Clean Energy", slug: "clean-energy", healthScore: 72, trendDirection: "stable", topSignals: ["IRA tax credits driving adoption", "Grid modernization spending surges", "Solar supply chain stabilizing"], scoreHistory: generateScoreHistory(72) },
-  { id: "4", name: "Logistics & Supply Chain", slug: "logistics-supply-chain", healthScore: 45, trendDirection: "declining", topSignals: ["Tariff escalation disrupts trade routes", "Freight rates volatile amid uncertainty", "Automation investment accelerating"], scoreHistory: generateScoreHistory(45) },
-  { id: "5", name: "FinTech", slug: "fintech", healthScore: 64, trendDirection: "stable", topSignals: ["Embedded finance adoption growing", "Regulatory scrutiny on BNPL intensifies", "Open banking APIs expanding"], scoreHistory: generateScoreHistory(64) },
-  { id: "6", name: "Defense & Aerospace", slug: "defense-aerospace", healthScore: 91, trendDirection: "improving", topSignals: ["NATO defense spending surge", "Space economy contracts expanding", "Autonomous systems budget +$12B"], scoreHistory: generateScoreHistory(91) },
-  { id: "7", name: "Commercial Real Estate", slug: "commercial-real-estate", healthScore: 28, trendDirection: "declining", topSignals: ["Office vacancy at historic highs", "Conversion to residential accelerates", "REITs under pressure from rate environment"], scoreHistory: generateScoreHistory(28) },
-  { id: "8", name: "EdTech", slug: "edtech", healthScore: 55, trendDirection: "stable", topSignals: ["AI tutoring platforms gaining traction", "Corporate L&D budgets shifting online", "Student loan policy changes impact demand"], scoreHistory: generateScoreHistory(55) },
-  { id: "9", name: "AI & Machine Learning", slug: "ai-machine-learning", healthScore: 95, trendDirection: "improving", topSignals: ["Enterprise AI adoption at inflection point", "GPU demand outstripping supply", "Regulatory frameworks emerging globally"], scoreHistory: generateScoreHistory(95) },
-  { id: "10", name: "Manufacturing", slug: "manufacturing", healthScore: 52, trendDirection: "stable", topSignals: ["Reshoring incentives boost domestic ops", "Labor shortage persists in skilled roles", "Smart factory adoption accelerating"], scoreHistory: generateScoreHistory(52) },
-  { id: "11", name: "Pharmaceuticals", slug: "pharmaceuticals", healthScore: 69, trendDirection: "improving", topSignals: ["GLP-1 market explosion continues", "Drug pricing reform takes shape", "AI drug discovery cuts timelines 40%"], scoreHistory: generateScoreHistory(69) },
-  { id: "12", name: "Retail & E-Commerce", slug: "retail-ecommerce", healthScore: 41, trendDirection: "declining", topSignals: ["Consumer spending softening", "Returns management costs surge", "Social commerce reshaping acquisition"], scoreHistory: generateScoreHistory(41) },
+  { id: "1", name: "Cybersecurity", slug: "cybersecurity", healthScore: 88, trendDirection: "improving", topSignals: ["Federal cyber mandate expands to contractors", "AI-driven threat detection funding +40%", "Critical infrastructure attacks up 65% YoY"], scoreHistory: generateScoreHistory(88, "improving", 1) },
+  { id: "2", name: "Healthcare IT", slug: "healthcare-it", healthScore: 76, trendDirection: "improving", topSignals: ["CMS interoperability rules take effect", "Telehealth reimbursement made permanent", "EHR modernization wave accelerates"], scoreHistory: generateScoreHistory(76, "improving", 2) },
+  { id: "3", name: "Clean Energy", slug: "clean-energy", healthScore: 72, trendDirection: "stable", topSignals: ["IRA tax credits driving adoption", "Grid modernization spending surges", "Solar supply chain stabilizing"], scoreHistory: generateScoreHistory(72, "stable", 3) },
+  { id: "4", name: "Logistics & Supply Chain", slug: "logistics-supply-chain", healthScore: 45, trendDirection: "declining", topSignals: ["Tariff escalation disrupts trade routes", "Freight rates volatile amid uncertainty", "Automation investment accelerating"], scoreHistory: generateScoreHistory(45, "declining", 4) },
+  { id: "5", name: "FinTech", slug: "fintech", healthScore: 64, trendDirection: "stable", topSignals: ["Embedded finance adoption growing", "Regulatory scrutiny on BNPL intensifies", "Open banking APIs expanding"], scoreHistory: generateScoreHistory(64, "stable", 5) },
+  { id: "6", name: "Defense & Aerospace", slug: "defense-aerospace", healthScore: 91, trendDirection: "improving", topSignals: ["NATO defense spending surge", "Space economy contracts expanding", "Autonomous systems budget +$12B"], scoreHistory: generateScoreHistory(91, "improving", 6) },
+  { id: "7", name: "Commercial Real Estate", slug: "commercial-real-estate", healthScore: 28, trendDirection: "declining", topSignals: ["Office vacancy at historic highs", "Conversion to residential accelerates", "REITs under pressure from rate environment"], scoreHistory: generateScoreHistory(28, "declining", 7) },
+  { id: "8", name: "EdTech", slug: "edtech", healthScore: 55, trendDirection: "stable", topSignals: ["AI tutoring platforms gaining traction", "Corporate L&D budgets shifting online", "Student loan policy changes impact demand"], scoreHistory: generateScoreHistory(55, "stable", 8) },
+  { id: "9", name: "AI & Machine Learning", slug: "ai-machine-learning", healthScore: 95, trendDirection: "improving", topSignals: ["Enterprise AI adoption at inflection point", "GPU demand outstripping supply", "Regulatory frameworks emerging globally"], scoreHistory: generateScoreHistory(95, "improving", 9) },
+  { id: "10", name: "Manufacturing", slug: "manufacturing", healthScore: 52, trendDirection: "stable", topSignals: ["Reshoring incentives boost domestic ops", "Labor shortage persists in skilled roles", "Smart factory adoption accelerating"], scoreHistory: generateScoreHistory(52, "stable", 10) },
+  { id: "11", name: "Pharmaceuticals", slug: "pharmaceuticals", healthScore: 69, trendDirection: "improving", topSignals: ["GLP-1 market explosion continues", "Drug pricing reform takes shape", "AI drug discovery cuts timelines 40%"], scoreHistory: generateScoreHistory(69, "improving", 11) },
+  { id: "12", name: "Retail & E-Commerce", slug: "retail-ecommerce", healthScore: 41, trendDirection: "declining", topSignals: ["Consumer spending softening", "Returns management costs surge", "Social commerce reshaping acquisition"], scoreHistory: generateScoreHistory(41, "declining", 12) },
 ];
 
 export const signals: Signal[] = [
