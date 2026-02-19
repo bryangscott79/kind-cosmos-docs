@@ -240,20 +240,47 @@ function generateScoreHistory(
   return history;
 }
 
-export const industries: Industry[] = [
-  { id: "1", name: "Cybersecurity", slug: "cybersecurity", healthScore: 88, trendDirection: "improving", topSignals: ["Federal cyber mandate expands to contractors", "AI-driven threat detection funding +40%", "Critical infrastructure attacks up 65% YoY"], scoreHistory: generateScoreHistory(88, "improving", 1) },
-  { id: "2", name: "Healthcare IT", slug: "healthcare-it", healthScore: 76, trendDirection: "improving", topSignals: ["CMS interoperability rules take effect", "Telehealth reimbursement made permanent", "EHR modernization wave accelerates"], scoreHistory: generateScoreHistory(76, "improving", 2) },
-  { id: "3", name: "Clean Energy", slug: "clean-energy", healthScore: 72, trendDirection: "stable", topSignals: ["IRA tax credits driving adoption", "Grid modernization spending surges", "Solar supply chain stabilizing"], scoreHistory: generateScoreHistory(72, "stable", 3) },
-  { id: "4", name: "Logistics & Supply Chain", slug: "logistics-supply-chain", healthScore: 45, trendDirection: "declining", topSignals: ["Tariff escalation disrupts trade routes", "Freight rates volatile amid uncertainty", "Automation investment accelerating"], scoreHistory: generateScoreHistory(45, "declining", 4) },
-  { id: "5", name: "FinTech", slug: "fintech", healthScore: 64, trendDirection: "stable", topSignals: ["Embedded finance adoption growing", "Regulatory scrutiny on BNPL intensifies", "Open banking APIs expanding"], scoreHistory: generateScoreHistory(64, "stable", 5) },
-  { id: "6", name: "Defense & Aerospace", slug: "defense-aerospace", healthScore: 91, trendDirection: "improving", topSignals: ["NATO defense spending surge", "Space economy contracts expanding", "Autonomous systems budget +$12B"], scoreHistory: generateScoreHistory(91, "improving", 6) },
-  { id: "7", name: "Commercial Real Estate", slug: "commercial-real-estate", healthScore: 28, trendDirection: "declining", topSignals: ["Office vacancy at historic highs", "Conversion to residential accelerates", "REITs under pressure from rate environment"], scoreHistory: generateScoreHistory(28, "declining", 7) },
-  { id: "8", name: "EdTech", slug: "edtech", healthScore: 55, trendDirection: "stable", topSignals: ["AI tutoring platforms gaining traction", "Corporate L&D budgets shifting online", "Student loan policy changes impact demand"], scoreHistory: generateScoreHistory(55, "stable", 8) },
-  { id: "9", name: "AI & Machine Learning", slug: "ai-machine-learning", healthScore: 95, trendDirection: "improving", topSignals: ["Enterprise AI adoption at inflection point", "GPU demand outstripping supply", "Regulatory frameworks emerging globally"], scoreHistory: generateScoreHistory(95, "improving", 9) },
-  { id: "10", name: "Manufacturing", slug: "manufacturing", healthScore: 52, trendDirection: "stable", topSignals: ["Reshoring incentives boost domestic ops", "Labor shortage persists in skilled roles", "Smart factory adoption accelerating"], scoreHistory: generateScoreHistory(52, "stable", 10) },
-  { id: "11", name: "Pharmaceuticals", slug: "pharmaceuticals", healthScore: 69, trendDirection: "improving", topSignals: ["GLP-1 market explosion continues", "Drug pricing reform takes shape", "AI drug discovery cuts timelines 40%"], scoreHistory: generateScoreHistory(69, "improving", 11) },
-  { id: "12", name: "Retail & E-Commerce", slug: "retail-ecommerce", healthScore: 41, trendDirection: "declining", topSignals: ["Consumer spending softening", "Returns management costs surge", "Social commerce reshaping acquisition"], scoreHistory: generateScoreHistory(41, "declining", 12) },
-];
+import { US_INDUSTRIES } from "@/data/industryList";
+
+// Generate all 100 industries from the canonical list
+function generateIndustries(): Industry[] {
+  const trendOptions: ("improving" | "declining" | "stable")[] = ["improving", "declining", "stable"];
+  const signalTemplates: Record<string, string[]> = {
+    "Primary & Resources": ["Supply chain disruptions impacting extraction", "Automation accelerating in field operations", "ESG regulations tightening compliance requirements"],
+    "Construction & Infrastructure": ["Infrastructure bill funding flows accelerating", "Labor shortage driving automation adoption", "Material costs stabilizing after 2-year surge"],
+    "Energy & Utilities": ["Grid modernization spending surges", "Renewable energy adoption at inflection point", "Regulatory pressure on emissions intensifying"],
+    "Manufacturing — Durable Goods": ["Reshoring incentives boost domestic production", "Smart factory adoption accelerating", "Supply chain diversification urgent"],
+    "Manufacturing — Nondurable Goods": ["Input cost volatility persists", "Automation investment accelerating", "Sustainability mandates reshaping operations"],
+    "Transportation & Logistics": ["Freight rates volatile amid uncertainty", "Autonomous vehicle pilots expanding", "Last-mile costs driving innovation"],
+    "Wholesale Trade": ["E-commerce disrupting distribution models", "Inventory AI adoption growing", "Cold chain technology advancing"],
+    "Retail Trade": ["Consumer spending patterns shifting", "Omnichannel integration accelerating", "AI personalization becoming table stakes"],
+    "Technology & Digital Economy": ["Enterprise AI adoption at inflection point", "Cybersecurity spending surge continues", "Cloud migration driving transformation"],
+    "Telecommunications & Media": ["5G monetization challenges persist", "Streaming consolidation accelerating", "AI content tools reshaping production"],
+    "Financial Services": ["Embedded finance adoption growing", "Regulatory scrutiny intensifying", "AI risk management gaining traction"],
+    "Healthcare & Life Sciences": ["Staffing crisis driving tech adoption", "Telehealth reimbursement stabilizing", "AI diagnostics gaining regulatory approval"],
+  };
+
+  return US_INDUSTRIES.map((ind, idx) => {
+    const rng = seededRandom(idx * 137 + 42);
+    const healthScore = Math.round(30 + rng() * 65); // 30-95 range
+    const trendIdx = healthScore >= 70 ? 0 : healthScore <= 40 ? 1 : Math.floor(rng() * 3);
+    const trend = trendOptions[trendIdx];
+    const sectorSignals = Object.entries(signalTemplates).find(([k]) => ind.sector.includes(k))?.[1]
+      || signalTemplates["Technology & Digital Economy"];
+
+    return {
+      id: String(idx + 1),
+      name: ind.name,
+      slug: ind.slug,
+      healthScore,
+      trendDirection: trend,
+      topSignals: sectorSignals,
+      scoreHistory: generateScoreHistory(healthScore, trend, idx + 1),
+    };
+  });
+}
+
+export const industries: Industry[] = generateIndustries();
 
 export const signals: Signal[] = [
   // === POLITICAL & GEOPOLITICAL ===
