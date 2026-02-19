@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Search, MapPin, Building2, Globe2, Star, Loader2, ChevronLeft, ChevronRight, Sparkles, Navigation, RefreshCw, Download, CheckSquare, Square, ArrowRight, CheckCircle2, Plus, Layers } from "lucide-react";
+import { Search, MapPin, Building2, Globe2, Star, Loader2, ChevronLeft, ChevronRight, Sparkles, Navigation, RefreshCw, Download, CheckSquare, Square, ArrowRight, CheckCircle2, Plus, Layers, ChevronDown, ChevronUp } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import ProspectCard from "@/components/ProspectCard";
 import IntelligenceLoader from "@/components/IntelligenceLoader";
@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { track, EVENTS } from "@/lib/analytics";
 import { Slider } from "@/components/ui/slider";
 import { useExpandedProspects } from "@/hooks/useExpandedProspects";
-import { INDUSTRY_TAXONOMY, getUntappedVerticals, searchVerticals, type IndustryVertical } from "@/data/industryTaxonomy";
+import { INDUSTRY_TAXONOMY, ALL_VERTICALS, getUntappedVerticals, searchVerticals, getAllCompanies, type IndustryVertical, type IndustrySector } from "@/data/industryTaxonomy";
 
 type SortBy = "score" | "name" | "revenue" | "employees";
 
@@ -222,6 +222,62 @@ function ProspectSection({
   );
 }
 
+function VerticalButton({ v, sector, expanding, expandVertical, exploredVerticals }: {
+  v: IndustryVertical;
+  sector?: IndustrySector;
+  expanding: string | null;
+  expandVertical: (req: any) => void;
+  exploredVerticals: { vertical_id: string; times_expanded: number }[];
+}) {
+  const explored = exploredVerticals.find(ev => ev.vertical_id === v.id);
+  const isExpanding = expanding === v.id;
+  return (
+    <button
+      onClick={() => expandVertical({
+        verticalId: v.id,
+        verticalName: v.name,
+        sectorName: sector?.name || v.sector,
+        scope: "all",
+        exampleCompanies: v.exampleCompanies,
+      })}
+      disabled={!!expanding}
+      className={`group relative rounded-lg border p-3 text-left transition-all hover:border-primary/30 hover:bg-primary/5 disabled:opacity-50 ${
+        explored ? "border-primary/20 bg-primary/5" : "border-border"
+      }`}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs">{sector?.icon || "📊"}</span>
+            <span className="text-xs font-semibold text-foreground truncate">{v.name}</span>
+          </div>
+          <p className="mt-1 text-[10px] text-muted-foreground line-clamp-1">
+            {v.exampleCompanies.slice(0, 3).join(", ")}
+            {v.exampleCompanies.length > 3 && ` +${v.exampleCompanies.length - 3}`}
+          </p>
+        </div>
+        <div className="flex items-center gap-1 shrink-0">
+          {explored && (
+            <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] font-medium text-primary">
+              {explored.times_expanded}x
+            </span>
+          )}
+          {v.aiOpportunityLevel === "high" && (
+            <span className="rounded-full bg-emerald-100 dark:bg-emerald-900/30 px-1.5 py-0.5 text-[9px] font-medium text-emerald-700 dark:text-emerald-400">
+              High AI
+            </span>
+          )}
+        </div>
+      </div>
+      {isExpanding && (
+        <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-card/80 backdrop-blur-sm">
+          <Loader2 className="h-4 w-4 animate-spin text-primary" />
+        </div>
+      )}
+    </button>
+  );
+}
+
 export default function Prospects() {
   const [searchParams] = useSearchParams();
   const industryParam = searchParams.get("industry") || "all";
@@ -428,7 +484,7 @@ export default function Prospects() {
 
   // ── Discover Industries state ──
   const [discoverSearch, setDiscoverSearch] = useState("");
-  const [discoverExpanded, setDiscoverExpanded] = useState(false);
+  const [openSectors, setOpenSectors] = useState<Set<string>>(new Set());
 
   const untappedVerticals = useMemo(() => {
     const tracked = [
@@ -440,8 +496,8 @@ export default function Prospects() {
 
   const discoverResults = useMemo(() => {
     if (discoverSearch.trim()) return searchVerticals(discoverSearch);
-    return untappedVerticals.slice(0, discoverExpanded ? 60 : 12);
-  }, [discoverSearch, untappedVerticals, discoverExpanded]);
+    return untappedVerticals;
+  }, [discoverSearch, untappedVerticals]);
 
   // Load More button factory for each scope
   const [loadMoreCounter, setLoadMoreCounter] = useState({ local: 0, national: 0, international: 0 });
@@ -667,7 +723,7 @@ export default function Prospects() {
                 prospects={localProspects}
                 selectedIds={selectedIds}
                 onToggleSelect={toggleSelect}
-                emptyMessage={`No prospects within ${localRadius} miles of ${userCity || "your location"}. Try loading more or increasing the radius.`}
+                emptyMessage={`No prospects within ${localRadius} miles of ${userCity || "your location"}. Use "Load More" or try the Discover Industries section below.`}
                 emptyAction={refreshCTA}
                 loadMoreAction={makeLoadMoreButton("local")}
               />
@@ -677,7 +733,7 @@ export default function Prospects() {
                 prospects={nationalProspects}
                 selectedIds={selectedIds}
                 onToggleSelect={toggleSelect}
-                emptyMessage="No national prospects found. Load more to discover companies across the US."
+                emptyMessage="No national prospects found yet. Load more to discover companies across the US."
                 emptyAction={refreshCTA}
                 loadMoreAction={makeLoadMoreButton("national")}
               />
@@ -687,7 +743,7 @@ export default function Prospects() {
                 prospects={internationalProspects}
                 selectedIds={selectedIds}
                 onToggleSelect={toggleSelect}
-                emptyMessage="No international prospects found. Load more to discover global opportunities."
+                emptyMessage="No international prospects found yet. Load more to discover global opportunities."
                 emptyAction={refreshCTA}
                 loadMoreAction={makeLoadMoreButton("international")}
               />
@@ -719,12 +775,12 @@ export default function Prospects() {
               <Layers className="h-5 w-5 text-primary" />
               <h2 className="text-lg font-semibold text-foreground">Discover Industries</h2>
               <span className="text-xs text-muted-foreground">
-                {INDUSTRY_TAXONOMY.reduce((sum, s) => sum + s.verticals.length, 0)} verticals across {INDUSTRY_TAXONOMY.length} sectors
+                {ALL_VERTICALS.length} verticals · {INDUSTRY_TAXONOMY.length} sectors · {getAllCompanies().length}+ companies
               </span>
             </div>
           </div>
           <p className="text-sm text-muted-foreground mb-4">
-            Expand your prospect pipeline into new industries. Click any vertical to generate targeted prospects.
+            Expand your prospect pipeline into new industries. Click any vertical to generate targeted prospects with AI intelligence.
           </p>
           
           <div className="relative mb-4">
@@ -733,79 +789,73 @@ export default function Prospects() {
               type="text"
               value={discoverSearch}
               onChange={(e) => setDiscoverSearch(e.target.value)}
-              placeholder="Search verticals... (e.g. QSR, C-Store, CPG, production studios, controls)"
+              placeholder="Search verticals... (e.g. QSR, C-Store, CPG, production studios, controls, craft brands)"
               className="w-full rounded-md border border-border bg-background pl-9 pr-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             />
           </div>
 
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {discoverResults.map((v) => {
-              const sector = INDUSTRY_TAXONOMY.find(s => s.verticals.some(sv => sv.id === v.id));
-              const explored = exploredVerticals.find(ev => ev.vertical_id === v.id);
-              const isExpanding = expanding === v.id;
-              return (
-                <button
-                  key={v.id}
-                  onClick={() => expandVertical({
-                    verticalId: v.id,
-                    verticalName: v.name,
-                    sectorName: sector?.name || v.sector,
-                    scope: "all",
-                    exampleCompanies: v.exampleCompanies,
+          {/* Search results (flat grid) */}
+          {discoverSearch.trim() && (
+            <div className="mb-4">
+              {discoverResults.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-4 text-center">No verticals match "{discoverSearch}". Try broader keywords.</p>
+              ) : (
+                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                  {discoverResults.map((v) => {
+                    const sector = INDUSTRY_TAXONOMY.find(s => s.verticals.some(sv => sv.id === v.id));
+                    return <VerticalButton key={v.id} v={v} sector={sector} expanding={expanding} expandVertical={expandVertical} exploredVerticals={exploredVerticals} />;
                   })}
-                  disabled={!!expanding}
-                  className={`group relative rounded-lg border p-3 text-left transition-all hover:border-primary/30 hover:bg-primary/5 disabled:opacity-50 ${
-                    explored ? "border-primary/20 bg-primary/5" : "border-border"
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs">{sector?.icon || "📊"}</span>
-                        <span className="text-xs font-semibold text-foreground truncate">{v.name}</span>
-                      </div>
-                      <p className="mt-1 text-[10px] text-muted-foreground truncate">
-                        {v.exampleCompanies.slice(0, 3).join(", ")}
-                        {v.exampleCompanies.length > 3 && ` +${v.exampleCompanies.length - 3} more`}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-1 shrink-0">
-                      {explored && (
-                        <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] font-medium text-primary">
-                          {explored.times_expanded}x
-                        </span>
-                      )}
-                      {v.aiOpportunityLevel === "high" && (
-                        <span className="rounded-full bg-emerald-100 dark:bg-emerald-900/30 px-1.5 py-0.5 text-[9px] font-medium text-emerald-700 dark:text-emerald-400">
-                          High AI
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  {isExpanding && (
-                    <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-card/80 backdrop-blur-sm">
-                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                    </div>
-                  )}
-                </button>
-              );
-            })}
-          </div>
+                </div>
+              )}
+            </div>
+          )}
 
-          {!discoverSearch && !discoverExpanded && untappedVerticals.length > 12 && (
-            <button
-              onClick={() => setDiscoverExpanded(true)}
-              className="mt-3 w-full rounded-md border border-dashed border-border py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-            >
-              Show all {untappedVerticals.length} verticals
-            </button>
+          {/* Sector-based browsing (when not searching) */}
+          {!discoverSearch.trim() && (
+            <div className="space-y-2">
+              {INDUSTRY_TAXONOMY.map((sector) => {
+                const isOpen = openSectors.has(sector.id);
+                const sectorExplored = exploredVerticals.filter(ev => sector.verticals.some(v => v.id === ev.vertical_id));
+                return (
+                  <div key={sector.id} className="rounded-lg border border-border overflow-hidden">
+                    <button
+                      onClick={() => setOpenSectors(prev => {
+                        const next = new Set(prev);
+                        if (next.has(sector.id)) next.delete(sector.id); else next.add(sector.id);
+                        return next;
+                      })}
+                      className="w-full flex items-center justify-between px-4 py-3 hover:bg-accent/50 transition-colors"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-base">{sector.icon}</span>
+                        <span className="text-sm font-semibold text-foreground">{sector.name}</span>
+                        <span className="text-[10px] text-muted-foreground">{sector.verticals.length} verticals</span>
+                        {sectorExplored.length > 0 && (
+                          <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] font-medium text-primary">
+                            {sectorExplored.length} explored
+                          </span>
+                        )}
+                      </div>
+                      {isOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                    </button>
+                    {isOpen && (
+                      <div className="px-4 pb-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                        {sector.verticals.map((v) => (
+                          <VerticalButton key={v.id} v={v} sector={sector} expanding={expanding} expandVertical={expandVertical} exploredVerticals={exploredVerticals} />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           )}
 
           {exploredVerticals.length > 0 && (
             <div className="mt-4 pt-3 border-t border-border">
               <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Recently Explored</span>
               <div className="mt-2 flex flex-wrap gap-2">
-                {exploredVerticals.slice(0, 8).map((v) => (
+                {exploredVerticals.slice(0, 10).map((v) => (
                   <span key={v.vertical_id} className="inline-flex items-center gap-1 rounded-full border border-primary/20 bg-primary/5 px-2.5 py-1 text-[10px] font-medium text-primary">
                     {v.vertical_name}
                     <span className="text-primary/50">·</span>
