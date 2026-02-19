@@ -58,7 +58,7 @@ serve(async (req) => {
     });
 
     // Find active or trialing subscription
-    const activeSub = subscriptions.data.find(s => s.status === "active" || s.status === "trialing");
+    const activeSub = subscriptions.data.find((s: any) => s.status === "active" || s.status === "trialing");
 
     const hasActiveSub = !!activeSub;
     let productId = null;
