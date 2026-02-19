@@ -5,7 +5,7 @@ import {
   Users, Radio, Calendar, MessageSquare, ExternalLink,
   ChevronRight, ChevronLeft, ChevronDown,
   MapPin, DollarSign, Building2, Mail, Trophy, XCircle,
-  Save, TrendingUp, TrendingDown, Minus, Target, Trash2
+  Save, TrendingUp, TrendingDown, Minus, Target, Trash2, Download
 } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import IntelligenceLoader from "@/components/IntelligenceLoader";
@@ -504,9 +504,37 @@ export default function Pipeline() {
               {effectiveProspects.length} total · {activeCount} active · {wonCount} {stageLabels.won?.toLowerCase() || "won"}
             </p>
           </div>
-          <Link to="/prospects" className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
-            <Users className="h-3.5 w-3.5" /> Find {persona.prospectLabel}
-          </Link>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                const header = "Company,Industry,VIGYL Score,Stage,Revenue,Employees,Location,Status,Why Now,Contacts,Notes\n";
+                const rows = effectiveProspects.map(p => {
+                  const ind = industries.find(i => i.id === p.industryId);
+                  return [
+                    `"${p.companyName}"`, `"${ind?.name || p.industryId || ""}"`, p.vigylScore,
+                    `"${pipelineStageLabels[p.pipelineStage]}"`, `"${p.annualRevenue}"`, p.employeeCount,
+                    `"${p.location.city}, ${p.location.state}"`, `"${getPressureLabel(p.pressureResponse)}"`,
+                    `"${(p.whyNow || "").replace(/"/g, '""')}"`,
+                    `"${p.decisionMakers.map(d => `${d.name} (${d.title})`).join("; ")}"`,
+                    `"${(p.notes || "").replace(/"/g, '""')}"`,
+                  ].join(",");
+                }).join("\n");
+                const blob = new Blob([header + rows], { type: "text/csv" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url; a.download = `vigyl-pipeline-${new Date().toISOString().split("T")[0]}.csv`;
+                a.click(); URL.revokeObjectURL(url);
+                track(EVENTS.PIPELINE_EXPORTED, { count: effectiveProspects.length });
+                toast({ title: "Pipeline exported", description: `${effectiveProspects.length} prospects exported to CSV.` });
+              }}
+              className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+            >
+              <Download className="h-3.5 w-3.5" /> Export CSV
+            </button>
+            <Link to="/prospects" className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+              <Users className="h-3.5 w-3.5" /> Find {persona.prospectLabel}
+            </Link>
+          </div>
         </div>
 
         <div className="mt-5 flex gap-3 overflow-x-auto pb-4">

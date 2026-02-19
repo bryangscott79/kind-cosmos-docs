@@ -5,6 +5,7 @@ import vigylLogo from "@/assets/vigyl-logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { track, EVENTS } from "@/lib/analytics";
 
 export default function Auth() {
   const { session, profile } = useAuth();
@@ -42,6 +43,7 @@ export default function Auth() {
         });
         if (error) throw error;
         setEmailSent(true);
+        track(EVENTS.SIGNED_UP);
         toast({ title: "Check your email", description: "We sent you a confirmation link to verify your account." });
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
