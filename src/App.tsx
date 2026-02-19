@@ -26,6 +26,7 @@ import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import DigestPreview from "./pages/DigestPreview";
 import Admin from "./pages/Admin";
+import AcceptInvite from "./pages/AcceptInvite";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -57,6 +58,7 @@ const App = () => (
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               <Route path="/digest-preview" element={<ProtectedRoute><DigestPreview /></ProtectedRoute>} />
               <Route path="/admin" element={<Admin />} />
+              <Route path="/invite/:token" element={<AcceptInvite />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
             </ErrorBoundary>

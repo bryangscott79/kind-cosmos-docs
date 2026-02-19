@@ -1,11 +1,12 @@
 import { useState, useRef, useCallback } from "react";
 import {
   Users, Plus, Trash2, Camera, Loader2, Mail, Send,
-  GripVertical, Linkedin, Check, X, ChevronDown, ChevronUp, User
+  Linkedin, Check, X, ChevronDown, ChevronUp, User, Copy, Link as LinkIcon
 } from "lucide-react";
 import { useTeamMembers, TeamMember, TeamMemberInput } from "@/hooks/useTeamMembers";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 function AvatarUpload({ member, onUpload }: { member: TeamMember; onUpload: (file: File) => Promise<void> }) {
   const [uploading, setUploading] = useState(false);
@@ -311,7 +312,7 @@ function AddMemberForm({ onAdd }: { onAdd: (input: TeamMemberInput) => Promise<v
 }
 
 export default function TeamSection() {
-  const { members, loading, addMember, updateMember, removeMember, uploadAvatar, reorder } = useTeamMembers();
+  const { members, loading, addMember, updateMember, removeMember, uploadAvatar, reorder, refresh } = useTeamMembers();
   const { user, profile } = useAuth();
   const { toast } = useToast();
   const [inviting, setInviting] = useState<string | null>(null);
@@ -352,21 +353,50 @@ export default function TeamSection() {
     }
   }, [uploadAvatar, toast]);
 
+  const [inviteLink, setInviteLink] = useState<string | null>(null);
+
   const handleInvite = async (member: TeamMember) => {
     if (!member.email) {
       toast({ title: "No email", description: "Add an email address to send an invite.", variant: "destructive" });
       return;
     }
     setInviting(member.id);
+    setInviteLink(null);
     try {
-      // For now, mark as pending — actual email invite would go through an edge function
-      await updateMember(member.id, { invite_status: "pending" } as any);
-      toast({
-        title: "Invite sent",
-        description: `Collaboration invite sent to ${member.email}. They'll get access to shared intelligence when they sign up.`,
+      const { data: result, error } = await supabase.functions.invoke("invite-team-member", {
+        body: { teamMemberId: member.id, appUrl: window.location.origin },
       });
+
+      if (error) throw new Error(error.message);
+      if (!result?.success) throw new Error(result?.error || "Failed to send invite");
+
+      if (result.emailSent) {
+        toast({
+          title: "Invite sent!",
+          description: `Email sent to ${member.email}. They'll get a link to accept and join your team.`,
+        });
+      } else if (result.inviteUrl) {
+        // Resend not configured — show copyable link
+        setInviteLink(result.inviteUrl);
+        toast({
+          title: "Invite created",
+          description: result.message || "Copy the invite link to share with your team member.",
+        });
+      }
+
+      // Refresh to pick up status change
+      refresh();
+    } catch (err: any) {
+      toast({ title: "Invite failed", description: err.message, variant: "destructive" });
     } finally {
       setInviting(null);
+    }
+  };
+
+  const copyInviteLink = () => {
+    if (inviteLink) {
+      navigator.clipboard.writeText(inviteLink);
+      toast({ title: "Link copied", description: "Share this link with your team member." });
     }
   };
 
@@ -481,10 +511,22 @@ export default function TeamSection() {
                     className="flex items-center gap-1.5 rounded-md border border-violet-200 dark:border-violet-700 bg-white dark:bg-violet-800/30 px-3 py-1.5 text-xs font-medium text-violet-700 dark:text-violet-300 hover:bg-violet-100 dark:hover:bg-violet-800/50 disabled:opacity-50 transition-colors"
                   >
                     {inviting === m.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Mail className="h-3 w-3" />}
-                    Invite {m.name.split(" ")[0]}
+                    {m.invite_status === "pending" ? "Resend" : "Invite"} {m.name.split(" ")[0]}
                   </button>
                 ))}
               </div>
+              {inviteLink && (
+                <div className="mt-3 flex items-center gap-2 rounded-md border border-violet-300 dark:border-violet-700 bg-white dark:bg-violet-900/40 px-3 py-2">
+                  <LinkIcon className="h-3.5 w-3.5 text-violet-500 shrink-0" />
+                  <code className="flex-1 text-[11px] text-foreground truncate">{inviteLink}</code>
+                  <button
+                    onClick={copyInviteLink}
+                    className="flex items-center gap-1 rounded-md bg-violet-100 dark:bg-violet-800 px-2 py-1 text-[10px] font-medium text-violet-700 dark:text-violet-300 hover:bg-violet-200 dark:hover:bg-violet-700 transition-colors shrink-0"
+                  >
+                    <Copy className="h-3 w-3" /> Copy
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useSearchParams } from "react-router-dom";
 import { Mail, Lock, User, ArrowRight } from "lucide-react";
 import vigylLogo from "@/assets/vigyl-logo.png";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,6 +9,8 @@ import { useToast } from "@/hooks/use-toast";
 export default function Auth() {
   const { session, profile } = useAuth();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+  const redirectTo = searchParams.get("redirect");
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -16,7 +18,10 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
 
-  if (session && profile?.onboarding_completed) return <Navigate to="/industries" replace />;
+  // If logged in, redirect to the intended page or default
+  if (session && profile?.onboarding_completed) {
+    return <Navigate to={redirectTo || "/industries"} replace />;
+  }
   if (session && profile && !profile.onboarding_completed) return <Navigate to="/onboarding" replace />;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -29,7 +34,9 @@ export default function Auth() {
           email,
           password,
           options: {
-            emailRedirectTo: window.location.origin,
+            emailRedirectTo: redirectTo
+              ? `${window.location.origin}${redirectTo}`
+              : window.location.origin,
             data: { full_name: fullName },
           },
         });
