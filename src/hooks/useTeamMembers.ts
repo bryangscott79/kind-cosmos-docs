@@ -34,11 +34,11 @@ export function useTeamMembers() {
   const load = useCallback(async () => {
     if (!user) { setLoading(false); return; }
     try {
-      const { data, error } = await supabase
-        .from("team_members")
+      const { data, error } = await (supabase
+        .from("team_members" as any)
         .select("*")
         .eq("owner_id", user.id)
-        .order("display_order", { ascending: true }) as any;
+        .order("display_order", { ascending: true }) as any);
       if (error) throw error;
       setMembers(data || []);
     } catch (e) {
@@ -56,8 +56,8 @@ export function useTeamMembers() {
       ? Math.max(...members.map(m => m.display_order)) + 1
       : 0;
 
-    const { data, error } = await supabase
-      .from("team_members")
+    const { data, error } = await (supabase
+      .from("team_members" as any)
       .insert({
         owner_id: user.id,
         name: input.name,
@@ -69,7 +69,7 @@ export function useTeamMembers() {
         display_order: maxOrder,
       } as any)
       .select()
-      .single() as any;
+      .single()) as any;
 
     if (error) throw error;
     setMembers(prev => [...prev, data]);
@@ -77,12 +77,12 @@ export function useTeamMembers() {
   }, [user, members]);
 
   const updateMember = useCallback(async (id: string, updates: Partial<TeamMemberInput & { avatar_url: string | null }>) => {
-    const { data, error } = await supabase
-      .from("team_members")
+    const { data, error } = await (supabase
+      .from("team_members" as any)
       .update(updates as any)
       .eq("id", id)
       .select()
-      .single() as any;
+      .single()) as any;
 
     if (error) throw error;
     setMembers(prev => prev.map(m => m.id === id ? { ...m, ...data } : m));
@@ -90,10 +90,10 @@ export function useTeamMembers() {
   }, []);
 
   const removeMember = useCallback(async (id: string) => {
-    const { error } = await supabase
-      .from("team_members")
+    const { error } = await (supabase
+      .from("team_members" as any)
       .delete()
-      .eq("id", id) as any;
+      .eq("id", id)) as any;
 
     if (error) throw error;
     setMembers(prev => prev.filter(m => m.id !== id));
@@ -133,7 +133,7 @@ export function useTeamMembers() {
     });
     // Persist
     for (const { id, display_order } of updates) {
-      await supabase.from("team_members").update({ display_order } as any).eq("id", id);
+      await (supabase.from("team_members" as any) as any).update({ display_order } as any).eq("id", id);
     }
   }, []);
 

@@ -6,7 +6,7 @@
 import React from "react";
 import {
   FileText, Building2, Users, BarChart3, Calendar,
-  Brain, TrendingUp, TrendingDown, Bot, Handshake,
+  Brain, TrendingUp, TrendingDown, Bot, Handshake, Minus,
   User, Radio, Clock, AlertTriangle, CheckCircle2,
   Target, Lightbulb, Shield, Zap, Briefcase
 } from "lucide-react";

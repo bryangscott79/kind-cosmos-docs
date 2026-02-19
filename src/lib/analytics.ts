@@ -26,7 +26,8 @@ async function getPostHog() {
   if (!POSTHOG_KEY) return null;
 
   try {
-    const mod = await import("posthog-js");
+    // @ts-ignore - posthog-js is optionally loaded at runtime
+    const mod = await import(/* @vite-ignore */ "posthog-js");
     posthog = mod.default;
     posthog.init(POSTHOG_KEY, {
       api_host: POSTHOG_HOST,
