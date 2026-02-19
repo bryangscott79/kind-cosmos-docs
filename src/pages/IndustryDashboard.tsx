@@ -10,9 +10,10 @@ import {
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import IndustryCard from "@/components/IndustryCard";
 import GlobalSignalBanner from "@/components/GlobalSignalBanner";
-import Sparkline from "@/components/Sparkline";
 import IntelligenceLoader from "@/components/IntelligenceLoader";
-import CriticalAlertCard, { signalTypeColors } from "@/components/dashboard/CriticalAlertCard";
+import { signalTypeColors } from "@/components/dashboard/CriticalAlertCard";
+import EnhancedCriticalAlerts from "@/components/dashboard/EnhancedCriticalAlerts";
+import IndustryHealthTimeline from "@/components/dashboard/IndustryHealthTimeline";
 import { useIntelligence } from "@/contexts/IntelligenceContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { getSignalTypeLabel } from "@/data/mockData";
@@ -56,10 +57,8 @@ export default function IndustryDashboard() {
     [signals]
   );
 
-  const criticalAlerts = useMemo(
-    () => signals.filter((s) => s.severity >= 5 && s.sentiment !== "positive").slice(0, 2),
-    [signals]
-  );
+
+
 
   const topProspects = useMemo(
     () => [...prospects].sort((a, b) => b.vigylScore - a.vigylScore).slice(0, 5),
@@ -74,11 +73,8 @@ export default function IndustryDashboard() {
       .slice(0, 5);
   }, [prospects]);
 
-  const industryMovers = useMemo(() => {
-    const improving = [...industries].filter((i) => i.trendDirection === "improving").sort((a, b) => b.healthScore - a.healthScore).slice(0, 3);
-    const declining = [...industries].filter((i) => i.trendDirection === "declining").sort((a, b) => a.healthScore - b.healthScore).slice(0, 3);
-    return { improving, declining };
-  }, [industries]);
+
+
 
   // AI Impact summary — top 3 by automation rate
   const aiImpactSummary = useMemo(() => {
@@ -309,21 +305,17 @@ export default function IndustryDashboard() {
               {/* Left column — 2/3 width */}
               <div className="lg:col-span-2 space-y-6">
 
-                {/* Critical Alerts */}
-                {criticalAlerts.length > 0 && (
-                  <section>
-                    <div className="flex items-center gap-2 mb-3">
-                      <AlertTriangle className="h-4 w-4 text-rose-500" />
-                      <h2 className="text-sm font-semibold text-foreground">Critical Alerts</h2>
-                    </div>
-                    <div className="space-y-2">
-                      {criticalAlerts.map((signal) => {
-                        const affected = getAffectedProspects(signal.id);
-                        return <CriticalAlertCard key={signal.id} signal={signal} affected={affected} getIndustryName={getIndustryName} />;
-                      })}
-                    </div>
-                  </section>
-                )}
+                {/* Critical Alerts — pipeline-weighted with urgency cues */}
+                <EnhancedCriticalAlerts
+                  signals={signals}
+                  prospects={prospects}
+                  industries={industries}
+                  targetIndustryIds={profile?.target_industries?.map((name: string) => {
+                    const ind = industries.find(i => i.name === name);
+                    return ind?.id;
+                  }).filter(Boolean) as string[] | undefined}
+                  getIndustryName={getIndustryName}
+                />
 
                 {/* Signal Feed */}
                 <section>
@@ -577,84 +569,8 @@ export default function IndustryDashboard() {
                   return null;
                 })()}
 
-                {/* Industry Health */}
-                <section>
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <BarChart3 className="h-4 w-4 text-primary" />
-                      <h2 className="text-sm font-semibold text-foreground">Industry Health</h2>
-                    </div>
-                    <span className="text-[9px] text-muted-foreground">7-day change</span>
-                  </div>
-                  <div className="space-y-2">
-                    {industryMovers.improving.map((ind) => {
-                      const delta = ind.scoreHistory && ind.scoreHistory.length >= 7
-                        ? ind.healthScore - ind.scoreHistory[ind.scoreHistory.length - 7].score
-                        : 0;
-                      return (
-                      <Link
-                        key={ind.id}
-                        to={`/industries/${ind.slug}`}
-                        className="flex items-center justify-between rounded-lg border border-border bg-card p-3 hover:border-primary/20 transition-colors"
-                      >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <TrendingUp className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
-                          <div className="min-w-0">
-                            <span className="text-sm font-medium text-foreground truncate block">{ind.name}</span>
-                            <span className="text-[10px] text-emerald-600 font-medium">Improving</span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3 shrink-0">
-                          {delta !== 0 && (
-                            <span className={`text-[10px] font-mono font-semibold ${delta > 0 ? "text-emerald-600" : "text-rose-500"}`}>
-                              {delta > 0 ? "+" : ""}{delta}
-                            </span>
-                          )}
-                          {ind.scoreHistory && (
-                            <div className="w-16 hidden sm:block">
-                              <Sparkline data={ind.scoreHistory} healthScore={ind.healthScore} width={64} height={24} />
-                            </div>
-                          )}
-                          <span className="text-sm font-mono font-bold text-foreground w-7 text-right">{ind.healthScore}</span>
-                        </div>
-                      </Link>
-                      );
-                    })}
-                    {industryMovers.declining.map((ind) => {
-                      const delta = ind.scoreHistory && ind.scoreHistory.length >= 7
-                        ? ind.healthScore - ind.scoreHistory[ind.scoreHistory.length - 7].score
-                        : 0;
-                      return (
-                      <Link
-                        key={ind.id}
-                        to={`/industries/${ind.slug}`}
-                        className="flex items-center justify-between rounded-lg border border-border bg-card p-3 hover:border-primary/20 transition-colors"
-                      >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <TrendingDown className="h-3.5 w-3.5 text-rose-500 shrink-0" />
-                          <div className="min-w-0">
-                            <span className="text-sm font-medium text-foreground truncate block">{ind.name}</span>
-                            <span className="text-[10px] text-rose-600 font-medium">Declining</span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3 shrink-0">
-                          {delta !== 0 && (
-                            <span className={`text-[10px] font-mono font-semibold ${delta > 0 ? "text-emerald-600" : "text-rose-500"}`}>
-                              {delta > 0 ? "+" : ""}{delta}
-                            </span>
-                          )}
-                          {ind.scoreHistory && (
-                            <div className="w-16 hidden sm:block">
-                              <Sparkline data={ind.scoreHistory} healthScore={ind.healthScore} width={64} height={24} />
-                            </div>
-                          )}
-                          <span className="text-sm font-mono font-bold text-foreground w-7 text-right">{ind.healthScore}</span>
-                        </div>
-                      </Link>
-                      );
-                    })}
-                  </div>
-                </section>
+                {/* Industry Health — multi-timeframe with trend context */}
+                <IndustryHealthTimeline industries={industries} />
               </div>
             </div>
           </>

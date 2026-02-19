@@ -177,11 +177,11 @@ export function getMaturityLabel(maturity: AIMaturity): string {
 
 function generateScoreHistory(base: number): { date: string; score: number }[] {
   const history: { date: string; score: number }[] = [];
-  let score = base - 10 + Math.random() * 20;
-  for (let i = 29; i >= 0; i--) {
+  let score = base - 15 + Math.random() * 20;
+  for (let i = 89; i >= 0; i--) {
     const date = new Date();
     date.setDate(date.getDate() - i);
-    score = Math.max(5, Math.min(95, score + (Math.random() - 0.45) * 6));
+    score = Math.max(5, Math.min(95, score + (Math.random() - 0.47) * 4));
     history.push({ date: date.toISOString().split("T")[0], score: Math.round(score) });
   }
   return history;
