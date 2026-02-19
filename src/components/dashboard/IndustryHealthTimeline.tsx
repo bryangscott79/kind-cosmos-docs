@@ -120,9 +120,9 @@ export default function IndustryHealthTimeline({ industries, aiImpact, generatin
       .sort((a, b) => Math.abs(b.trend.delta) - Math.abs(a.trend.delta));
   }, [industries, days]);
 
-  const improving = rankedIndustries.filter((i) => i.trend.delta > 0).slice(0, 5);
-  const declining = rankedIndustries.filter((i) => i.trend.delta < 0).slice(0, 5);
-  const stable = rankedIndustries.filter((i) => i.trend.delta === 0).slice(0, 3);
+  const improving = rankedIndustries.filter((i) => i.trend.delta > 0);
+  const declining = rankedIndustries.filter((i) => i.trend.delta < 0);
+  const stable = rankedIndustries.filter((i) => i.trend.delta === 0);
 
   const hasAiData = aiImpact && aiImpact.length > 0;
 
@@ -206,7 +206,6 @@ export default function IndustryHealthTimeline({ industries, aiImpact, generatin
 function IndustryHealthRow({ industry, trend, days, impact }: {
   industry: Industry; trend: ReturnType<typeof getTrendContext>; days: number; impact?: AIImpactAnalysis;
 }) {
-  const [showContext, setShowContext] = useState(false);
   const { delta, isBlip, contextLabel, contextColor } = trend;
   const TrendIcon = delta > 0 ? TrendingUp : delta < 0 ? TrendingDown : Minus;
   const trendColor = delta > 0 ? "text-emerald-500" : delta < 0 ? "text-rose-500" : "text-muted-foreground";
@@ -216,61 +215,55 @@ function IndustryHealthRow({ industry, trend, days, impact }: {
   const sparkData = (industry.scoreHistory || []).slice(-days);
 
   return (
-    <div className="group">
-      <Link
-        to={`/industries/${industry.slug}`}
-        className="block rounded-lg border border-border bg-card p-3 hover:border-primary/20 transition-colors"
-        onMouseEnter={() => setShowContext(true)}
-        onMouseLeave={() => setShowContext(false)}
-      >
-        {/* Row 1: Name + Score */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2.5 min-w-0 flex-1">
-            <TrendIcon className={`h-3.5 w-3.5 ${trendColor} shrink-0`} />
-            <span className="text-sm font-medium text-foreground truncate">{industry.name}</span>
-          </div>
-          <div className="flex items-center gap-2.5 shrink-0">
-            {delta !== 0 && (
-              <span className={`text-[10px] font-mono font-semibold ${deltaColor}`}>{delta > 0 ? "+" : ""}{delta}</span>
-            )}
-            {sparkData.length > 2 && (
-              <div className="w-16 hidden sm:block">
-                <Sparkline data={sparkData} healthScore={industry.healthScore} width={64} height={20} />
-              </div>
-            )}
-            <span className="text-lg font-mono font-bold text-foreground w-8 text-right">{industry.healthScore}</span>
-          </div>
+    <Link
+      to={`/industries/${industry.slug}`}
+      className="block rounded-lg border border-border bg-card p-3 hover:border-primary/20 transition-colors"
+    >
+      {/* Row 1: Name + Score */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+          <TrendIcon className={`h-3.5 w-3.5 ${trendColor} shrink-0`} />
+          <span className="text-sm font-medium text-foreground truncate">{industry.name}</span>
         </div>
-
-        {/* Row 2: Trend label + AI impact */}
-        <div className="mt-1.5 flex items-center justify-between gap-2 ml-6">
-          <div className="flex items-center gap-2">
-            <span className={`text-[10px] font-medium ${trendLabelColor}`}>{trendLabel}</span>
-            {isBlip && (
-              <span className="text-[9px] px-1 rounded bg-amber-500/10 border border-amber-500/20 text-amber-600 font-medium">blip</span>
-            )}
-          </div>
-          {impact && <AIImpactBadge impact={impact} />}
+        <div className="flex items-center gap-2.5 shrink-0">
+          {delta !== 0 && (
+            <span className={`text-[10px] font-mono font-semibold ${deltaColor}`}>{delta > 0 ? "+" : ""}{delta}</span>
+          )}
+          {sparkData.length > 2 && (
+            <div className="w-16 hidden sm:block">
+              <Sparkline data={sparkData} healthScore={industry.healthScore} width={64} height={20} />
+            </div>
+          )}
+          <span className="text-lg font-mono font-bold text-foreground w-8 text-right">{industry.healthScore}</span>
         </div>
-      </Link>
+      </div>
 
-      {/* Hover context row */}
-      {showContext && (
-        <div className="mt-1 ml-8 flex items-center gap-2 px-1 animate-in fade-in duration-200">
-          <Info className="h-3 w-3 text-muted-foreground shrink-0" />
-          <span className={`text-[10px] ${contextColor}`}>{contextLabel}</span>
-          <span className="text-[10px] text-muted-foreground">·</span>
-          <VolatilityDots history={industry.scoreHistory || []} days={days} />
-          {trend.longDelta !== 0 && days <= 30 && (
-            <>
-              <span className="text-[10px] text-muted-foreground">·</span>
-              <span className="text-[10px] text-muted-foreground">
-                90d: <span className={trend.longDelta > 0 ? "text-emerald-600" : "text-rose-500"}>{trend.longDelta > 0 ? "+" : ""}{trend.longDelta}</span>
-              </span>
-            </>
+      {/* Row 2: Trend label + AI impact */}
+      <div className="mt-1.5 flex items-center justify-between gap-2 ml-6">
+        <div className="flex items-center gap-2">
+          <span className={`text-[10px] font-medium ${trendLabelColor}`}>{trendLabel}</span>
+          {isBlip && (
+            <span className="text-[9px] px-1 rounded bg-amber-500/10 border border-amber-500/20 text-amber-600 font-medium">blip</span>
           )}
         </div>
-      )}
-    </div>
+        {impact && <AIImpactBadge impact={impact} />}
+      </div>
+
+      {/* Row 3: Context + Volatility (always visible) */}
+      <div className="mt-1.5 ml-6 flex items-center gap-2 flex-wrap">
+        <Info className="h-3 w-3 text-muted-foreground shrink-0" />
+        <span className={`text-[10px] ${contextColor}`}>{contextLabel}</span>
+        <span className="text-[10px] text-muted-foreground">·</span>
+        <VolatilityDots history={industry.scoreHistory || []} days={days} />
+        {trend.longDelta !== 0 && days <= 30 && (
+          <>
+            <span className="text-[10px] text-muted-foreground">·</span>
+            <span className="text-[10px] text-muted-foreground">
+              90d: <span className={trend.longDelta > 0 ? "text-emerald-600" : "text-rose-500"}>{trend.longDelta > 0 ? "+" : ""}{trend.longDelta}</span>
+            </span>
+          </>
+        )}
+      </div>
+    </Link>
   );
 }
