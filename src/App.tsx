@@ -1,3 +1,4 @@
+import { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,26 +11,39 @@ import ArgusChat from "@/components/ArgusChat";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import TierGate from "@/components/TierGate";
 import ErrorBoundary from "@/components/ErrorBoundary";
-import Landing from "./pages/Landing";
-import Auth from "./pages/Auth";
-import Onboarding from "./pages/Onboarding";
-import Pricing from "./pages/Pricing";
-import IndustryDashboard from "./pages/IndustryDashboard";
-import IndustryDetail from "./pages/IndustryDetail";
-import AIImpactDashboard from "./pages/AIImpactDashboard";
-import SignalFeed from "./pages/SignalFeed";
-import Prospects from "./pages/Prospects";
-import ProspectDetail from "./pages/ProspectDetail";
-import Pipeline from "./pages/Pipeline";
-import Outreach from "./pages/Outreach";
-import Reports from "./pages/Reports";
-import Settings from "./pages/Settings";
-import DigestPreview from "./pages/DigestPreview";
-import Admin from "./pages/Admin";
-import AcceptInvite from "./pages/AcceptInvite";
-import NotFound from "./pages/NotFound";
+
+// Lazy-loaded pages — each becomes its own chunk
+const Landing = lazy(() => import("./pages/Landing"));
+const Auth = lazy(() => import("./pages/Auth"));
+const Onboarding = lazy(() => import("./pages/Onboarding"));
+const Pricing = lazy(() => import("./pages/Pricing"));
+const IndustryDashboard = lazy(() => import("./pages/IndustryDashboard"));
+const IndustryDetail = lazy(() => import("./pages/IndustryDetail"));
+const AIImpactDashboard = lazy(() => import("./pages/AIImpactDashboard"));
+const SignalFeed = lazy(() => import("./pages/SignalFeed"));
+const Prospects = lazy(() => import("./pages/Prospects"));
+const ProspectDetail = lazy(() => import("./pages/ProspectDetail"));
+const Pipeline = lazy(() => import("./pages/Pipeline"));
+const Outreach = lazy(() => import("./pages/Outreach"));
+const Reports = lazy(() => import("./pages/Reports"));
+const Settings = lazy(() => import("./pages/Settings"));
+const DigestPreview = lazy(() => import("./pages/DigestPreview"));
+const Admin = lazy(() => import("./pages/Admin"));
+const AcceptInvite = lazy(() => import("./pages/AcceptInvite"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
+
+function PageLoader() {
+  return (
+    <div className="flex h-screen w-full items-center justify-center">
+      <div className="flex flex-col items-center gap-3">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        <p className="text-xs text-muted-foreground">Loading...</p>
+      </div>
+    </div>
+  );
+}
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -41,6 +55,7 @@ const App = () => (
           <IntelligenceProvider>
             <ArgusProvider>
             <ErrorBoundary fallbackMessage="Something went wrong loading this page. Try refreshing.">
+            <Suspense fallback={<PageLoader />}>
             <Routes>
               <Route path="/" element={<Landing />} />
               <Route path="/auth" element={<Auth />} />
@@ -61,6 +76,7 @@ const App = () => (
               <Route path="/invite/:token" element={<AcceptInvite />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
+            </Suspense>
             </ErrorBoundary>
             <ArgusChat />
             </ArgusProvider>
