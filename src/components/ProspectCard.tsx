@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import AskArgus from "@/components/AskArgus";
+import CrmPushButton from "@/components/CrmPushButton";
 
 interface ProspectCardProps {
   prospect: Prospect;
@@ -313,27 +314,30 @@ export default function ProspectCard({ prospect }: ProspectCardProps) {
               />
             </div>
           </div>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              const text = [
-                `Company: ${prospect.companyName}`,
-                `Industry: ${industry?.name || "Unknown"}`,
-                `Revenue: ${prospect.annualRevenue}`,
-                `Employees: ${prospect.employeeCount.toLocaleString()}`,
-                `Location: ${prospect.location.city}, ${prospect.location.state}`,
-                `Score: ${prospect.vigylScore}/100`,
-                `Status: ${getPressureLabel(prospect.pressureResponse)}`,
-                `Why Now: ${prospect.whyNow}`,
-                prospect.decisionMakers.length > 0 ? `Contacts: ${prospect.decisionMakers.map(d => `${d.name} (${d.title})`).join("; ")}` : "",
-              ].filter(Boolean).join("\n");
-              navigator.clipboard.writeText(text);
-              toast({ title: "Copied to clipboard", description: "Paste into your CRM or notes." });
-            }}
-            className="flex items-center justify-center gap-1.5 w-full rounded-md py-1.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <Copy className="h-2.5 w-2.5" /> Copy for CRM
-          </button>
+          <div className="flex items-center justify-center gap-3 w-full py-1">
+            <CrmPushButton prospect={prospect} industryName={industry?.name} variant="compact" />
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                const text = [
+                  `Company: ${prospect.companyName}`,
+                  `Industry: ${industry?.name || "Unknown"}`,
+                  `Revenue: ${prospect.annualRevenue}`,
+                  `Employees: ${prospect.employeeCount.toLocaleString()}`,
+                  `Location: ${prospect.location.city}, ${prospect.location.state}`,
+                  `Score: ${prospect.vigylScore}/100`,
+                  `Status: ${getPressureLabel(prospect.pressureResponse)}`,
+                  `Why Now: ${prospect.whyNow}`,
+                  prospect.decisionMakers.length > 0 ? `Contacts: ${prospect.decisionMakers.map(d => `${d.name} (${d.title})`).join("; ")}` : "",
+                ].filter(Boolean).join("\n");
+                navigator.clipboard.writeText(text);
+                toast({ title: "Copied to clipboard", description: "Paste into your CRM or notes." });
+              }}
+              className="flex items-center justify-center gap-1.5 rounded-md py-1.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Copy className="h-2.5 w-2.5" /> Copy for CRM
+            </button>
+          </div>
         </div>
       )}
     </div>

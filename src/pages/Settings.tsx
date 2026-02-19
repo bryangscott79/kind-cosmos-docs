@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { Save, Bell, CreditCard, Building2, Globe, Loader2, Sparkles, MapPin, Users, Briefcase, Target, Check, X, ArrowRight, LogOut, Search, Plus } from "lucide-react";
+import { Save, Bell, CreditCard, Building2, Globe, Loader2, Sparkles, MapPin, Users, Briefcase, Target, Check, X, ArrowRight, LogOut, Search, Plus, Plug } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,10 +8,12 @@ import { useDigestSubscription } from "@/hooks/useDigestSubscription";
 import { TIERS, hasAccess } from "@/lib/tiers";
 import { useNavigate, Link } from "react-router-dom";
 import TeamSection from "@/components/settings/TeamSection";
+import CrmSection from "@/components/settings/CrmSection";
 
 const tabs = [
   { id: "profile", label: "Business Profile", icon: Building2 },
   { id: "team", label: "Team", icon: Users },
+  { id: "integrations", label: "Integrations", icon: Plug },
   { id: "notifications", label: "Notifications", icon: Bell },
   { id: "account", label: "Account & Billing", icon: CreditCard },
 ];
@@ -661,6 +663,8 @@ export default function Settings() {
           )}
 
           {activeTab === "team" && <TeamSection />}
+
+          {activeTab === "integrations" && <CrmSection />}
 
           {activeTab === "notifications" && (
             <div className="space-y-6">

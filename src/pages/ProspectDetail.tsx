@@ -19,6 +19,7 @@ import { useTeamMembers, TeamMember } from "@/hooks/useTeamMembers";
 import { track, EVENTS } from "@/lib/analytics";
 import { supabase } from "@/integrations/supabase/client";
 import AskArgus from "@/components/AskArgus";
+import CrmPushButton from "@/components/CrmPushButton";
 import {
   getScoreColorHsl, getPressureLabel, pipelineStageLabels,
   getSignalTypeLabel, PipelineStage
@@ -309,6 +310,7 @@ ${impactData ? `Industry AI Automation: ${impactData.automationRate}%, Opportuni
                 className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-brand-blue to-brand-purple px-5 py-2.5 text-xs font-semibold text-white hover:opacity-90 transition-opacity">
                 <Mail className="h-3.5 w-3.5" /> Generate Outreach
               </Link>
+              <CrmPushButton prospect={prospect} industryName={industry?.name} variant="full" />
               <AskArgus context={argusContext} label={prospect.companyName}
                 greeting={`I'm looking at the full dossier for ${prospect.companyName} (VIGYL Score: ${prospect.vigylScore}). They're a ${prospect.annualRevenue} ${industry?.name || ""} company with ${prospect.employeeCount.toLocaleString()} employees. What would you like to explore?`} />
               {prospect.websiteUrl && (

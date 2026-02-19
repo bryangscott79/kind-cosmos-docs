@@ -131,6 +131,11 @@ export const EVENTS = {
   // Pipeline
   PIPELINE_EXPORTED: "pipeline_exported",
 
+  // CRM
+  CRM_CONNECTED: "crm_connected",
+  CRM_PROSPECT_SYNCED: "crm_prospect_synced",
+  CRM_SYNC_FAILED: "crm_sync_failed",
+
   // Subscription
   UPGRADE_CLICKED: "upgrade_clicked",
   SUBSCRIPTION_STARTED: "subscription_started",
