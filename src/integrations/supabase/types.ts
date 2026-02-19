@@ -96,6 +96,11 @@ export type Database = {
           location_state: string | null
           onboarding_completed: boolean
           role_title: string | null
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          subscription_end: string | null
+          subscription_status: string | null
+          subscription_tier: string | null
           target_industries: string[] | null
           updated_at: string
           user_id: string
@@ -117,6 +122,11 @@ export type Database = {
           location_state?: string | null
           onboarding_completed?: boolean
           role_title?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_end?: string | null
+          subscription_status?: string | null
+          subscription_tier?: string | null
           target_industries?: string[] | null
           updated_at?: string
           user_id: string
@@ -138,6 +148,11 @@ export type Database = {
           location_state?: string | null
           onboarding_completed?: boolean
           role_title?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_end?: string | null
+          subscription_status?: string | null
+          subscription_tier?: string | null
           target_industries?: string[] | null
           updated_at?: string
           user_id?: string
