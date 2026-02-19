@@ -15,6 +15,8 @@ import IntelligenceLoader from "@/components/IntelligenceLoader";
 import { useIntelligence } from "@/contexts/IntelligenceContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { getSignalTypeLabel } from "@/data/mockData";
+import { useDigestSubscription } from "@/hooks/useDigestSubscription";
+import { useToast } from "@/hooks/use-toast";
 import AskArgus from "@/components/AskArgus";
 
 const signalTypeColors: Record<string, string> = {
@@ -177,7 +179,8 @@ export default function IndustryDashboard() {
   const [search, setSearch] = useState("");
   const [digestDismissed, setDigestDismissed] = useState(false);
   const [digestEmail, setDigestEmail] = useState("");
-  const [digestSubmitted, setDigestSubmitted] = useState(false);
+  const { isSubscribed, subscribe, saving: digestSaving } = useDigestSubscription();
+  const { toast } = useToast();
   const [welcomeDismissed, setWelcomeDismissed] = useState(() => localStorage.getItem("vigyl_welcome_dismissed") === "true");
   const navigate = useNavigate();
   const { data, loading, refresh } = useIntelligence();
@@ -386,7 +389,7 @@ export default function IndustryDashboard() {
             {/* Main layout */}
 
             {/* Email Digest CTA */}
-            {!digestDismissed && !digestSubmitted && (
+            {!digestDismissed && !isSubscribed && (
               <div className="mt-4 rounded-lg border border-primary/20 bg-gradient-to-r from-primary/[0.04] to-violet-500/[0.04] p-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-start gap-3">
@@ -409,22 +412,37 @@ export default function IndustryDashboard() {
                     onChange={(e) => setDigestEmail(e.target.value)}
                     placeholder="you@company.com"
                     className="w-full max-w-xs rounded-md border border-border bg-card px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && digestEmail) {
+                        subscribe(digestEmail).then(r => {
+                          if (r.success) toast({ title: "Subscribed!", description: "Your first daily briefing arrives tomorrow morning." });
+                          else toast({ title: "Failed to subscribe", description: r.error, variant: "destructive" });
+                        });
+                      }
+                    }}
                   />
                   <button
-                    onClick={() => { if (digestEmail) setDigestSubmitted(true); }}
-                    disabled={!digestEmail}
+                    onClick={() => {
+                      if (digestEmail) {
+                        subscribe(digestEmail).then(r => {
+                          if (r.success) toast({ title: "Subscribed!", description: "Your first daily briefing arrives tomorrow morning." });
+                          else toast({ title: "Failed to subscribe", description: r.error, variant: "destructive" });
+                        });
+                      }
+                    }}
+                    disabled={!digestEmail || digestSaving}
                     className="shrink-0 rounded-md bg-primary px-4 py-1.5 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
                   >
-                    Subscribe
+                    {digestSaving ? "Subscribing..." : "Subscribe"}
                   </button>
                 </div>
               </div>
             )}
-            {digestSubmitted && (
-              <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 p-4 flex items-center gap-3">
-                <Mail className="h-4 w-4 text-emerald-600 shrink-0" />
-                <p className="text-xs text-emerald-700"><span className="font-semibold">You're subscribed.</span> Your first daily briefing arrives tomorrow morning.</p>
-                <button onClick={() => setDigestSubmitted(false)} className="ml-auto text-emerald-600 hover:text-emerald-700"><XIcon className="h-3 w-3" /></button>
+            {isSubscribed && !digestDismissed && (
+              <div className="mt-4 rounded-lg border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 p-4 flex items-center gap-3">
+                <Mail className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <p className="text-xs text-emerald-700 dark:text-emerald-300"><span className="font-semibold">You're subscribed.</span> Daily briefings arrive in your inbox every morning.</p>
+                <button onClick={() => setDigestDismissed(true)} className="ml-auto text-emerald-600 dark:text-emerald-400 hover:text-emerald-700"><XIcon className="h-3 w-3" /></button>
               </div>
             )}
             <div className="mt-6 grid gap-6 lg:grid-cols-3">
