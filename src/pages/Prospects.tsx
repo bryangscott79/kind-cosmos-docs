@@ -223,37 +223,7 @@ export default function Prospects() {
     });
   }, []);
 
-  const selectAll = useCallback(() => {
-    if (selectedIds.size === filtered.length) {
-      setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set(filtered.map(p => p.id)));
-    }
-  }, [filtered, selectedIds.size]);
-
-  const exportSelected = useCallback(() => {
-    const selected = filtered.filter(p => selectedIds.has(p.id));
-    if (selected.length === 0) return;
-    const headers = ["Company", "Industry", "Location", "Revenue", "Employees", "Score", "Why Now"];
-    const rows = selected.map(p => {
-      const ind = industries.find(i => i.id === p.industryId);
-      return [
-        `"${p.companyName}"`, `"${ind?.name || ""}"`,
-        `"${p.location.city}, ${p.location.state}"`,
-        `"${p.annualRevenue}"`, p.employeeCount, p.vigylScore,
-        `"${p.whyNow.replace(/"/g, '""')}"`,
-      ];
-    });
-    const csv = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `vigyl-selected-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast({ title: "Exported", description: `${selected.length} prospects exported.` });
-  }, [filtered, selectedIds, industries, toast]);
+  // selectAll and exportSelected moved below `filtered` declaration
 
   const userState = (profile?.location_state || "").trim();
   const userCity = (profile?.location_city || "").trim();
@@ -301,6 +271,38 @@ export default function Prospects() {
 
     return result;
   }, [search, sortBy, pressureFilter, industryFilter, locationFilter, scopeFilter, enrichedProspects]);
+
+  const selectAll = useCallback(() => {
+    if (selectedIds.size === filtered.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filtered.map(p => p.id)));
+    }
+  }, [filtered, selectedIds.size]);
+
+  const exportSelected = useCallback(() => {
+    const selected = filtered.filter(p => selectedIds.has(p.id));
+    if (selected.length === 0) return;
+    const headers = ["Company", "Industry", "Location", "Revenue", "Employees", "Score", "Why Now"];
+    const rows = selected.map(p => {
+      const ind = industries.find(i => i.id === p.industryId);
+      return [
+        `"${p.companyName}"`, `"${ind?.name || ""}"`,
+        `"${p.location.city}, ${p.location.state}"`,
+        `"${p.annualRevenue}"`, p.employeeCount, p.vigylScore,
+        `"${p.whyNow.replace(/"/g, '""')}"`,
+      ];
+    });
+    const csv = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `vigyl-selected-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: "Exported", description: `${selected.length} prospects exported.` });
+  }, [filtered, selectedIds, industries, toast]);
 
   // Group by scope
   const localProspects = useMemo(() => filtered.filter(p => p.scope === "local"), [filtered]);
