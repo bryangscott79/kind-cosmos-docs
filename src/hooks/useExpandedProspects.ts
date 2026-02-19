@@ -30,6 +30,7 @@ export function useExpandedProspects(existingProspects: Prospect[]) {
   const [exploredVerticals, setExploredVerticals] = useState<ExploredVertical[]>([]);
   const [loading, setLoading] = useState(false);
   const [expanding, setExpanding] = useState<string | null>(null); // verticalId being expanded
+  const [expandingScope, setExpandingScope] = useState<string | null>(null); // scope being expanded
   const [error, setError] = useState<string | null>(null);
 
   // Load existing expanded prospects from DB
@@ -69,6 +70,7 @@ export function useExpandedProspects(existingProspects: Prospect[]) {
   const expandVertical = useCallback(async (request: ExpandRequest) => {
     if (!user || !profile || expanding) return;
     setExpanding(request.verticalId);
+    setExpandingScope(request.scope);
     setError(null);
 
     try {
@@ -139,6 +141,7 @@ export function useExpandedProspects(existingProspects: Prospect[]) {
       return [];
     } finally {
       setExpanding(null);
+      setExpandingScope(null);
     }
   }, [user, profile, expanding, existingProspects, expandedProspects, exploredVerticals]);
 
@@ -170,6 +173,7 @@ export function useExpandedProspects(existingProspects: Prospect[]) {
     scopeCounts,
     loading,
     expanding,
+    expandingScope,
     error,
     expandVertical,
     removeExpanded,

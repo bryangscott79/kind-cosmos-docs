@@ -109,28 +109,31 @@ Generate intelligence across a WIDE range of industries. Think globally and acro
 
 Generate diverse, high-quality intelligence. Be concise but specific.
 
-1. **12-16 industries** most relevant to this user's sales targets. Include DIVERSE industries — not just obvious ones. Cover at least 6 different sectors. Include health scores (0-100), trend direction, and top market signals for each.
+1. **16-20 industries** most relevant to this user's sales targets. Include DIVERSE industries — not just obvious ones. Cover at least 8 different sectors. Include health scores (0-100), trend direction, and top market signals for each.
 
-2. **18-25 market signals** across these industries. Signal types: political, regulatory, economic, hiring, tech, supply_chain, social, competitive, environmental.
+2. **25-35 market signals** across these industries. Signal types: political, regulatory, economic, hiring, tech, supply_chain, social, competitive, environmental.
    Each signal needs a clear sales implication. Use recent dates near ${today}. Include REAL publication sources with realistic URLs.
    For each signal, include 2-3 "impactedEntities" with name, type (industry/company), impact (positive/negative), action (engage/avoid/monitor), and reason.
 
-3. **25-35 prospect companies** in THREE BATCHES:
+3. **45-60 prospect companies** in THREE BATCHES:
 
-   **BATCH A — LOCAL (8-12 prospects, scope: "local"):**
+   **BATCH A — LOCAL (15-20 prospects, scope: "local"):**
    Companies near ${location_city || "the user's city"}, ${location_state || "the user's state"} (within ~150 miles).
+   Include a MIX: well-known regional employers, fast-growing startups, mid-market companies, and local operations of national brands.
    
-   **BATCH B — NATIONAL (10-14 prospects, scope: "national"):**
+   **BATCH B — NATIONAL (18-25 prospects, scope: "national"):**
    Companies in OTHER US states far from ${location_state || "GA"}.
+   Spread across at least 8 different states and 10+ different industries. Include Fortune 500s, mid-market leaders, and growth-stage companies.
    
-   **BATCH C — INTERNATIONAL (7-10 prospects, scope: "international"):**
-   Companies in OTHER COUNTRIES (UK, Germany, Japan, Canada, Australia, etc.).
+   **BATCH C — INTERNATIONAL (12-15 prospects, scope: "international"):**
+   Companies in OTHER COUNTRIES (UK, Germany, Japan, Canada, Australia, Singapore, France, Brazil, India, etc.).
+   Cover at least 5 different countries and diverse industries.
 
     CRITICAL RULES:
     - Each prospect's "industryId" MUST match an industry you generated. An airline is NOT "Education". Match the prospect's ACTUAL business to the correct industry.
-    - Include a MIX of company sizes and spread across at least 8 different industries
+    - Include a MIX of company sizes and spread across at least 12 different industries
     - REQUIRED: Include companies from food & beverage (QSR, CPG, craft brands), manufacturing (controls, automation), media (production studios, streaming), retail (DTC, marketplaces), and healthcare — not just tech!
-    - Think about real companies the user might recognize — well-known brands, regional leaders, and fast-growing challengers
+    - Think about REAL companies the user might recognize — well-known brands, regional leaders, and fast-growing challengers across the FULL BREADTH of the economy
     - Each with a "Why Now" reason, key contacts, 2-3 recommended services, websiteUrl, 2-3 relatedLinks, and 2-3 competitors
 
     DECISION MAKER RULES (CRITICAL):
@@ -329,6 +332,7 @@ Make everything specific to the user's business capabilities and geography.`;
           },
           body: JSON.stringify({
             model: "openai/gpt-5-mini",
+            max_tokens: 16384,
             messages: [
               { role: "system", content: systemPrompt },
               { role: "user", content: userPrompt },

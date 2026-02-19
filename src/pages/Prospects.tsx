@@ -298,6 +298,7 @@ export default function Prospects() {
   const {
     allProspects: mergedWithExpanded,
     expanding,
+    expandingScope,
     expandVertical,
     exploredVerticals,
     scopeCounts,
@@ -443,40 +444,48 @@ export default function Prospects() {
   }, [discoverSearch, untappedVerticals, discoverExpanded]);
 
   // Load More button factory for each scope
+  const [loadMoreCounter, setLoadMoreCounter] = useState({ local: 0, national: 0, international: 0 });
+  
   const makeLoadMoreButton = (scope: "local" | "national" | "international") => {
     const scopeLabels = { local: "Local", national: "National", international: "International" };
+    const isThisScopeExpanding = expandingScope === scope;
+    
     return (
       <button
         onClick={() => {
-          // Pick a random untapped vertical to expand, or use a tracked one
+          // Build a priority list: user's tracked industries + untapped verticals
           const trackedIndustries = profile?.target_industries || [];
-          const randomIndustry = trackedIndustries.length > 0
-            ? trackedIndustries[Math.floor(Math.random() * trackedIndustries.length)]
-            : "Technology & SaaS";
+          const allVerticals = [...trackedIndustries.map(name => {
+            const match = searchVerticals(name)[0];
+            return match || { id: name.toLowerCase().replace(/[^a-z0-9]+/g, "-"), name, sector: "General", keywords: [], exampleCompanies: [], aiOpportunityLevel: "medium" as const };
+          }), ...untappedVerticals];
           
-          // Find matching vertical from taxonomy
-          const match = searchVerticals(randomIndustry)[0];
-          const sector = match
-            ? INDUSTRY_TAXONOMY.find(s => s.verticals.some(v => v.id === match.id))
-            : INDUSTRY_TAXONOMY[0];
+          // Cycle through verticals using counter
+          const idx = loadMoreCounter[scope] % Math.max(1, allVerticals.length);
+          const vertical = allVerticals[idx];
+          setLoadMoreCounter(prev => ({ ...prev, [scope]: prev[scope] + 1 }));
+          
+          const sector = INDUSTRY_TAXONOMY.find(s => 
+            s.verticals.some(v => v.id === vertical.id)
+          );
           
           expandVertical({
-            verticalId: match?.id || randomIndustry.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
-            verticalName: match?.name || randomIndustry,
-            sectorName: sector?.name || "General",
+            verticalId: vertical.id || vertical.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+            verticalName: vertical.name,
+            sectorName: sector?.name || vertical.sector || "General",
             scope,
-            exampleCompanies: match?.exampleCompanies,
+            exampleCompanies: vertical.exampleCompanies,
           });
         }}
         disabled={!!expanding}
         className="inline-flex items-center gap-2 rounded-lg border border-dashed border-primary/30 bg-primary/5 px-5 py-3 text-sm font-medium text-primary hover:bg-primary/10 hover:border-primary/50 transition-colors disabled:opacity-50"
       >
-        {expanding === scope ? (
+        {isThisScopeExpanding ? (
           <Loader2 className="h-4 w-4 animate-spin" />
         ) : (
           <Plus className="h-4 w-4" />
         )}
-        {expanding ? "Generating..." : `Load More ${scopeLabels[scope]} Prospects`}
+        {isThisScopeExpanding ? "Generating..." : `Load More ${scopeLabels[scope]} Prospects`}
       </button>
     );
   };
