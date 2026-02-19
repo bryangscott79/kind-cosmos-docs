@@ -7,9 +7,11 @@ import { useToast } from "@/hooks/use-toast";
 import { useDigestSubscription } from "@/hooks/useDigestSubscription";
 import { TIERS, hasAccess } from "@/lib/tiers";
 import { useNavigate, Link } from "react-router-dom";
+import TeamSection from "@/components/settings/TeamSection";
 
 const tabs = [
   { id: "profile", label: "Business Profile", icon: Building2 },
+  { id: "team", label: "Team", icon: Users },
   { id: "notifications", label: "Notifications", icon: Bell },
   { id: "account", label: "Account & Billing", icon: CreditCard },
 ];
@@ -657,6 +659,8 @@ export default function Settings() {
               </button>
             </div>
           )}
+
+          {activeTab === "team" && <TeamSection />}
 
           {activeTab === "notifications" && (
             <div className="space-y-6">

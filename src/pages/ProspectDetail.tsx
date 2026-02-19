@@ -15,6 +15,7 @@ import { useIntelligence } from "@/contexts/IntelligenceContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { usePipelineProspects } from "@/hooks/usePipelineProspects";
+import { useTeamMembers, TeamMember } from "@/hooks/useTeamMembers";
 import { track, EVENTS } from "@/lib/analytics";
 import { supabase } from "@/integrations/supabase/client";
 import AskArgus from "@/components/AskArgus";
@@ -64,7 +65,14 @@ function MetricPill({ label, value, icon }: { label: string; value: string; icon
   );
 }
 
-function buildPresentationPrompt(prospect: any, industry: any, relatedSignals: any[], impactData: any) {
+function buildPresentationPrompt(prospect: any, industry: any, relatedSignals: any[], impactData: any, teamMembers?: TeamMember[]) {
+  const teamBlock = teamMembers && teamMembers.length > 0
+    ? `## OUR TEAM (for "Meet The Team" slide)
+${teamMembers.map(m => `- ${m.name}, ${m.title}${m.bio ? ` — ${m.bio}` : ""}${m.linkedin_url ? ` (${m.linkedin_url})` : ""}`).join("\n")}
+Include a headshot/photo placeholder for each team member.`
+    : `## OUR TEAM
+No team data provided — use a generic "Your Dedicated Team" slide with placeholder headshots.`;
+
   return `Create a professional, visually structured presentation (10-15 slides) for a prospective client meeting with ${prospect.companyName}. The goal is to demonstrate deep understanding of their business, industry challenges, and position our services as the ideal solution.
 
 ## COMPANY OVERVIEW
@@ -96,6 +104,8 @@ ${impactData ? `## INDUSTRY AI IMPACT
 - Collaborative Functions: ${impactData.collaborativeFunctions.length}
 - Human-Led Functions: ${impactData.humanLedFunctions.length}` : ""}
 
+${teamBlock}
+
 ${prospect.notes ? `## INTERNAL NOTES (DO NOT include in presentation, use for context)
 ${prospect.notes}` : ""}
 
@@ -110,7 +120,7 @@ ${prospect.notes}` : ""}
 8. Relevant Experience — Similar work, case studies
 9. Proposed Engagement — Phased approach with clear milestones
 10. Expected Outcomes — Measurable results
-11. The Team — Who they'll work with
+11. The Team — Who they'll work with (use team data above for names, titles, bios, and headshot placeholders)
 12. Next Steps — Clear call to action
 
 ## STYLE GUIDELINES
@@ -136,6 +146,9 @@ export default function ProspectDetail() {
   // Resolve prospect from intelligence data OR pipeline DB
   const { findProspect, loading: pipelineLoading } = usePipelineProspects(prospects);
   const prospect = findProspect(id);
+
+  // Team data for presentations
+  const { members: teamMembers } = useTeamMembers();
 
   const enrichContacts = useCallback(async () => {
     if (!prospect || enriching) return;
@@ -323,7 +336,7 @@ ${impactData ? `Industry AI Automation: ${impactData.automationRate}%, Opportuni
                   <div className="relative mt-3">
                     <button
                       onClick={() => {
-                        const prompt = buildPresentationPrompt(prospect, industry, relatedSignals, impactData);
+                        const prompt = buildPresentationPrompt(prospect, industry, relatedSignals, impactData, teamMembers);
                         navigator.clipboard.writeText(prompt);
                         setCopied(true);
                         toast({ title: "Prompt copied to clipboard!" });
@@ -334,7 +347,7 @@ ${impactData ? `Industry AI Automation: ${impactData.automationRate}%, Opportuni
                       {copied ? <><Check className="h-3 w-3" /> Copied</> : <><Copy className="h-3 w-3" /> Copy Prompt</>}
                     </button>
                     <pre className="rounded-lg bg-secondary/50 border border-border p-4 pr-24 text-xs text-foreground leading-relaxed whitespace-pre-wrap font-sans">
-                      {buildPresentationPrompt(prospect, industry, relatedSignals, impactData)}
+                      {buildPresentationPrompt(prospect, industry, relatedSignals, impactData, teamMembers)}
                     </pre>
                   </div>
                 </DialogContent>
