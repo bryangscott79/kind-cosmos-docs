@@ -34,9 +34,9 @@ export default function ShareableAIReport({ analysis, onClose }: ShareableAIRepo
 • Human Resilience: ${analysis.humanResilienceScore}/100
 • Collaborative Opportunity: ${analysis.collaborativeOpportunityIndex}/100
 
-💡 Top AI-Led: ${topAI.map(f => f.functionName).join(", ")}
-🤝 Top Collaborative: ${topCollab.map(f => f.functionName).join(", ")}
-👤 Still Human: ${topHuman.map(f => f.functionName).join(", ")}
+💡 Top AI-Led: ${topAI.map(f => f.name).join(", ")}
+🤝 Top Collaborative: ${topCollab.map(f => f.name).join(", ")}
+👤 Still Human: ${topHuman.map(f => f.name).join(", ")}
 
 Powered by VIGYL.ai — AI Impact Intelligence`;
 
@@ -118,19 +118,19 @@ Powered by VIGYL.ai — AI Impact Intelligence`;
             <div>
               <p className="font-semibold text-rose-600 mb-1.5">Top AI-Led</p>
               {topAI.map(f => (
-                <p key={f.functionName} className="text-muted-foreground mb-1 leading-snug">{f.functionName}</p>
+                <p key={f.name} className="text-muted-foreground mb-1 leading-snug">{f.name}</p>
               ))}
             </div>
             <div>
               <p className="font-semibold text-violet-600 mb-1.5">Collaborative Edge</p>
               {topCollab.map(f => (
-                <p key={f.functionName} className="text-muted-foreground mb-1 leading-snug">{f.functionName}</p>
+                <p key={f.name} className="text-muted-foreground mb-1 leading-snug">{f.name}</p>
               ))}
             </div>
             <div>
               <p className="font-semibold text-sky-600 mb-1.5">Still Human</p>
               {topHuman.map(f => (
-                <p key={f.functionName} className="text-muted-foreground mb-1 leading-snug">{f.functionName}</p>
+                <p key={f.name} className="text-muted-foreground mb-1 leading-snug">{f.name}</p>
               ))}
             </div>
           </div>
