@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { BarChart3, Radio, Users, Kanban, PenTool, Settings, LogOut, CreditCard, Lock, Shield, Menu, X, Brain, FileText, Mail } from "lucide-react";
+import { BarChart3, Radio, Users, Kanban, PenTool, Settings, LogOut, CreditCard, Lock, Shield, Menu, X, FileText, Mail } from "lucide-react";
 import vigylLogo from "@/assets/vigyl-logo.png";
 import { useAuth } from "@/contexts/AuthContext";
 import { TIERS, hasAccess, FEATURE_ACCESS, TierKey } from "@/lib/tiers";
@@ -12,9 +12,8 @@ function useNavSections() {
     {
       label: "Intelligence",
       items: [
-        { label: "Briefing", subtitle: "Your market at a glance", path: "/industries", icon: BarChart3, feature: "industries" },
+        { label: "Briefing", subtitle: "Health, AI impact & market intel", path: "/industries", icon: BarChart3, feature: "industries" },
         { label: "Signals", subtitle: "What's happening now", path: "/signals", icon: Radio, feature: "signals" },
-        { label: "AI Impact", subtitle: "Where AI meets your industry", path: "/ai-impact", icon: Brain, feature: "ai_impact" },
       ],
     },
     {
