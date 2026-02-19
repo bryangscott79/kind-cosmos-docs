@@ -5,6 +5,34 @@ import { track, EVENTS } from "@/lib/analytics";
 import type { Industry, Signal, Prospect, AIImpactAnalysis } from "@/data/mockData";
 import { industries as seedIndustries, signals as seedSignals, prospects as seedProspects } from "@/data/mockData";
 
+/**
+ * Merge AI-generated industries on top of the full 100-industry seed list.
+ * AI data overrides seed entries by matching on slug or name (case-insensitive).
+ * This ensures users always see all 100 industries even when the AI only returns ~16-20.
+ */
+function mergeIndustriesWithSeed(aiIndustries: Industry[]): Industry[] {
+  const aiMap = new Map<string, Industry>();
+  for (const ind of aiIndustries) {
+    aiMap.set(ind.slug, ind);
+    aiMap.set(ind.name.toLowerCase(), ind);
+  }
+
+  return seedIndustries.map((seed) => {
+    const match = aiMap.get(seed.slug) || aiMap.get(seed.name.toLowerCase());
+    if (match) {
+      // Overlay AI data but keep seed's id/slug for consistency
+      return {
+        ...seed,
+        healthScore: match.healthScore,
+        trendDirection: match.trendDirection,
+        topSignals: match.topSignals?.length ? match.topSignals : seed.topSignals,
+        scoreHistory: match.scoreHistory?.length ? match.scoreHistory : seed.scoreHistory,
+      };
+    }
+    return seed;
+  });
+}
+
 interface IntelligenceData {
   industries: Industry[];
   signals: Signal[];
@@ -132,7 +160,7 @@ export function IntelligenceProvider({ children }: { children: ReactNode }) {
         const intelligenceData = cached.intelligence_data as any;
         if (intelligenceData.industries?.length > 0) {
           setData({
-            industries: intelligenceData.industries || [],
+            industries: mergeIndustriesWithSeed(intelligenceData.industries || []),
             signals: intelligenceData.signals || [],
             prospects: intelligenceData.prospects || [],
             aiImpact: intelligenceData.aiImpact || [],
@@ -168,7 +196,10 @@ export function IntelligenceProvider({ children }: { children: ReactNode }) {
       if (fnError) throw new Error(fnError.message);
       if (!result?.success) throw new Error(result?.error || "Failed to generate intelligence");
 
-      setData(result.data);
+      setData({
+        ...result.data,
+        industries: mergeIndustriesWithSeed(result.data.industries || []),
+      });
       setIsUsingSeedData(false);
       track(isBackground ? EVENTS.INTELLIGENCE_REFRESHED : EVENTS.INTELLIGENCE_GENERATED, {
         industries: result.data.industries?.length,

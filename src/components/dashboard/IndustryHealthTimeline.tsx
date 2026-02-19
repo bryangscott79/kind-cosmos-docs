@@ -1,16 +1,22 @@
 import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { BarChart3, TrendingUp, TrendingDown, Minus, Info, Brain, Bot, Handshake, User, Sparkles, Loader2, RefreshCw } from "lucide-react";
+import { BarChart3, TrendingUp, TrendingDown, Minus, Info, Brain, Bot, Handshake, User, Loader2, ChevronDown, ChevronRight } from "lucide-react";
 import Sparkline from "@/components/Sparkline";
+import { US_INDUSTRIES } from "@/data/industryList";
 import type { Industry, AIImpactAnalysis } from "@/data/mockData";
 
 type Timeframe = "7d" | "30d" | "90d";
+type ViewMode = "sector" | "ranked";
 
 const timeframeConfig: Record<Timeframe, { label: string; days: number; description: string }> = {
   "7d": { label: "7D", days: 7, description: "Past week" },
   "30d": { label: "30D", days: 30, description: "Past month" },
   "90d": { label: "90D", days: 90, description: "Past quarter" },
 };
+
+// Build a slug→sector map from the canonical list
+const sectorBySlug = new Map<string, string>();
+US_INDUSTRIES.forEach((i) => sectorBySlug.set(i.slug, i.sector));
 
 function getTrendContext(industry: Industry, days: number) {
   const history = industry.scoreHistory || [];
@@ -59,7 +65,6 @@ function VolatilityDots({ history, days }: { history: { date: string; score: num
   );
 }
 
-// AI Impact mini badge — displayed on its own row for clarity
 function AIImpactBadge({ impact }: { impact: AIImpactAnalysis }) {
   const automColor = impact.automationRate >= 70 ? "text-rose-600" : impact.automationRate >= 40 ? "text-amber-600" : "text-emerald-600";
   const dominantZone = impact.aiLedFunctions.length >= impact.collaborativeFunctions.length && impact.aiLedFunctions.length >= impact.humanLedFunctions.length
@@ -98,9 +103,10 @@ interface IndustryHealthTimelineProps {
 
 export default function IndustryHealthTimeline({ industries, aiImpact, generating, onGenerateAiImpact, genProgress }: IndustryHealthTimelineProps) {
   const [timeframe, setTimeframe] = useState<Timeframe>("7d");
+  const [viewMode, setViewMode] = useState<ViewMode>("sector");
+  const [collapsedSectors, setCollapsedSectors] = useState<Set<string>>(new Set());
   const days = timeframeConfig[timeframe].days;
 
-  // Map AI impact by industry name for quick lookup
   const aiImpactMap = useMemo(() => {
     const map = new Map<string, AIImpactAnalysis>();
     if (aiImpact) {
@@ -120,11 +126,35 @@ export default function IndustryHealthTimeline({ industries, aiImpact, generatin
       .sort((a, b) => Math.abs(b.trend.delta) - Math.abs(a.trend.delta));
   }, [industries, days]);
 
+  // Group by sector
+  const sectorGroups = useMemo(() => {
+    const groups = new Map<string, typeof rankedIndustries>();
+    for (const ind of rankedIndustries) {
+      const sector = sectorBySlug.get(ind.slug) || "Other";
+      if (!groups.has(sector)) groups.set(sector, []);
+      groups.get(sector)!.push(ind);
+    }
+    // Sort sectors by average health score (worst first for attention)
+    return [...groups.entries()].sort((a, b) => {
+      const avgA = a[1].reduce((s, i) => s + i.healthScore, 0) / a[1].length;
+      const avgB = b[1].reduce((s, i) => s + i.healthScore, 0) / b[1].length;
+      return avgA - avgB;
+    });
+  }, [rankedIndustries]);
+
+  const toggleSector = (sector: string) => {
+    setCollapsedSectors((prev) => {
+      const next = new Set(prev);
+      next.has(sector) ? next.delete(sector) : next.add(sector);
+      return next;
+    });
+  };
+
+  const hasAiData = aiImpact && aiImpact.length > 0;
+
   const improving = rankedIndustries.filter((i) => i.trend.delta > 0);
   const declining = rankedIndustries.filter((i) => i.trend.delta < 0);
   const stable = rankedIndustries.filter((i) => i.trend.delta === 0);
-
-  const hasAiData = aiImpact && aiImpact.length > 0;
 
   return (
     <section>
@@ -132,20 +162,30 @@ export default function IndustryHealthTimeline({ industries, aiImpact, generatin
         <div className="flex items-center gap-2">
           <BarChart3 className="h-4 w-4 text-primary" />
           <h2 className="text-sm font-semibold text-foreground">Industry Health</h2>
+          <span className="text-[10px] text-muted-foreground">({industries.length} industries)</span>
         </div>
         <div className="flex items-center gap-2">
-          {/* AI Impact generation button */}
           {onGenerateAiImpact && (
             <button
               onClick={onGenerateAiImpact}
               disabled={generating}
               className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[10px] font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors disabled:opacity-50"
-              title={hasAiData ? "Refresh AI Impact analysis" : "Generate AI Impact analysis"}
             >
               {generating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Brain className="h-3 w-3" />}
               {generating ? (genProgress ? `${genProgress.current}/${genProgress.total}` : "...") : hasAiData ? "Refresh AI" : "Analyze AI"}
             </button>
           )}
+          {/* View mode toggle */}
+          <div className="flex items-center gap-0.5 rounded-md border border-border bg-secondary/60 p-0.5">
+            <button onClick={() => setViewMode("sector")}
+              className={`px-2 py-0.5 text-[10px] font-medium rounded transition-colors ${viewMode === "sector" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
+              Sector
+            </button>
+            <button onClick={() => setViewMode("ranked")}
+              className={`px-2 py-0.5 text-[10px] font-medium rounded transition-colors ${viewMode === "ranked" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
+              Ranked
+            </button>
+          </div>
           {/* Timeframe selector */}
           <div className="flex items-center gap-0.5 rounded-md border border-border bg-secondary/60 p-0.5">
             {(Object.keys(timeframeConfig) as Timeframe[]).map((tf) => (
@@ -158,7 +198,6 @@ export default function IndustryHealthTimeline({ industries, aiImpact, generatin
         </div>
       </div>
 
-      {/* AI Impact legend when data exists */}
       {hasAiData && (
         <div className="flex items-center gap-3 mb-2 text-[9px] text-muted-foreground">
           <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-rose-500" /> AI-Led</span>
@@ -169,7 +208,6 @@ export default function IndustryHealthTimeline({ industries, aiImpact, generatin
         </div>
       )}
 
-      {/* Generation progress */}
       {generating && genProgress && genProgress.total > 0 && (
         <div className="mb-2 rounded-md bg-primary/[0.04] border border-primary/10 p-2">
           <div className="flex items-center gap-2 mb-1">
@@ -182,23 +220,72 @@ export default function IndustryHealthTimeline({ industries, aiImpact, generatin
         </div>
       )}
 
-      <div className="space-y-1.5">
-        {improving.map((ind) => (
-          <IndustryHealthRow key={ind.id} industry={ind} trend={ind.trend} days={days} impact={getImpact(ind)} />
-        ))}
-        {improving.length > 0 && declining.length > 0 && <div className="border-t border-border/50 my-1" />}
-        {declining.map((ind) => (
-          <IndustryHealthRow key={ind.id} industry={ind} trend={ind.trend} days={days} impact={getImpact(ind)} />
-        ))}
-        {stable.length > 0 && (
-          <>
-            <div className="border-t border-border/50 my-1" />
-            {stable.map((ind) => (
-              <IndustryHealthRow key={ind.id} industry={ind} trend={ind.trend} days={days} impact={getImpact(ind)} />
-            ))}
-          </>
-        )}
-      </div>
+      {/* Sector view */}
+      {viewMode === "sector" && (
+        <div className="space-y-3">
+          {sectorGroups.map(([sector, sectorIndustries]) => {
+            const isCollapsed = collapsedSectors.has(sector);
+            const avgScore = Math.round(sectorIndustries.reduce((s, i) => s + i.healthScore, 0) / sectorIndustries.length);
+            const improvingCount = sectorIndustries.filter((i) => i.trend.delta > 0).length;
+            const decliningCount = sectorIndustries.filter((i) => i.trend.delta < 0).length;
+
+            return (
+              <div key={sector}>
+                <button
+                  onClick={() => toggleSector(sector)}
+                  className="flex items-center justify-between w-full px-3 py-2 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    {isCollapsed ? <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />}
+                    <span className="text-xs font-semibold text-foreground">{sector}</span>
+                    <span className="text-[10px] text-muted-foreground">({sectorIndustries.length})</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-[10px]">
+                    {improvingCount > 0 && <span className="text-emerald-600">↑{improvingCount}</span>}
+                    {decliningCount > 0 && <span className="text-rose-500">↓{decliningCount}</span>}
+                    <span className="font-mono font-bold text-foreground">{avgScore}</span>
+                  </div>
+                </button>
+                {!isCollapsed && (
+                  <div className="mt-1.5 space-y-1.5">
+                    {sectorIndustries.map((ind) => (
+                      <IndustryHealthRow key={ind.id} industry={ind} trend={ind.trend} days={days} impact={getImpact(ind)} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Ranked view (improving / declining / stable) */}
+      {viewMode === "ranked" && (
+        <div className="space-y-1.5">
+          {improving.length > 0 && (
+            <div className="text-[10px] font-semibold text-emerald-600 mb-1">Improving ({improving.length})</div>
+          )}
+          {improving.map((ind) => (
+            <IndustryHealthRow key={ind.id} industry={ind} trend={ind.trend} days={days} impact={getImpact(ind)} />
+          ))}
+          {improving.length > 0 && declining.length > 0 && <div className="border-t border-border/50 my-2" />}
+          {declining.length > 0 && (
+            <div className="text-[10px] font-semibold text-rose-500 mb-1">Declining ({declining.length})</div>
+          )}
+          {declining.map((ind) => (
+            <IndustryHealthRow key={ind.id} industry={ind} trend={ind.trend} days={days} impact={getImpact(ind)} />
+          ))}
+          {stable.length > 0 && (
+            <>
+              <div className="border-t border-border/50 my-2" />
+              <div className="text-[10px] font-semibold text-muted-foreground mb-1">Stable ({stable.length})</div>
+              {stable.map((ind) => (
+                <IndustryHealthRow key={ind.id} industry={ind} trend={ind.trend} days={days} impact={getImpact(ind)} />
+              ))}
+            </>
+          )}
+        </div>
+      )}
     </section>
   );
 }
@@ -219,7 +306,6 @@ function IndustryHealthRow({ industry, trend, days, impact }: {
       to={`/industries/${industry.slug}`}
       className="block rounded-lg border border-border bg-card p-3 hover:border-primary/20 transition-colors"
     >
-      {/* Row 1: Name + Score */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2.5 min-w-0 flex-1">
           <TrendIcon className={`h-3.5 w-3.5 ${trendColor} shrink-0`} />
@@ -238,7 +324,6 @@ function IndustryHealthRow({ industry, trend, days, impact }: {
         </div>
       </div>
 
-      {/* Row 2: Trend label + AI impact */}
       <div className="mt-1.5 flex items-center justify-between gap-2 ml-6">
         <div className="flex items-center gap-2">
           <span className={`text-[10px] font-medium ${trendLabelColor}`}>{trendLabel}</span>
@@ -249,7 +334,6 @@ function IndustryHealthRow({ industry, trend, days, impact }: {
         {impact && <AIImpactBadge impact={impact} />}
       </div>
 
-      {/* Row 3: Context + Volatility (always visible) */}
       <div className="mt-1.5 ml-6 flex items-center gap-2 flex-wrap">
         <Info className="h-3 w-3 text-muted-foreground shrink-0" />
         <span className={`text-[10px] ${contextColor}`}>{contextLabel}</span>
