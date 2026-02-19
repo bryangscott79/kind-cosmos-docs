@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { Prospect, getPressureLabel, getScoreColorHsl } from "@/data/mockData";
 import { useSavedSignals } from "@/hooks/useSavedSignals";
+import { track, EVENTS } from "@/lib/analytics";
 import { useIntelligence } from "@/contexts/IntelligenceContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -295,6 +296,7 @@ export default function ProspectCard({ prospect }: ProspectCardProps) {
                 } as any);
                 if (error) throw error;
                 toast({ title: `Added to ${persona.pipelineLabel}`, description: `${prospect.companyName} added to Researching stage.` });
+                track(EVENTS.PROSPECT_ADDED_TO_PIPELINE, { company: prospect.companyName, score: prospect.vigylScore });
               } catch (err: any) {
                 toast({ title: "Failed to track", description: err.message, variant: "destructive" });
               }

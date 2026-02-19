@@ -9,6 +9,7 @@ import { usePipelineProspects } from "@/hooks/usePipelineProspects";
 import { supabase } from "@/integrations/supabase/client";
 import { getScoreColor, getPressureLabel, getPressureColor } from "@/data/mockData";
 import { getStageLabels } from "@/lib/personas";
+import { track, EVENTS } from "@/lib/analytics";
 
 const CONTENT_TYPE_MAP: Record<string, { value: string; label: string }[]> = {
   job_seeker: [
@@ -106,6 +107,7 @@ export default function Outreach() {
       if (error) throw error;
       setGeneratedSubject(result.subject || "");
       setGeneratedContent(result.body || "");
+      track(EVENTS.OUTREACH_GENERATED, { company: selectedProspect.companyName, type: contentType });
     } catch (err: any) {
       console.error("Outreach generation failed:", err);
       setGenError("AI generation unavailable — using basic template.");

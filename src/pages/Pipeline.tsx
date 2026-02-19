@@ -1,10 +1,11 @@
+import { track, EVENTS } from "@/lib/analytics";
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   Users, Radio, Calendar, MessageSquare, ExternalLink,
   ChevronRight, ChevronLeft, ChevronDown,
   MapPin, DollarSign, Building2, Mail, Trophy, XCircle,
-  Save, TrendingUp, TrendingDown, Minus, Target
+  Save, TrendingUp, TrendingDown, Minus, Target, Trash2
 } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import IntelligenceLoader from "@/components/IntelligenceLoader";
@@ -37,16 +38,19 @@ function PipelineCard({
   signals,
   onMove,
   onUpdateNotes,
+  onDelete,
 }: {
   prospect: Prospect;
   industries: Industry[];
   signals: Signal[];
   onMove: (stage: PipelineStage) => void;
   onUpdateNotes: (notes: string) => void;
+  onDelete: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [editingNotes, setEditingNotes] = useState(false);
   const [notesDraft, setNotesDraft] = useState(prospect.notes);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const industry = industries.find((i) => i.id === prospect.industryId);
   const relatedSignals = signals.filter((s) => prospect.relatedSignals?.includes(s.id));
@@ -286,6 +290,33 @@ function PipelineCard({
               context={`Prospect: ${prospect.companyName}\nIndustry: ${industry?.name || "Unknown"}\nVIGYL Score: ${prospect.vigylScore}\nRevenue: ${prospect.annualRevenue}\nEmployees: ${prospect.employeeCount.toLocaleString()}\nLocation: ${prospect.location.city}, ${prospect.location.state}\nPipeline Stage: ${pipelineStageLabels[prospect.pipelineStage]}\nPressure Response: ${getPressureLabel(prospect.pressureResponse)}\nWhy Now: ${prospect.whyNow}\nDecision Makers: ${prospect.decisionMakers.map(d => `${d.name} (${d.title})`).join(", ")}\nNotes: ${prospect.notes || "None"}\nRelated Signals: ${relatedSignals.map(s => s.title).join(", ") || "None"}`}
               label={prospect.companyName}
             />
+            <div className="ml-auto">
+              {confirmDelete ? (
+                <div className="flex items-center gap-1.5 rounded-md border border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-900/20 px-2 py-1">
+                  <span className="text-[10px] text-rose-600 dark:text-rose-400 font-medium">Remove?</span>
+                  <button
+                    onClick={() => { onDelete(); setConfirmDelete(false); }}
+                    className="rounded px-2 py-0.5 text-[10px] font-semibold bg-rose-500 text-white hover:bg-rose-600 transition-colors"
+                  >
+                    Yes
+                  </button>
+                  <button
+                    onClick={() => setConfirmDelete(false)}
+                    className="rounded px-2 py-0.5 text-[10px] font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setConfirmDelete(true)}
+                  className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1.5 text-[10px] font-medium text-muted-foreground hover:text-rose-500 hover:border-rose-200 dark:hover:border-rose-800 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-colors"
+                  title="Remove from pipeline"
+                >
+                  <Trash2 className="h-3 w-3" /> Remove
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -365,6 +396,7 @@ export default function Pipeline() {
 
     if (prevStage && prevStage !== newStage) {
       const label = stageLabels[newStage] || pipelineStageLabels[newStage];
+      track(EVENTS.PROSPECT_STAGE_CHANGED, { company: current?.companyName, from: prevStage, to: newStage });
       toast({
         title: `Moved to ${label}`,
         description: `${current?.companyName || "Prospect"} → ${label}`,
@@ -393,6 +425,60 @@ export default function Pipeline() {
       await supabase.from("pipeline_items").update({ notes } as any).eq("id", dbId);
     }
   }, [mergedProspects]);
+
+  const deleteProspect = useCallback(async (prospectId: string) => {
+    const current = (localProspects || mergedProspects).find(p => p.id === prospectId);
+
+    // Optimistically remove from UI
+    setLocalProspects((prev) => {
+      const list = prev || [...mergedProspects];
+      return list.filter((p) => p.id !== prospectId);
+    });
+
+    // Delete from DB
+    if (prospectId.startsWith("db-")) {
+      const dbId = prospectId.replace("db-", "");
+      await supabase.from("pipeline_items").delete().eq("id", dbId) as any;
+    }
+
+    track(EVENTS.PROSPECT_DELETED, { company: current?.companyName });
+
+    toast({
+      title: "Removed",
+      description: `${current?.companyName || "Prospect"} removed from pipeline.`,
+      action: <ToastAction altText="Undo" onClick={async () => {
+        // Re-add to local state
+        setLocalProspects((prev) => {
+          const list = prev || [...mergedProspects];
+          if (current) return [...list, current];
+          return list;
+        });
+        // Re-insert to DB
+        if (prospectId.startsWith("db-") && current) {
+          const dbId = prospectId.replace("db-", "");
+          const pd = current as any;
+          await supabase.from("pipeline_items").insert({
+            id: dbId,
+            user_id: user?.id,
+            company_name: current.companyName,
+            industry_name: current.industryId,
+            pipeline_stage: current.pipelineStage,
+            vigyl_score: current.vigylScore,
+            notes: current.notes || null,
+            prospect_data: {
+              whyNow: current.whyNow,
+              annualRevenue: current.annualRevenue,
+              employeeCount: current.employeeCount,
+              location: current.location,
+              pressureResponse: current.pressureResponse,
+              decisionMakers: current.decisionMakers,
+              isDreamClient: pd.isDreamClient || false,
+            },
+          } as any);
+        }
+      }}>Undo</ToastAction>,
+    });
+  }, [mergedProspects, localProspects, user, toast]);
 
   const columns = useMemo(() => stageOrder.map((stage) => ({
     stage,
@@ -439,6 +525,7 @@ export default function Pipeline() {
                     signals={signals}
                     onMove={(stage) => moveProspect(p.id, stage)}
                     onUpdateNotes={(notes) => updateNotes(p.id, notes)}
+                    onDelete={() => deleteProspect(p.id)}
                   />
                 ))}
                 {col.prospects.length === 0 && (

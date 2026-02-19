@@ -3,6 +3,7 @@ import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { TierKey, getTierFromProductId } from "@/lib/tiers";
 import { PersonaConfig, getPersonaConfig } from "@/lib/personas";
+import { identify, resetAnalytics, track, EVENTS } from "@/lib/analytics";
 
 interface Profile {
   id: string;
@@ -100,6 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             fetchProfile(session.user.id);
             refreshSubscription();
             checkAdminRole(session.user.id);
+            identify(session.user.id, { email: session.user.email || undefined });
           }, 0);
         } else {
           setProfile(null);
@@ -138,6 +140,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setTier("free");
     setSubscriptionEnd(null);
     setIsAdmin(false);
+    resetAnalytics();
+    track(EVENTS.SIGNED_OUT);
   };
 
   const persona = useMemo(() => getPersonaConfig(profile?.user_persona), [profile?.user_persona]);

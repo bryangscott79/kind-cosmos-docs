@@ -15,6 +15,7 @@ import { useIntelligence } from "@/contexts/IntelligenceContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { usePipelineProspects } from "@/hooks/usePipelineProspects";
+import { track, EVENTS } from "@/lib/analytics";
 import { supabase } from "@/integrations/supabase/client";
 import AskArgus from "@/components/AskArgus";
 import {

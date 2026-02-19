@@ -9,6 +9,7 @@ import { Prospect, PressureResponse, ProspectScope } from "@/data/mockData";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { track, EVENTS } from "@/lib/analytics";
 import { Slider } from "@/components/ui/slider";
 
 type SortBy = "score" | "name" | "revenue" | "employees";
@@ -395,6 +396,7 @@ export default function Prospects() {
       setDreamOverview(result.data.companyOverview);
       setDreamProspects(result.data.prospects);
       toast({ title: "✨ Dream Client Analyzed", description: `Found ${result.data.prospects.length} opportunities within ${dreamInput}` });
+      track(EVENTS.DREAM_CLIENT_ANALYZED, { company: dreamInput, opportunities: result.data.prospects.length });
     } catch (err: any) {
       toast({ title: "Analysis failed", description: err.message, variant: "destructive" });
     } finally {
