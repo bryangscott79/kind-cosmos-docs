@@ -2,7 +2,8 @@ import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import {
   Brain, Bot, User, Handshake, Sparkles, Loader2, RefreshCw,
-  Search, X, HelpCircle, Lock, CreditCard
+  Search, X, HelpCircle, Lock, CreditCard, ChevronUp, ChevronDown,
+  Columns2, ArrowLeft
 } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import IntelligenceLoader from "@/components/IntelligenceLoader";

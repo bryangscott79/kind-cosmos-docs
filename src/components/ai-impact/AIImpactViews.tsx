@@ -60,7 +60,7 @@ export function FunctionRow({ fn }: { fn: AIFunction }) {
         </div>
         <span className="text-[10px] font-mono text-muted-foreground">{fn.automationLevel}%</span>
       </div>
-      {fn.opportunity && <p className="text-[10px] text-muted-foreground leading-relaxed line-clamp-2">{fn.opportunity}</p>}
+      {fn.description && <p className="text-[10px] text-muted-foreground leading-relaxed line-clamp-2">{fn.description}</p>}
     </div>
   );
 }
