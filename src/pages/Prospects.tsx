@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Search, MapPin, Building2, Globe2, Star, Loader2, ChevronLeft, ChevronRight, Sparkles, Navigation, RefreshCw, Download, CheckSquare, Square, ArrowRight, CheckCircle2 } from "lucide-react";
+import { Search, MapPin, Building2, Globe2, Star, Loader2, ChevronLeft, ChevronRight, Sparkles, Navigation, RefreshCw, Download, CheckSquare, Square, ArrowRight, CheckCircle2, Plus, Layers } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import ProspectCard from "@/components/ProspectCard";
 import IntelligenceLoader from "@/components/IntelligenceLoader";
@@ -11,6 +11,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { track, EVENTS } from "@/lib/analytics";
 import { Slider } from "@/components/ui/slider";
+import { useExpandedProspects } from "@/hooks/useExpandedProspects";
+import { INDUSTRY_TAXONOMY, getUntappedVerticals, searchVerticals, type IndustryVertical } from "@/data/industryTaxonomy";
 
 type SortBy = "score" | "name" | "revenue" | "employees";
 
@@ -133,6 +135,7 @@ function ProspectSection({
   emptyAction,
   selectedIds,
   onToggleSelect,
+  loadMoreAction,
 }: {
   title: string;
   icon: React.ReactNode;
@@ -141,6 +144,7 @@ function ProspectSection({
   emptyAction?: React.ReactNode;
   selectedIds?: Set<string>;
   onToggleSelect?: (id: string) => void;
+  loadMoreAction?: React.ReactNode;
 }) {
   const [page, setPage] = useState(0);
   const totalPages = Math.ceil(prospects.length / PROSPECTS_PER_PAGE);
@@ -157,6 +161,7 @@ function ProspectSection({
         <div className="py-8 text-center">
           <p className="text-sm text-muted-foreground">{emptyMessage}</p>
           {emptyAction && <div className="mt-3">{emptyAction}</div>}
+          {loadMoreAction && <div className="mt-3">{loadMoreAction}</div>}
         </div>
       </div>
     );
@@ -210,6 +215,9 @@ function ProspectSection({
           </div>
         ))}
       </div>
+      {loadMoreAction && (
+        <div className="mt-4 flex justify-center">{loadMoreAction}</div>
+      )}
     </div>
   );
 }
@@ -273,12 +281,11 @@ export default function Prospects() {
   const userCountry = (profile?.location_country || "US").trim();
 
   // Enrich prospects with inferred scope
-  const enrichedProspects = useMemo(() => {
+  const enrichedCoreProspects = useMemo(() => {
     const result = prospects.map(p => ({
       ...p,
       scope: inferScope(p, userState, userCountry, localRadius),
     }));
-    // Debug: log scope distribution
     const counts = { local: 0, national: 0, international: 0 };
     result.forEach(p => { if (p.scope in counts) counts[p.scope as keyof typeof counts]++; });
     if (result.length > 0) {
@@ -286,6 +293,18 @@ export default function Prospects() {
     }
     return result;
   }, [prospects, userState, userCountry, localRadius]);
+
+  // Expanded prospects system
+  const {
+    allProspects: mergedWithExpanded,
+    expanding,
+    expandVertical,
+    exploredVerticals,
+    scopeCounts,
+  } = useExpandedProspects(enrichedCoreProspects);
+
+  // Use merged list (core + expanded) for all filtering
+  const enrichedProspects = mergedWithExpanded;
 
   const states = useMemo(() => [...new Set(enrichedProspects.map(p => p.location.state))].sort(), [enrichedProspects]);
   const industriesWithProspects = useMemo(() => {
@@ -404,6 +423,62 @@ export default function Prospects() {
     } finally {
       setDreamLoading(false);
     }
+  };
+
+  // ── Discover Industries state ──
+  const [discoverSearch, setDiscoverSearch] = useState("");
+  const [discoverExpanded, setDiscoverExpanded] = useState(false);
+
+  const untappedVerticals = useMemo(() => {
+    const tracked = [
+      ...(profile?.target_industries || []),
+      ...industries.map(i => i.name),
+    ];
+    return getUntappedVerticals(tracked);
+  }, [profile?.target_industries, industries]);
+
+  const discoverResults = useMemo(() => {
+    if (discoverSearch.trim()) return searchVerticals(discoverSearch);
+    return untappedVerticals.slice(0, discoverExpanded ? 60 : 12);
+  }, [discoverSearch, untappedVerticals, discoverExpanded]);
+
+  // Load More button factory for each scope
+  const makeLoadMoreButton = (scope: "local" | "national" | "international") => {
+    const scopeLabels = { local: "Local", national: "National", international: "International" };
+    return (
+      <button
+        onClick={() => {
+          // Pick a random untapped vertical to expand, or use a tracked one
+          const trackedIndustries = profile?.target_industries || [];
+          const randomIndustry = trackedIndustries.length > 0
+            ? trackedIndustries[Math.floor(Math.random() * trackedIndustries.length)]
+            : "Technology & SaaS";
+          
+          // Find matching vertical from taxonomy
+          const match = searchVerticals(randomIndustry)[0];
+          const sector = match
+            ? INDUSTRY_TAXONOMY.find(s => s.verticals.some(v => v.id === match.id))
+            : INDUSTRY_TAXONOMY[0];
+          
+          expandVertical({
+            verticalId: match?.id || randomIndustry.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+            verticalName: match?.name || randomIndustry,
+            sectorName: sector?.name || "General",
+            scope,
+            exampleCompanies: match?.exampleCompanies,
+          });
+        }}
+        disabled={!!expanding}
+        className="inline-flex items-center gap-2 rounded-lg border border-dashed border-primary/30 bg-primary/5 px-5 py-3 text-sm font-medium text-primary hover:bg-primary/10 hover:border-primary/50 transition-colors disabled:opacity-50"
+      >
+        {expanding === scope ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <Plus className="h-4 w-4" />
+        )}
+        {expanding ? "Generating..." : `Load More ${scopeLabels[scope]} Prospects`}
+      </button>
+    );
   };
 
   return (
@@ -583,8 +658,9 @@ export default function Prospects() {
                 prospects={localProspects}
                 selectedIds={selectedIds}
                 onToggleSelect={toggleSelect}
-                emptyMessage={`No prospects within ${localRadius} miles of ${userCity || "your location"}. Try increasing the radius or refreshing your data.`}
+                emptyMessage={`No prospects within ${localRadius} miles of ${userCity || "your location"}. Try loading more or increasing the radius.`}
                 emptyAction={refreshCTA}
+                loadMoreAction={makeLoadMoreButton("local")}
               />
               <ProspectSection
                 title={`National Prospects — ${userCountry || "United States"}`}
@@ -592,8 +668,9 @@ export default function Prospects() {
                 prospects={nationalProspects}
                 selectedIds={selectedIds}
                 onToggleSelect={toggleSelect}
-                emptyMessage="No national prospects found."
+                emptyMessage="No national prospects found. Load more to discover companies across the US."
                 emptyAction={refreshCTA}
+                loadMoreAction={makeLoadMoreButton("national")}
               />
               <ProspectSection
                 title="International Prospects"
@@ -601,8 +678,9 @@ export default function Prospects() {
                 prospects={internationalProspects}
                 selectedIds={selectedIds}
                 onToggleSelect={toggleSelect}
-                emptyMessage="No international prospects found."
+                emptyMessage="No international prospects found. Load more to discover global opportunities."
                 emptyAction={refreshCTA}
+                loadMoreAction={makeLoadMoreButton("international")}
               />
             </>
           ) : (
@@ -622,6 +700,111 @@ export default function Prospects() {
               onToggleSelect={toggleSelect}
               emptyMessage="No prospects match your filters."
             />
+          )}
+        </div>
+
+        {/* ── Discover Industries ── */}
+        <div className="mt-10 rounded-xl border border-border bg-card p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Layers className="h-5 w-5 text-primary" />
+              <h2 className="text-lg font-semibold text-foreground">Discover Industries</h2>
+              <span className="text-xs text-muted-foreground">
+                {INDUSTRY_TAXONOMY.reduce((sum, s) => sum + s.verticals.length, 0)} verticals across {INDUSTRY_TAXONOMY.length} sectors
+              </span>
+            </div>
+          </div>
+          <p className="text-sm text-muted-foreground mb-4">
+            Expand your prospect pipeline into new industries. Click any vertical to generate targeted prospects.
+          </p>
+          
+          <div className="relative mb-4">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <input
+              type="text"
+              value={discoverSearch}
+              onChange={(e) => setDiscoverSearch(e.target.value)}
+              placeholder="Search verticals... (e.g. QSR, C-Store, CPG, production studios, controls)"
+              className="w-full rounded-md border border-border bg-background pl-9 pr-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+            />
+          </div>
+
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {discoverResults.map((v) => {
+              const sector = INDUSTRY_TAXONOMY.find(s => s.verticals.some(sv => sv.id === v.id));
+              const explored = exploredVerticals.find(ev => ev.vertical_id === v.id);
+              const isExpanding = expanding === v.id;
+              return (
+                <button
+                  key={v.id}
+                  onClick={() => expandVertical({
+                    verticalId: v.id,
+                    verticalName: v.name,
+                    sectorName: sector?.name || v.sector,
+                    scope: "all",
+                    exampleCompanies: v.exampleCompanies,
+                  })}
+                  disabled={!!expanding}
+                  className={`group relative rounded-lg border p-3 text-left transition-all hover:border-primary/30 hover:bg-primary/5 disabled:opacity-50 ${
+                    explored ? "border-primary/20 bg-primary/5" : "border-border"
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs">{sector?.icon || "📊"}</span>
+                        <span className="text-xs font-semibold text-foreground truncate">{v.name}</span>
+                      </div>
+                      <p className="mt-1 text-[10px] text-muted-foreground truncate">
+                        {v.exampleCompanies.slice(0, 3).join(", ")}
+                        {v.exampleCompanies.length > 3 && ` +${v.exampleCompanies.length - 3} more`}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      {explored && (
+                        <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] font-medium text-primary">
+                          {explored.times_expanded}x
+                        </span>
+                      )}
+                      {v.aiOpportunityLevel === "high" && (
+                        <span className="rounded-full bg-emerald-100 dark:bg-emerald-900/30 px-1.5 py-0.5 text-[9px] font-medium text-emerald-700 dark:text-emerald-400">
+                          High AI
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  {isExpanding && (
+                    <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-card/80 backdrop-blur-sm">
+                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {!discoverSearch && !discoverExpanded && untappedVerticals.length > 12 && (
+            <button
+              onClick={() => setDiscoverExpanded(true)}
+              className="mt-3 w-full rounded-md border border-dashed border-border py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+            >
+              Show all {untappedVerticals.length} verticals
+            </button>
+          )}
+
+          {exploredVerticals.length > 0 && (
+            <div className="mt-4 pt-3 border-t border-border">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Recently Explored</span>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {exploredVerticals.slice(0, 8).map((v) => (
+                  <span key={v.vertical_id} className="inline-flex items-center gap-1 rounded-full border border-primary/20 bg-primary/5 px-2.5 py-1 text-[10px] font-medium text-primary">
+                    {v.vertical_name}
+                    <span className="text-primary/50">·</span>
+                    <span className="text-primary/60">{v.times_expanded}x</span>
+                  </span>
+                ))}
+              </div>
+            </div>
           )}
         </div>
       </DashboardLayout>

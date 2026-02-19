@@ -80,52 +80,57 @@ Location: ${locationStr}${entityContext}${personaContext}${maturityContext}
 ${feedbackContext}
 
 Generate intelligence across a WIDE range of industries. Think globally and across ALL major sectors including but NOT limited to:
-- Technology & SaaS
-- Healthcare & Life Sciences
-- Financial Services & Banking
-- Food & Beverage
-- Automotive & Transportation
-- Airlines & Aviation
-- Electronics & Consumer Tech
-- Retail & E-Commerce
-- Manufacturing & Industrial
-- Energy & Utilities
-- Real Estate & Construction
-- Media & Entertainment
-- Telecommunications
-- Agriculture & AgTech
-- Hospitality & Tourism
-- Education & EdTech
-- Defense & Aerospace
-- Pharmaceuticals
-- Insurance
-- Professional Services
-- Logistics & Supply Chain
-- Mining & Natural Resources
+- Technology & SaaS, Cybersecurity, AI & ML
+- Healthcare & Life Sciences, Medical Devices, Digital Health
+- Financial Services, Banking, Insurance, FinTech, Payments
+- Food & Beverage, Fast Casual & QSR Dining, C-Store/Convenience, CPG
+- Craft & Artisan Brands, Beverage Companies, Restaurant Chains
+- Automotive & Transportation, EV & Battery, Fleet Management
+- Airlines & Aviation, Logistics & Supply Chain, Last-Mile Delivery
+- Electronics & Consumer Tech, Semiconductors
+- Retail & E-Commerce, DTC Brands, Marketplaces
+- Manufacturing & Industrial, Controls & Automation Companies
+- 3D Printing, Packaging, Chemicals & Materials
+- Aerospace & Defense
+- Energy & Utilities, Clean Energy, EV Charging
+- Real Estate & Construction, PropTech
+- Media & Entertainment, Production Studios, Streaming, Gaming
+- Advertising & Media Buying, MarTech & AdTech
+- Music & Audio, Publishing & News
+- Telecommunications, 5G, Satellite & Space Tech
+- Agriculture & AgTech, Food Processing
+- Hospitality & Tourism, Hotels
+- Education & EdTech, Corporate Training
+- Professional Services, Legal, Consulting, Staffing
+- Government & GovTech, Nonprofit
+- Pet Care, Fitness & Wellness
+- Waste Management, Water & Wastewater
+- Carbon & Sustainability
 
 Generate diverse, high-quality intelligence. Be concise but specific.
 
-1. **8-10 industries** most relevant to this user's sales targets. Include DIVERSE industries — not just obvious ones. Include health scores (0-100), trend direction, and top market signals for each.
+1. **12-16 industries** most relevant to this user's sales targets. Include DIVERSE industries — not just obvious ones. Cover at least 6 different sectors. Include health scores (0-100), trend direction, and top market signals for each.
 
-2. **12-18 market signals** across these industries. Signal types: political, regulatory, economic, hiring, tech, supply_chain, social, competitive, environmental.
+2. **18-25 market signals** across these industries. Signal types: political, regulatory, economic, hiring, tech, supply_chain, social, competitive, environmental.
    Each signal needs a clear sales implication. Use recent dates near ${today}. Include REAL publication sources with realistic URLs.
    For each signal, include 2-3 "impactedEntities" with name, type (industry/company), impact (positive/negative), action (engage/avoid/monitor), and reason.
 
-3. **18-25 prospect companies** in THREE BATCHES:
+3. **25-35 prospect companies** in THREE BATCHES:
 
-   **BATCH A — LOCAL (5-8 prospects, scope: "local"):**
+   **BATCH A — LOCAL (8-12 prospects, scope: "local"):**
    Companies near ${location_city || "the user's city"}, ${location_state || "the user's state"} (within ~150 miles).
    
-   **BATCH B — NATIONAL (6-9 prospects, scope: "national"):**
+   **BATCH B — NATIONAL (10-14 prospects, scope: "national"):**
    Companies in OTHER US states far from ${location_state || "GA"}.
    
-   **BATCH C — INTERNATIONAL (5-8 prospects, scope: "international"):**
+   **BATCH C — INTERNATIONAL (7-10 prospects, scope: "international"):**
    Companies in OTHER COUNTRIES (UK, Germany, Japan, Canada, Australia, etc.).
 
     CRITICAL RULES:
     - Each prospect's "industryId" MUST match an industry you generated. An airline is NOT "Education". Match the prospect's ACTUAL business to the correct industry.
-    - Include a MIX of company sizes and spread across at least 6 different industries
-    - Include food & beverage, automotive, airlines, electronics, hospitality — not just tech!
+    - Include a MIX of company sizes and spread across at least 8 different industries
+    - REQUIRED: Include companies from food & beverage (QSR, CPG, craft brands), manufacturing (controls, automation), media (production studios, streaming), retail (DTC, marketplaces), and healthcare — not just tech!
+    - Think about real companies the user might recognize — well-known brands, regional leaders, and fast-growing challengers
     - Each with a "Why Now" reason, key contacts, 2-3 recommended services, websiteUrl, 2-3 relatedLinks, and 2-3 competitors
 
     DECISION MAKER RULES (CRITICAL):
