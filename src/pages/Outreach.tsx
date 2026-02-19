@@ -166,9 +166,9 @@ export default function Outreach() {
             </div>
 
             {genError && (
-              <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 flex items-center gap-2">
+              <div className="rounded-md border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 px-3 py-2 flex items-center gap-2">
                 <AlertCircle className="h-3.5 w-3.5 text-amber-600 shrink-0" />
-                <p className="text-xs text-amber-700">{genError}</p>
+                <p className="text-xs text-amber-700 dark:text-amber-400">{genError}</p>
               </div>
             )}
 
@@ -182,7 +182,7 @@ export default function Outreach() {
                   {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}{copied ? "Copied" : "Copy"}
                 </button>
                 <button onClick={() => setMarkedSent(true)} disabled={!generatedContent || markedSent}
-                  className={`inline-flex items-center gap-1.5 rounded-md border px-3 py-2 text-xs font-medium transition-colors disabled:opacity-50 ${markedSent ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-border text-foreground hover:bg-accent"}`}>
+                  className={`inline-flex items-center gap-1.5 rounded-md border px-3 py-2 text-xs font-medium transition-colors disabled:opacity-50 ${markedSent ? "border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300" : "border-border text-foreground hover:bg-accent"}`}>
                   {markedSent ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Send className="h-3.5 w-3.5" />}
                   {markedSent ? "Done ✓" : persona.key === "job_seeker" ? "Mark Applied" : "Mark Sent"}
                 </button>
@@ -191,7 +191,7 @@ export default function Outreach() {
             {markedSent && (
               <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 flex items-center justify-between">
                 <p className="text-xs text-emerald-700"><span className="font-semibold">Logged.</span> {selectedProspect?.companyName} updated.</p>
-                <Link to="/pipeline" className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 hover:text-emerald-900 transition-colors">
+                <Link to="/pipeline" className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 dark:text-emerald-300 hover:text-emerald-900 dark:hover:text-emerald-200 transition-colors">
                   <Kanban className="h-3 w-3" /> {persona.pipelineLabel}
                 </Link>
               </div>

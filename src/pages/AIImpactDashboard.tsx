@@ -27,7 +27,7 @@ const OPPORTUNITY_ICONS: Record<string, typeof Zap> = {
 
 const signalTypeColors: Record<string, string> = {
   political: "bg-purple-100 text-purple-700", regulatory: "bg-blue-100 text-blue-700",
-  economic: "bg-emerald-100 text-emerald-700", hiring: "bg-amber-100 text-amber-700",
+  economic: "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300", hiring: "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300",
   tech: "bg-cyan-100 text-cyan-700", supply_chain: "bg-rose-100 text-rose-700",
   social: "bg-pink-100 text-pink-700", competitive: "bg-slate-100 text-slate-700",
   environmental: "bg-lime-100 text-lime-700",

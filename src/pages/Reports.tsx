@@ -457,7 +457,7 @@ function generateAIReadiness(industry: Industry, aiImpact: AIImpactAnalysis | un
               <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider mb-2">Active Now ({nowFunctions.length})</p>
               <div className="grid sm:grid-cols-2 gap-2">
                 {nowFunctions.map((f, i) => (
-                  <div key={i} className="rounded-md border border-emerald-200 bg-emerald-50 p-2.5">
+                  <div key={i} className="rounded-md border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 p-2.5">
                     <p className="text-xs font-semibold text-foreground">{f.name}</p>
                     <p className="text-[10px] text-muted-foreground">{f.automationLevel}% automated · {f.opportunityType.replace("_", " ")}</p>
                   </div>
@@ -470,7 +470,7 @@ function generateAIReadiness(industry: Industry, aiImpact: AIImpactAnalysis | un
               <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider mb-2">Next 6 Months ({nearFunctions.length})</p>
               <div className="grid sm:grid-cols-2 gap-2">
                 {nearFunctions.map((f, i) => (
-                  <div key={i} className="rounded-md border border-amber-200 bg-amber-50 p-2.5">
+                  <div key={i} className="rounded-md border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-2.5">
                     <p className="text-xs font-semibold text-foreground">{f.name}</p>
                     <p className="text-[10px] text-muted-foreground">{f.automationLevel}% automated · {f.opportunityType.replace("_", " ")}</p>
                   </div>

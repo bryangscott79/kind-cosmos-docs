@@ -1,8 +1,10 @@
 import { ReactNode } from "react";
 import AppSidebar from "./AppSidebar";
 import MobilePageNav from "./MobilePageNav";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
+  useKeyboardShortcuts();
   return (
     <div className="min-h-screen bg-background">
       <AppSidebar />

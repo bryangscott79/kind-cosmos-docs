@@ -740,7 +740,7 @@ export default function Settings() {
                           disabled={digestSaving}
                           className={`relative mt-0.5 h-5 w-9 shrink-0 rounded-full transition-colors ${isOn ? "bg-primary" : "bg-muted"}`}
                         >
-                          <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-transform ${isOn ? "right-0.5" : "left-0.5"}`} />
+                          <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white dark:bg-slate-200 transition-transform ${isOn ? "right-0.5" : "left-0.5"}`} />
                         </button>
                       </div>
                     );

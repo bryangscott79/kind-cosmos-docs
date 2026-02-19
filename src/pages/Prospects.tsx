@@ -1,6 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Search, MapPin, Building2, Globe2, Star, Loader2, ChevronLeft, ChevronRight, Sparkles, Navigation, RefreshCw, Download } from "lucide-react";
+import { Search, MapPin, Building2, Globe2, Star, Loader2, ChevronLeft, ChevronRight, Sparkles, Navigation, RefreshCw, Download, CheckSquare, Square, ArrowRight } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import ProspectCard from "@/components/ProspectCard";
 import IntelligenceLoader from "@/components/IntelligenceLoader";
@@ -88,12 +88,16 @@ function ProspectSection({
   prospects,
   emptyMessage,
   emptyAction,
+  selectedIds,
+  onToggleSelect,
 }: {
   title: string;
   icon: React.ReactNode;
   prospects: Prospect[];
   emptyMessage: string;
   emptyAction?: React.ReactNode;
+  selectedIds?: Set<string>;
+  onToggleSelect?: (id: string) => void;
 }) {
   const [page, setPage] = useState(0);
   const totalPages = Math.ceil(prospects.length / PROSPECTS_PER_PAGE);
@@ -147,7 +151,20 @@ function ProspectSection({
       </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {paged.map((prospect) => (
-          <ProspectCard key={prospect.id} prospect={prospect} />
+          <div key={prospect.id} className="relative">
+            {onToggleSelect && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onToggleSelect(prospect.id); }}
+                className="absolute top-2 left-2 z-10 rounded-md p-1 bg-background/80 backdrop-blur-sm border border-border hover:bg-accent transition-colors"
+              >
+                {selectedIds?.has(prospect.id)
+                  ? <CheckSquare className="h-3.5 w-3.5 text-primary" />
+                  : <Square className="h-3.5 w-3.5 text-muted-foreground" />
+                }
+              </button>
+            )}
+            <ProspectCard prospect={prospect} />
+          </div>
         ))}
       </div>
     </div>
@@ -196,6 +213,47 @@ export default function Prospects() {
   const [dreamLoading, setDreamLoading] = useState(false);
   const [dreamProspects, setDreamProspects] = useState<Prospect[]>([]);
   const [dreamOverview, setDreamOverview] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  const toggleSelect = useCallback((id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const selectAll = useCallback(() => {
+    if (selectedIds.size === filtered.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filtered.map(p => p.id)));
+    }
+  }, [filtered, selectedIds.size]);
+
+  const exportSelected = useCallback(() => {
+    const selected = filtered.filter(p => selectedIds.has(p.id));
+    if (selected.length === 0) return;
+    const headers = ["Company", "Industry", "Location", "Revenue", "Employees", "Score", "Why Now"];
+    const rows = selected.map(p => {
+      const ind = industries.find(i => i.id === p.industryId);
+      return [
+        `"${p.companyName}"`, `"${ind?.name || ""}"`,
+        `"${p.location.city}, ${p.location.state}"`,
+        `"${p.annualRevenue}"`, p.employeeCount, p.vigylScore,
+        `"${p.whyNow.replace(/"/g, '""')}"`,
+      ];
+    });
+    const csv = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `vigyl-selected-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: "Exported", description: `${selected.length} prospects exported.` });
+  }, [filtered, selectedIds, industries, toast]);
 
   const userState = (profile?.location_state || "").trim();
   const userCity = (profile?.location_city || "").trim();
@@ -314,9 +372,20 @@ export default function Prospects() {
             </p>
           </div>
           {filtered.length > 0 && (
-            <button onClick={exportCSV} className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors shrink-0">
-              <Download className="h-3.5 w-3.5" /> Export CSV
-            </button>
+            <div className="flex items-center gap-2 shrink-0">
+              <button onClick={selectAll} className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors" title={selectedIds.size === filtered.length ? "Deselect all" : "Select all"}>
+                {selectedIds.size === filtered.length && filtered.length > 0 ? <CheckSquare className="h-3.5 w-3.5" /> : <Square className="h-3.5 w-3.5" />}
+                {selectedIds.size > 0 ? `${selectedIds.size} selected` : "Select"}
+              </button>
+              {selectedIds.size > 0 && (
+                <button onClick={exportSelected} className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:opacity-90 transition-opacity">
+                  <Download className="h-3.5 w-3.5" /> Export {selectedIds.size}
+                </button>
+              )}
+              <button onClick={exportCSV} className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+                <Download className="h-3.5 w-3.5" /> Export All
+              </button>
+            </div>
           )}
         </div>
 
@@ -453,6 +522,8 @@ export default function Prospects() {
                 title={`Local Prospects — ${userCity || "Your Area"}${userState ? `, ${userState}` : ""}`}
                 icon={<MapPin className="h-5 w-5 text-emerald-500" />}
                 prospects={localProspects}
+                selectedIds={selectedIds}
+                onToggleSelect={toggleSelect}
                 emptyMessage={`No prospects within ${localRadius} miles of ${userCity || "your location"}. Try increasing the radius or refreshing your data.`}
                 emptyAction={refreshCTA}
               />
@@ -460,6 +531,8 @@ export default function Prospects() {
                 title={`National Prospects — ${userCountry || "United States"}`}
                 icon={<Building2 className="h-5 w-5 text-blue-500" />}
                 prospects={nationalProspects}
+                selectedIds={selectedIds}
+                onToggleSelect={toggleSelect}
                 emptyMessage="No national prospects found."
                 emptyAction={refreshCTA}
               />
@@ -467,6 +540,8 @@ export default function Prospects() {
                 title="International Prospects"
                 icon={<Globe2 className="h-5 w-5 text-violet-500" />}
                 prospects={internationalProspects}
+                selectedIds={selectedIds}
+                onToggleSelect={toggleSelect}
                 emptyMessage="No international prospects found."
                 emptyAction={refreshCTA}
               />
@@ -484,6 +559,8 @@ export default function Prospects() {
                 <Globe2 className="h-5 w-5 text-violet-500" />
               }
               prospects={filtered}
+              selectedIds={selectedIds}
+              onToggleSelect={toggleSelect}
               emptyMessage="No prospects match your filters."
             />
           )}

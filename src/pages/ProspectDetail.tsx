@@ -230,12 +230,12 @@ ${impactData ? `Industry AI Automation: ${impactData.automationRate}%, Opportuni
                 <div className="flex items-center gap-3 flex-wrap">
                   <h1 className="text-xl font-bold text-foreground">{prospect.companyName}</h1>
                   {prospect.isDreamClient && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 border border-amber-200 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:text-amber-300">
                       <Star className="h-3 w-3" /> Dream Client
                     </span>
                   )}
                   <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                    prospect.pressureResponse === "growth_mode" ? "bg-emerald-100 text-emerald-700" :
+                    prospect.pressureResponse === "growth_mode" ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300" :
                     prospect.pressureResponse === "contracting" ? "bg-rose-100 text-rose-700" :
                     "bg-blue-100 text-blue-700"
                   }`}>

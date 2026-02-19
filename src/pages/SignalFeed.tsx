@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Search, ChevronDown, ChevronRight, Globe, Scale, DollarSign, Users, Cpu, Truck, TrendingUp, TrendingDown, Minus, MessageCircle, Swords, Leaf, Bookmark, Bell, BellOff, Download } from "lucide-react";
+import { Search, ChevronDown, ChevronRight, Globe, Scale, DollarSign, Users, Cpu, Truck, TrendingUp, TrendingDown, Minus, MessageCircle, Swords, Leaf, Bookmark, Bell, BellOff, Download, LayoutGrid, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import SignalCard from "@/components/SignalCard";
@@ -106,6 +106,7 @@ function CategorySection({ type, signalList, defaultOpen, industries, isWatched,
 export default function SignalFeed() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterType>("all");
+  const [viewMode, setViewMode] = useState<"categories" | "timeline">("categories");
   const { data } = useIntelligence();
   const { signals, industries } = data;
   const { savedSignals } = useSavedSignals();
@@ -153,6 +154,35 @@ export default function SignalFeed() {
 
   const totalSources = filtered.reduce((sum, s) => sum + (s.sources?.length || 0), 0);
 
+  // Timeline grouping
+  const timelineGroups = useMemo(() => {
+    const now = new Date();
+    const todayStr = now.toISOString().slice(0, 10);
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().slice(0, 10);
+    const weekAgo = new Date(now);
+    weekAgo.setDate(weekAgo.getDate() - 7);
+
+    const sorted = [...filtered].sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+    const groups: { label: string; signals: Signal[] }[] = [];
+    const buckets: Record<string, Signal[]> = { today: [], yesterday: [], thisWeek: [], earlier: [] };
+
+    for (const s of sorted) {
+      const d = s.publishedAt.slice(0, 10);
+      if (d === todayStr) buckets.today.push(s);
+      else if (d === yesterdayStr) buckets.yesterday.push(s);
+      else if (new Date(s.publishedAt) > weekAgo) buckets.thisWeek.push(s);
+      else buckets.earlier.push(s);
+    }
+
+    if (buckets.today.length) groups.push({ label: "Today", signals: buckets.today });
+    if (buckets.yesterday.length) groups.push({ label: "Yesterday", signals: buckets.yesterday });
+    if (buckets.thisWeek.length) groups.push({ label: "This Week", signals: buckets.thisWeek });
+    if (buckets.earlier.length) groups.push({ label: "Earlier", signals: buckets.earlier });
+    return groups;
+  }, [filtered]);
+
   const exportSignals = () => {
     const headers = ["Title", "Type", "Sentiment", "Severity", "Summary", "Sales Implication", "Published", "Sources"];
     const rows = filtered.map(s => [
@@ -196,6 +226,22 @@ export default function SignalFeed() {
             <button onClick={exportSignals} className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors shrink-0">
               <Download className="h-3.5 w-3.5" /> Export
             </button>
+            <div className="flex rounded-md border border-border overflow-hidden shrink-0">
+              <button
+                onClick={() => setViewMode("categories")}
+                className={`inline-flex items-center gap-1 px-2.5 py-2 text-xs font-medium transition-colors ${viewMode === "categories" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-accent"}`}
+                title="Group by category"
+              >
+                <LayoutGrid className="h-3.5 w-3.5" />
+              </button>
+              <button
+                onClick={() => setViewMode("timeline")}
+                className={`inline-flex items-center gap-1 px-2.5 py-2 text-xs font-medium transition-colors border-l border-border ${viewMode === "timeline" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-accent"}`}
+                title="Timeline view"
+              >
+                <Clock className="h-3.5 w-3.5" />
+              </button>
+            </div>
           </div>
           <div className="flex flex-wrap gap-1.5">
             {types.map(t => (
@@ -207,7 +253,33 @@ export default function SignalFeed() {
           </div>
         </div>
 
-        {filter === "all" ? (
+        {filter === "all" && viewMode === "timeline" ? (
+          <div className="mt-6 space-y-6">
+            {timelineGroups.map(group => (
+              <div key={group.label}>
+                <div className="flex items-center gap-3 mb-3">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{group.label}</h3>
+                  <div className="flex-1 h-px bg-border" />
+                  <span className="text-[10px] text-muted-foreground">{group.signals.length} signal{group.signals.length !== 1 ? "s" : ""}</span>
+                </div>
+                <div className="space-y-3 pl-4 border-l-2 border-primary/10">
+                  {group.signals.map(signal => (
+                    <div key={signal.id} className="relative">
+                      <div className="absolute -left-[calc(1rem+5px)] top-3 h-2 w-2 rounded-full bg-primary/40" />
+                      <SignalCard signal={signal} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+            {timelineGroups.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <Clock className="h-8 w-8 text-muted-foreground/30 mb-3" />
+                <p className="text-sm text-muted-foreground">No signals to display.</p>
+              </div>
+            )}
+          </div>
+        ) : filter === "all" ? (
           <div className="mt-6 space-y-4">
             {categoryOrder.filter(type => groupedByCategory[type]).map((type, i) => (
               <CategorySection
