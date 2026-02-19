@@ -25,10 +25,10 @@ serve(async (req) => {
     });
 
     const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await userClient.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims?.sub) throw new Error("Invalid auth token");
+    const { data: { user: authUser }, error: authError } = await userClient.auth.getUser(token);
+    if (authError || !authUser) throw new Error("Invalid auth token");
 
-    const user = { id: claimsData.claims.sub as string, email: (claimsData.claims.email || "") as string };
+    const user = { id: authUser.id, email: authUser.email || "" };
 
     const body = await req.json();
     const { action } = body;
