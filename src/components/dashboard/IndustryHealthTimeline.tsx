@@ -1,8 +1,8 @@
 import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { BarChart3, TrendingUp, TrendingDown, Minus, Info } from "lucide-react";
+import { BarChart3, TrendingUp, TrendingDown, Minus, Info, Brain, Bot, Handshake, User, Sparkles, Loader2, RefreshCw } from "lucide-react";
 import Sparkline from "@/components/Sparkline";
-import type { Industry } from "@/data/mockData";
+import type { Industry, AIImpactAnalysis } from "@/data/mockData";
 
 type Timeframe = "7d" | "30d" | "90d";
 
@@ -12,77 +12,45 @@ const timeframeConfig: Record<Timeframe, { label: string; days: number; descript
   "90d": { label: "90D", days: 90, description: "Past quarter" },
 };
 
-function getTrendContext(
-  industry: Industry,
-  days: number
-): {
-  delta: number;
-  shortDelta: number;
-  longDelta: number;
-  isBlip: boolean;
-  contextLabel: string;
-  contextColor: string;
-} {
+function getTrendContext(industry: Industry, days: number) {
   const history = industry.scoreHistory || [];
   const len = history.length;
   const currentScore = len > 0 ? history[len - 1].score : industry.healthScore;
-
-  // Current delta for the selected timeframe
   const startIdx = Math.max(0, len - days);
   const delta = len > 0 ? currentScore - (history[startIdx]?.score ?? currentScore) : 0;
-
-  // Short-term delta (last 7 days)
   const shortStartIdx = Math.max(0, len - 7);
   const shortDelta = len > 0 ? currentScore - (history[shortStartIdx]?.score ?? currentScore) : 0;
-
-  // Long-term delta (full history available)
   const longStartIdx = 0;
   const longDelta = len > 1 ? currentScore - history[longStartIdx].score : 0;
-
-  // Determine if this is a blip or sustained trend
-  // A "blip" = short-term and long-term trends diverge
   const shortDirection = shortDelta > 2 ? "up" : shortDelta < -2 ? "down" : "flat";
   const longDirection = longDelta > 5 ? "up" : longDelta < -5 ? "down" : "flat";
   const isBlip = shortDirection !== longDirection && shortDirection !== "flat";
 
   let contextLabel = "";
   let contextColor = "text-muted-foreground";
-
   if (isBlip && shortDirection === "down" && longDirection === "up") {
-    contextLabel = "Short-term dip in a longer uptrend";
-    contextColor = "text-amber-600";
+    contextLabel = "Short-term dip in a longer uptrend"; contextColor = "text-amber-600";
   } else if (isBlip && shortDirection === "up" && longDirection === "down") {
-    contextLabel = "Short-term bounce in a longer downtrend";
-    contextColor = "text-amber-600";
+    contextLabel = "Short-term bounce in a longer downtrend"; contextColor = "text-amber-600";
   } else if (longDirection === "up") {
-    contextLabel = days <= 7 ? "Part of sustained growth trend" : "Consistent improvement over time";
-    contextColor = "text-emerald-600";
+    contextLabel = days <= 7 ? "Part of sustained growth trend" : "Consistent improvement over time"; contextColor = "text-emerald-600";
   } else if (longDirection === "down") {
-    contextLabel = days <= 7 ? "Part of longer decline" : "Extended downward trend";
-    contextColor = "text-rose-600";
+    contextLabel = days <= 7 ? "Part of longer decline" : "Extended downward trend"; contextColor = "text-rose-600";
   } else {
     contextLabel = "Stable with minor fluctuations";
-    contextColor = "text-muted-foreground";
   }
-
   return { delta, shortDelta, longDelta, isBlip, contextLabel, contextColor };
 }
 
-// Volatility indicator
 function VolatilityDots({ history, days }: { history: { date: string; score: number }[]; days: number }) {
   const slice = history.slice(-days);
   if (slice.length < 3) return null;
-
-  // Calculate standard deviation
   const avg = slice.reduce((s, h) => s + h.score, 0) / slice.length;
   const variance = slice.reduce((s, h) => s + Math.pow(h.score - avg, 2), 0) / slice.length;
   const stdDev = Math.sqrt(variance);
-
-  // Low volatility = stable, high = choppy
   const level = stdDev < 3 ? "low" : stdDev < 7 ? "medium" : "high";
   const colors = { low: "bg-emerald-400", medium: "bg-amber-400", high: "bg-rose-400" };
   const labels = { low: "Low volatility", medium: "Moderate swings", high: "High volatility" };
-
   return (
     <div className="flex items-center gap-1" title={labels[level]}>
       <div className={`h-1.5 w-1.5 rounded-full ${colors[level]}`} />
@@ -91,75 +59,148 @@ function VolatilityDots({ history, days }: { history: { date: string; score: num
   );
 }
 
-interface IndustryHealthTimelineProps {
-  industries: Industry[];
+// AI Impact mini badge for inline display
+function AIImpactBadge({ impact }: { impact: AIImpactAnalysis }) {
+  const automColor = impact.automationRate >= 70 ? "text-rose-600" : impact.automationRate >= 40 ? "text-amber-600" : "text-emerald-600";
+  const totalFn = impact.aiLedFunctions.length + impact.collaborativeFunctions.length + impact.humanLedFunctions.length;
+  const dominantZone = impact.aiLedFunctions.length >= impact.collaborativeFunctions.length && impact.aiLedFunctions.length >= impact.humanLedFunctions.length
+    ? "ai_led" : impact.collaborativeFunctions.length >= impact.humanLedFunctions.length ? "collaborative" : "human_led";
+  const zoneConfig = {
+    ai_led: { icon: Bot, color: "text-rose-500", label: "AI-Led" },
+    collaborative: { icon: Handshake, color: "text-violet-500", label: "Collab" },
+    human_led: { icon: User, color: "text-sky-500", label: "Human" },
+  };
+  const zone = zoneConfig[dominantZone];
+  const ZoneIcon = zone.icon;
+
+  return (
+    <div className="flex items-center gap-2">
+      {/* Automation rate mini bar */}
+      <div className="flex items-center gap-1.5">
+        <div className="w-10 h-1.5 rounded-full bg-secondary overflow-hidden">
+          <div className="h-full rounded-full bg-gradient-to-r from-rose-500 to-violet-500" style={{ width: `${impact.automationRate}%` }} />
+        </div>
+        <span className={`text-[10px] font-mono font-bold ${automColor}`}>{impact.automationRate}%</span>
+      </div>
+      {/* Dominant zone */}
+      <span className={`hidden sm:flex items-center gap-0.5 text-[9px] font-medium ${zone.color}`}>
+        <ZoneIcon className="h-2.5 w-2.5" />{zone.label}
+      </span>
+      {/* Opportunity score */}
+      <span className="hidden md:inline text-[9px] text-violet-600 font-medium">
+        Opp:{impact.collaborativeOpportunityIndex}
+      </span>
+    </div>
+  );
 }
 
-export default function IndustryHealthTimeline({ industries }: IndustryHealthTimelineProps) {
+interface IndustryHealthTimelineProps {
+  industries: Industry[];
+  aiImpact?: AIImpactAnalysis[];
+  generating?: boolean;
+  onGenerateAiImpact?: () => void;
+  genProgress?: { current: number; total: number; industryName: string };
+}
+
+export default function IndustryHealthTimeline({ industries, aiImpact, generating, onGenerateAiImpact, genProgress }: IndustryHealthTimelineProps) {
   const [timeframe, setTimeframe] = useState<Timeframe>("7d");
   const days = timeframeConfig[timeframe].days;
 
-  // Sort by absolute delta (biggest movers first), then split improving/declining
+  // Map AI impact by industry name for quick lookup
+  const aiImpactMap = useMemo(() => {
+    const map = new Map<string, AIImpactAnalysis>();
+    if (aiImpact) {
+      aiImpact.forEach((a) => {
+        map.set(a.industryId, a);
+        map.set(a.industryName.toLowerCase(), a);
+      });
+    }
+    return map;
+  }, [aiImpact]);
+
+  const getImpact = (ind: Industry) => aiImpactMap.get(ind.id) || aiImpactMap.get(ind.name.toLowerCase());
+
   const rankedIndustries = useMemo(() => {
     return [...industries]
-      .map((ind) => ({
-        ...ind,
-        trend: getTrendContext(ind, days),
-      }))
+      .map((ind) => ({ ...ind, trend: getTrendContext(ind, days) }))
       .sort((a, b) => Math.abs(b.trend.delta) - Math.abs(a.trend.delta));
   }, [industries, days]);
 
-  const improving = rankedIndustries.filter((i) => i.trend.delta > 0).slice(0, 4);
-  const declining = rankedIndustries.filter((i) => i.trend.delta < 0).slice(0, 4);
-  const stable = rankedIndustries.filter((i) => i.trend.delta === 0).slice(0, 2);
+  const improving = rankedIndustries.filter((i) => i.trend.delta > 0).slice(0, 5);
+  const declining = rankedIndustries.filter((i) => i.trend.delta < 0).slice(0, 5);
+  const stable = rankedIndustries.filter((i) => i.trend.delta === 0).slice(0, 3);
+
+  const hasAiData = aiImpact && aiImpact.length > 0;
 
   return (
     <section>
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <BarChart3 className="h-4 w-4 text-primary" />
-          <h2 className="text-sm font-semibold text-foreground">Industry Health</h2>
+          <h2 className="text-sm font-semibold text-foreground">Industry Health & AI Impact</h2>
         </div>
-        {/* Timeframe selector */}
-        <div className="flex items-center gap-0.5 rounded-md border border-border bg-secondary/60 p-0.5">
-          {(Object.keys(timeframeConfig) as Timeframe[]).map((tf) => (
+        <div className="flex items-center gap-2">
+          {/* AI Impact generation button */}
+          {onGenerateAiImpact && (
             <button
-              key={tf}
-              onClick={() => setTimeframe(tf)}
-              className={`px-2 py-0.5 text-[10px] font-medium rounded transition-colors ${
-                timeframe === tf
-                  ? "bg-card text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
+              onClick={onGenerateAiImpact}
+              disabled={generating}
+              className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[10px] font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors disabled:opacity-50"
+              title={hasAiData ? "Refresh AI Impact analysis" : "Generate AI Impact analysis"}
             >
-              {timeframeConfig[tf].label}
+              {generating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Brain className="h-3 w-3" />}
+              {generating ? (genProgress ? `${genProgress.current}/${genProgress.total}` : "...") : hasAiData ? "Refresh AI" : "Analyze AI"}
             </button>
-          ))}
+          )}
+          {/* Timeframe selector */}
+          <div className="flex items-center gap-0.5 rounded-md border border-border bg-secondary/60 p-0.5">
+            {(Object.keys(timeframeConfig) as Timeframe[]).map((tf) => (
+              <button key={tf} onClick={() => setTimeframe(tf)}
+                className={`px-2 py-0.5 text-[10px] font-medium rounded transition-colors ${timeframe === tf ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
+                {timeframeConfig[tf].label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
+      {/* AI Impact legend when data exists */}
+      {hasAiData && (
+        <div className="flex items-center gap-3 mb-2 text-[9px] text-muted-foreground">
+          <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-rose-500" /> AI-Led</span>
+          <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-violet-500" /> Collaborative</span>
+          <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-sky-500" /> Human-Led</span>
+          <span className="text-muted-foreground/40">·</span>
+          <span>Bars show automation rate</span>
+        </div>
+      )}
+
+      {/* Generation progress */}
+      {generating && genProgress && genProgress.total > 0 && (
+        <div className="mb-2 rounded-md bg-primary/[0.04] border border-primary/10 p-2">
+          <div className="flex items-center gap-2 mb-1">
+            <Loader2 className="h-3 w-3 animate-spin text-primary" />
+            <span className="text-[10px] text-muted-foreground">Analyzing: {genProgress.industryName}</span>
+          </div>
+          <div className="h-1 w-full rounded-full bg-secondary overflow-hidden">
+            <div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${(genProgress.current / genProgress.total) * 100}%` }} />
+          </div>
+        </div>
+      )}
+
       <div className="space-y-1.5">
-        {/* Improving */}
         {improving.map((ind) => (
-          <IndustryHealthRow key={ind.id} industry={ind} trend={ind.trend} days={days} />
+          <IndustryHealthRow key={ind.id} industry={ind} trend={ind.trend} days={days} impact={getImpact(ind)} />
         ))}
-
-        {/* Divider if both exist */}
-        {improving.length > 0 && declining.length > 0 && (
-          <div className="border-t border-border/50 my-1" />
-        )}
-
-        {/* Declining */}
+        {improving.length > 0 && declining.length > 0 && <div className="border-t border-border/50 my-1" />}
         {declining.map((ind) => (
-          <IndustryHealthRow key={ind.id} industry={ind} trend={ind.trend} days={days} />
+          <IndustryHealthRow key={ind.id} industry={ind} trend={ind.trend} days={days} impact={getImpact(ind)} />
         ))}
-
-        {/* Stable (collapsed) */}
         {stable.length > 0 && (
           <>
             <div className="border-t border-border/50 my-1" />
             {stable.map((ind) => (
-              <IndustryHealthRow key={ind.id} industry={ind} trend={ind.trend} days={days} />
+              <IndustryHealthRow key={ind.id} industry={ind} trend={ind.trend} days={days} impact={getImpact(ind)} />
             ))}
           </>
         )}
@@ -168,25 +209,16 @@ export default function IndustryHealthTimeline({ industries }: IndustryHealthTim
   );
 }
 
-function IndustryHealthRow({
-  industry,
-  trend,
-  days,
-}: {
-  industry: Industry;
-  trend: ReturnType<typeof getTrendContext>;
-  days: number;
+function IndustryHealthRow({ industry, trend, days, impact }: {
+  industry: Industry; trend: ReturnType<typeof getTrendContext>; days: number; impact?: AIImpactAnalysis;
 }) {
   const [showContext, setShowContext] = useState(false);
   const { delta, isBlip, contextLabel, contextColor } = trend;
-
   const TrendIcon = delta > 0 ? TrendingUp : delta < 0 ? TrendingDown : Minus;
   const trendColor = delta > 0 ? "text-emerald-500" : delta < 0 ? "text-rose-500" : "text-muted-foreground";
   const deltaColor = delta > 0 ? "text-emerald-600" : delta < 0 ? "text-rose-500" : "text-muted-foreground";
   const trendLabel = delta > 0 ? "Improving" : delta < 0 ? "Declining" : "Stable";
   const trendLabelColor = delta > 0 ? "text-emerald-600" : delta < 0 ? "text-rose-600" : "text-muted-foreground";
-
-  // Slice sparkline data to match timeframe
   const sparkData = (industry.scoreHistory || []).slice(-days);
 
   return (
@@ -197,25 +229,23 @@ function IndustryHealthRow({
         onMouseEnter={() => setShowContext(true)}
         onMouseLeave={() => setShowContext(false)}
       >
-        <div className="flex items-center gap-3 min-w-0">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
           <TrendIcon className={`h-3.5 w-3.5 ${trendColor} shrink-0`} />
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <span className="text-sm font-medium text-foreground truncate block">{industry.name}</span>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className={`text-[10px] font-medium ${trendLabelColor}`}>{trendLabel}</span>
               {isBlip && (
-                <span className="text-[9px] px-1 py-0 rounded bg-amber-500/10 border border-amber-500/20 text-amber-600 font-medium">
-                  blip
-                </span>
+                <span className="text-[9px] px-1 py-0 rounded bg-amber-500/10 border border-amber-500/20 text-amber-600 font-medium">blip</span>
               )}
+              {/* Inline AI Impact data */}
+              {impact && <AIImpactBadge impact={impact} />}
             </div>
           </div>
         </div>
         <div className="flex items-center gap-3 shrink-0">
           {delta !== 0 && (
-            <span className={`text-[10px] font-mono font-semibold ${deltaColor}`}>
-              {delta > 0 ? "+" : ""}{delta}
-            </span>
+            <span className={`text-[10px] font-mono font-semibold ${deltaColor}`}>{delta > 0 ? "+" : ""}{delta}</span>
           )}
           {sparkData.length > 2 && (
             <div className="w-16 hidden sm:block">
@@ -225,8 +255,6 @@ function IndustryHealthRow({
           <span className="text-sm font-mono font-bold text-foreground w-7 text-right">{industry.healthScore}</span>
         </div>
       </Link>
-
-      {/* Context tooltip on hover */}
       {showContext && (
         <div className="mt-1 ml-8 flex items-center gap-2 px-1 animate-in fade-in duration-200">
           <Info className="h-3 w-3 text-muted-foreground shrink-0" />
@@ -237,9 +265,18 @@ function IndustryHealthRow({
             <>
               <span className="text-[10px] text-muted-foreground">·</span>
               <span className="text-[10px] text-muted-foreground">
-                90d: <span className={trend.longDelta > 0 ? "text-emerald-600" : "text-rose-500"}>
-                  {trend.longDelta > 0 ? "+" : ""}{trend.longDelta}
-                </span>
+                90d: <span className={trend.longDelta > 0 ? "text-emerald-600" : "text-rose-500"}>{trend.longDelta > 0 ? "+" : ""}{trend.longDelta}</span>
+              </span>
+            </>
+          )}
+          {impact && (
+            <>
+              <span className="text-[10px] text-muted-foreground">·</span>
+              <span className="text-[10px] text-muted-foreground">
+                Displace: <span className="text-rose-500 font-medium">{impact.jobDisplacementIndex}</span>
+              </span>
+              <span className="text-[10px] text-muted-foreground">
+                Resilience: <span className="text-sky-500 font-medium">{impact.humanResilienceScore}</span>
               </span>
             </>
           )}

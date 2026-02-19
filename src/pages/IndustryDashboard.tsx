@@ -44,7 +44,7 @@ export default function IndustryDashboard() {
   const { toast } = useToast();
   const [welcomeDismissed, setWelcomeDismissed] = useState(() => localStorage.getItem("vigyl_welcome_dismissed") === "true");
   const navigate = useNavigate();
-  const { data, loading, refresh } = useIntelligence();
+  const { data, loading, refresh, aiImpactGen, generateAiImpact } = useIntelligence();
   const { industries, signals, prospects, aiImpact } = data;
   const { persona, profile } = useAuth();
 
@@ -76,11 +76,7 @@ export default function IndustryDashboard() {
 
 
 
-  // AI Impact summary — top 3 by automation rate
-  const aiImpactSummary = useMemo(() => {
-    if (!aiImpact || aiImpact.length === 0) return [];
-    return [...aiImpact].sort((a, b) => b.automationRate - a.automationRate).slice(0, 4);
-  }, [aiImpact]);
+
 
   // Signal → Prospect connections
   const getAffectedProspects = (signalId: string) =>
@@ -233,13 +229,13 @@ export default function IndustryDashboard() {
                 </div>
                 <p className="text-2xl font-mono font-bold text-primary mt-1">{activePipeline}</p>
               </Link>
-              <Link to="/ai-impact" className="rounded-lg border border-border bg-card p-3 hover:border-primary/30 transition-colors group">
+              <div className="rounded-lg border border-border bg-card p-3 hover:border-primary/30 transition-colors group cursor-default">
                 <div className="flex items-center justify-between">
                   <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Industries Improving</p>
                   <TrendingUp className="h-3.5 w-3.5 text-emerald-500 opacity-50 group-hover:opacity-100 transition-opacity" />
                 </div>
                 <p className="text-2xl font-mono font-bold text-emerald-600 mt-1">{improvingCount}</p>
-              </Link>
+              </div>
             </div>
 
             {/* Main layout */}
@@ -379,50 +375,8 @@ export default function IndustryDashboard() {
                   </div>
                 </section>
 
-                {/* AI Impact Summary */}
-                {aiImpactSummary.length > 0 && (
-                  <section>
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <Brain className="h-4 w-4 text-primary" />
-                        <h2 className="text-sm font-semibold text-foreground">AI Impact Snapshot</h2>
-                      </div>
-                      <Link to="/ai-impact" className="text-xs font-medium text-primary hover:text-primary/80 transition-colors flex items-center gap-1">
-                        Full analysis <ArrowRight className="h-3 w-3" />
-                      </Link>
-                    </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                      {aiImpactSummary.map((impact) => (
-                        <Link
-                          key={impact.industryId}
-                          to="/ai-impact"
-                          className="rounded-lg border border-border bg-card p-3 hover:border-primary/20 transition-colors"
-                        >
-                          <p className="text-[11px] font-semibold text-foreground truncate">{impact.industryName}</p>
-                          <div className="flex items-center gap-2 mt-2">
-                            <div className="flex-1">
-                              <div className="flex h-1.5 w-full overflow-hidden rounded-full bg-secondary">
-                                <div className="bg-rose-500" style={{ width: `${impact.automationRate}%` }} />
-                              </div>
-                            </div>
-                            <span className="text-[10px] font-mono font-bold text-foreground">{impact.automationRate}%</span>
-                          </div>
-                          <div className="flex items-center gap-2 mt-1.5 text-[10px] text-muted-foreground">
-                            <span className="flex items-center gap-0.5">
-                              <span className="w-1.5 h-1.5 rounded-full bg-violet-500" />
-                              Opp: {impact.collaborativeOpportunityIndex}
-                            </span>
-                            <span className="flex items-center gap-0.5">
-                              <span className="w-1.5 h-1.5 rounded-full bg-sky-500" />
-                              Safe: {impact.humanResilienceScore}
-                            </span>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                  </section>
-                )}
               </div>
+
 
               {/* Right column — 1/3 width */}
               <div className="space-y-6">
@@ -569,8 +523,14 @@ export default function IndustryDashboard() {
                   return null;
                 })()}
 
-                {/* Industry Health — multi-timeframe with trend context */}
-                <IndustryHealthTimeline industries={industries} />
+                {/* Industry Health & AI Impact — unified view */}
+                <IndustryHealthTimeline
+                  industries={industries}
+                  aiImpact={aiImpact}
+                  generating={aiImpactGen.generating}
+                  onGenerateAiImpact={generateAiImpact}
+                  genProgress={aiImpactGen.progress}
+                />
               </div>
             </div>
           </>
