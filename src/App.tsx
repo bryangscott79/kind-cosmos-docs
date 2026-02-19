@@ -24,6 +24,7 @@ import Pipeline from "./pages/Pipeline";
 import Outreach from "./pages/Outreach";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
+import DigestPreview from "./pages/DigestPreview";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
@@ -54,6 +55,7 @@ const App = () => (
               <Route path="/outreach" element={<ProtectedRoute><TierGate requiredTier="starter" featureName="Outreach"><Outreach /></TierGate></ProtectedRoute>} />
               <Route path="/reports" element={<ProtectedRoute><TierGate requiredTier="starter" featureName="Reports"><Reports /></TierGate></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+              <Route path="/digest-preview" element={<ProtectedRoute><DigestPreview /></ProtectedRoute>} />
               <Route path="/admin" element={<Admin />} />
               <Route path="*" element={<NotFound />} />
             </Routes>

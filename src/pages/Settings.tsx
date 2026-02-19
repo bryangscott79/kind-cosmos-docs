@@ -770,6 +770,18 @@ export default function Settings() {
                   <option value="monthly">Monthly</option>
                 </select>
               </div>
+
+              {/* Preview link */}
+              <Link
+                to="/digest-preview"
+                className="flex items-center justify-between rounded-lg border border-border bg-card p-4 hover:border-primary/30 transition-colors"
+              >
+                <div>
+                  <p className="text-sm font-medium text-foreground">Preview Digest Email</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">See exactly what the email looks like with your live data, toggle sections, and send a test.</p>
+                </div>
+                <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0" />
+              </Link>
             </div>
           )}
 
