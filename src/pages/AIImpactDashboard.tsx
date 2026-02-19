@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { useState, useMemo, useEffect } from "react";
+import { Link, useParams } from "react-router-dom";
 import {
   Brain, Bot, User, Handshake, Sparkles, Loader2, RefreshCw,
   Search, X, HelpCircle, Lock, CreditCard, ChevronUp, ChevronDown,
@@ -139,6 +139,7 @@ function IndustryCard({ analysis, onClick, onCompare, isCompareMode, isSelected 
 }
 
 export default function AIImpactDashboard() {
+  const { slug } = useParams();
   const { data } = useIntelligence();
   const { tier } = useAuth();
   const canViewFull = hasAccess(tier, "starter");
@@ -157,6 +158,19 @@ export default function AIImpactDashboard() {
     if (data.aiImpact && data.aiImpact.length > 0) return data.aiImpact;
     return [];
   }, [data.aiImpact]);
+
+  // Auto-open detail view when navigated with a slug
+  useEffect(() => {
+    if (slug && effectiveAiImpact.length > 0) {
+      const match = effectiveAiImpact.find(
+        (a) => a.industryId === slug || a.industryName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") === slug
+      );
+      if (match) {
+        setSelectedId(match.industryId);
+        setView("detail");
+      }
+    }
+  }, [slug, effectiveAiImpact]);
 
   const filteredIndustries = useMemo(() => {
     if (!searchFilter) return effectiveAiImpact;

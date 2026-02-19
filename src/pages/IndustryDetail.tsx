@@ -190,7 +190,7 @@ export default function IndustryDetail() {
                       <p className="text-sm font-mono font-bold text-sky-600">{impactData.humanResilienceScore}/100</p>
                     </div>
                   </div>
-                  <Link to="/ai-impact" className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors">
+                  <Link to={`/ai-impact/${industry.slug}`} className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors">
                     View full AI impact breakdown <ArrowRight className="h-3 w-3" />
                   </Link>
                 </div>
