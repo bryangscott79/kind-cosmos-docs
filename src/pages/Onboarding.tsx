@@ -44,7 +44,7 @@ export default function Onboarding() {
   const [hasAnalyzed, setHasAnalyzed] = useState(false);
 
   if (!session) return <Navigate to="/auth" replace />;
-  if (profile?.onboarding_completed) return <Navigate to="/industries" replace />;
+  if (profile?.onboarding_completed) return <Navigate to="/dashboard" replace />;
 
   const handleScrape = async () => {
     if (!websiteUrl.trim()) return;
@@ -143,7 +143,7 @@ export default function Onboarding() {
       if (error) throw error;
       track(EVENTS.ONBOARDING_COMPLETED, { persona: userPersona, entityType, industries: accepted.length });
       await refreshProfile();
-      navigate("/industries");
+      navigate("/dashboard");
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
