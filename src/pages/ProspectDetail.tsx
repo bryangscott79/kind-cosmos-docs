@@ -5,8 +5,10 @@ import {
   Radio, Calendar, TrendingUp, TrendingDown, Minus, ExternalLink,
   Mail, ChevronRight, Bot, Handshake, User, Brain, Sparkles,
   Target, Lightbulb, Shield, Zap, AlertTriangle, Clock, Star, Swords,
-  MessageSquare, LinkIcon, Loader2
+  MessageSquare, LinkIcon, Loader2, Presentation, Copy, Check
 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { toast } from "sonner";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import IntelligenceLoader from "@/components/IntelligenceLoader";
 import { useIntelligence } from "@/contexts/IntelligenceContext";
@@ -58,11 +60,70 @@ function MetricPill({ label, value, icon }: { label: string; value: string; icon
   );
 }
 
+function buildPresentationPrompt(prospect: any, industry: any, relatedSignals: any[], impactData: any) {
+  return `Create a professional, visually structured presentation (10-15 slides) for a prospective client meeting with ${prospect.companyName}. The goal is to demonstrate deep understanding of their business, industry challenges, and position our services as the ideal solution.
+
+## COMPANY OVERVIEW
+- Company: ${prospect.companyName}
+- Industry: ${industry?.name || "Unknown"}
+- Location: ${prospect.location.city}, ${prospect.location.state}
+- Revenue: ${prospect.annualRevenue}
+- Employees: ${prospect.employeeCount.toLocaleString()}
+- Current Status: ${getPressureLabel(prospect.pressureResponse)}
+
+## WHY NOW — TIMING & URGENCY
+${prospect.whyNow}
+
+## KEY MARKET SIGNALS
+${relatedSignals.length > 0 ? relatedSignals.map(s => `- [${s.sentiment?.toUpperCase()}] ${s.title} (Severity: ${s.severity}/5)\n  Impact: ${s.salesImplication}`).join("\n") : "No direct signals currently tracked."}
+
+## DECISION MAKERS
+${prospect.decisionMakers.map((d: any) => `- ${d.name}, ${d.title}`).join("\n")}
+
+${prospect.competitors && prospect.competitors.length > 0 ? `## COMPETITIVE LANDSCAPE
+${prospect.competitors.map((c: any) => `- ${c.name}: ${c.description}`).join("\n")}` : ""}
+
+${prospect.recommendedServices && prospect.recommendedServices.length > 0 ? `## RECOMMENDED SERVICES TO HIGHLIGHT
+${prospect.recommendedServices.map((s: any) => `- ${s.service}: ${s.rationale}`).join("\n")}` : ""}
+
+${impactData ? `## INDUSTRY AI IMPACT
+- Automation Rate: ${impactData.automationRate}%
+- AI-Led Functions: ${impactData.aiLedFunctions.length}
+- Collaborative Functions: ${impactData.collaborativeFunctions.length}
+- Human-Led Functions: ${impactData.humanLedFunctions.length}` : ""}
+
+${prospect.notes ? `## INTERNAL NOTES (DO NOT include in presentation, use for context)
+${prospect.notes}` : ""}
+
+## PRESENTATION STRUCTURE
+1. Title Slide — Meeting with ${prospect.companyName}
+2. Their World — Industry landscape and position
+3. Market Forces — Key signals affecting their business right now
+4. Why Now — The convergence of timing and opportunity
+5. The Challenge — What they're up against
+6. Our Understanding — Mirror their priorities
+7. Our Approach — How we solve this specifically for them
+8. Relevant Experience — Similar work, case studies
+9. Proposed Engagement — Phased approach with clear milestones
+10. Expected Outcomes — Measurable results
+11. The Team — Who they'll work with
+12. Next Steps — Clear call to action
+
+## STYLE GUIDELINES
+- Professional, confident, not salesy
+- Use their language and industry terminology
+- Lead with their challenges, not our capabilities
+- Include data points and specific signal references
+- Keep text minimal, use visuals where possible
+- End with a clear, specific next step`;
+}
+
 export default function ProspectDetail() {
   const { id } = useParams<{ id: string }>();
   const { data, loading, isUsingSeedData } = useIntelligence();
   const { prospects, industries, signals, aiImpact } = data;
   const { persona } = useAuth();
+  const [copied, setCopied] = useState(false);
 
   const prospect = prospects.find(p => p.id === id);
 
@@ -191,6 +252,41 @@ ${impactData ? `Industry AI Automation: ${impactData.automationRate}%, Opportuni
                   <Globe className="h-3.5 w-3.5" /> Website
                 </a>
               )}
+
+              {/* Generate Presentation Prompt */}
+              <Dialog>
+                <DialogTrigger asChild>
+                  <button className="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/5 px-4 py-2.5 text-xs font-medium text-primary hover:bg-primary/10 transition-colors">
+                    <Presentation className="h-3.5 w-3.5" /> Presentation Prompt
+                  </button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <Presentation className="h-5 w-5 text-primary" />
+                      Presentation Prompt for {prospect.companyName}
+                    </DialogTitle>
+                    <p className="text-xs text-muted-foreground mt-1">Copy this prompt into ChatGPT, Claude, or any AI tool to generate a client-facing presentation.</p>
+                  </DialogHeader>
+                  <div className="relative mt-3">
+                    <button
+                      onClick={() => {
+                        const prompt = buildPresentationPrompt(prospect, industry, relatedSignals, impactData);
+                        navigator.clipboard.writeText(prompt);
+                        setCopied(true);
+                        toast.success("Prompt copied to clipboard!");
+                        setTimeout(() => setCopied(false), 2000);
+                      }}
+                      className="absolute top-2 right-2 inline-flex items-center gap-1 rounded-md bg-primary px-2.5 py-1.5 text-[10px] font-semibold text-primary-foreground hover:bg-primary/90 transition-colors z-10"
+                    >
+                      {copied ? <><Check className="h-3 w-3" /> Copied</> : <><Copy className="h-3 w-3" /> Copy Prompt</>}
+                    </button>
+                    <pre className="rounded-lg bg-secondary/50 border border-border p-4 pr-24 text-xs text-foreground leading-relaxed whitespace-pre-wrap font-sans">
+                      {buildPresentationPrompt(prospect, industry, relatedSignals, impactData)}
+                    </pre>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
 
