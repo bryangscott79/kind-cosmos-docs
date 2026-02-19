@@ -1,10 +1,11 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Copy, Check, Send, Sparkles, Kanban, CheckCircle2, Loader2, AlertCircle } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import IntelligenceLoader from "@/components/IntelligenceLoader";
 import { useIntelligence } from "@/contexts/IntelligenceContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePipelineProspects } from "@/hooks/usePipelineProspects";
 import { supabase } from "@/integrations/supabase/client";
 import { getScoreColor, getPressureLabel, getPressureColor } from "@/data/mockData";
 import { getStageLabels } from "@/lib/personas";
@@ -29,12 +30,15 @@ export default function Outreach() {
   const [searchParams] = useSearchParams();
   const preselectedId = searchParams.get("prospect");
   const { data } = useIntelligence();
-  const { prospects, industries, signals } = data;
+  const { prospects: intelProspects, industries, signals } = data;
   const { persona, profile } = useAuth();
   const stageLabels = useMemo(() => getStageLabels(persona), [persona]);
   const contentTypes = CONTENT_TYPE_MAP[persona.key] || CONTENT_TYPE_MAP.default;
 
-  const [selectedProspectId, setSelectedProspectId] = useState(preselectedId || prospects[0]?.id || "");
+  // Merge intelligence prospects with DB pipeline items
+  const { allProspects } = usePipelineProspects(intelProspects);
+
+  const [selectedProspectId, setSelectedProspectId] = useState(preselectedId || allProspects[0]?.id || "");
   const [contentType, setContentType] = useState<string>(contentTypes[0]?.value || "cold_email");
   const [copied, setCopied] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -43,10 +47,21 @@ export default function Outreach() {
   const [markedSent, setMarkedSent] = useState(false);
   const [genError, setGenError] = useState("");
 
-  const selectedProspect = prospects.find((p) => p.id === selectedProspectId);
-  const industry = selectedProspect ? industries.find((i) => i.id === selectedProspect.industryId) : null;
+  const selectedProspect = allProspects.find((p) => p.id === selectedProspectId);
+
+  // Auto-select first prospect when list loads (if no preselection or preselection not found)
+  useEffect(() => {
+    if (!selectedProspect && allProspects.length > 0 && !preselectedId) {
+      setSelectedProspectId(allProspects[0].id);
+    }
+  }, [selectedProspect, allProspects, preselectedId]);
+
+  const industry = selectedProspect 
+    ? (industries.find((i) => i.id === selectedProspect.industryId)
+      || industries.find((i) => i.name.toLowerCase() === (selectedProspect.industryId || "").toLowerCase()))
+    : null;
   const relatedSignals = selectedProspect
-    ? signals.filter((s) => selectedProspect.relatedSignals.includes(s.id))
+    ? signals.filter((s) => (selectedProspect.relatedSignals || []).includes(s.id))
     : [];
 
   const handleGenerate = async () => {
@@ -128,9 +143,10 @@ export default function Outreach() {
           <div className="space-y-3">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Select {persona.prospectLabelSingular}</h3>
             <div className="flex gap-2 overflow-x-auto pb-2 lg:flex-col lg:gap-1.5 lg:overflow-x-visible lg:overflow-y-auto lg:max-h-[calc(100vh-220px)] lg:pb-0">
-              {prospects.map((p) => {
-                const ind = industries.find((i) => i.id === p.industryId);
+              {allProspects.map((p) => {
+                const ind = industries.find((i) => i.id === p.industryId) || industries.find((i) => i.name.toLowerCase() === (p.industryId || "").toLowerCase());
                 const isSelected = p.id === selectedProspectId;
+                const isDbProspect = p.id.startsWith("db-");
                 return (
                   <button
                     key={p.id}
@@ -141,7 +157,10 @@ export default function Outreach() {
                       <span className="text-sm font-medium text-foreground">{p.companyName}</span>
                       <span className={`font-mono text-xs font-bold text-${getScoreColor(p.vigylScore)}`}>{p.vigylScore}</span>
                     </div>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">{ind?.name}</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                      {ind?.name || p.industryId || "Uncategorized"}
+                      {isDbProspect && <span className="ml-1.5 text-primary/60">★ added</span>}
+                    </p>
                   </button>
                 );
               })}

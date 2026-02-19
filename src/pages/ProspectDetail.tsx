@@ -14,6 +14,7 @@ import IntelligenceLoader from "@/components/IntelligenceLoader";
 import { useIntelligence } from "@/contexts/IntelligenceContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { usePipelineProspects } from "@/hooks/usePipelineProspects";
 import { supabase } from "@/integrations/supabase/client";
 import AskArgus from "@/components/AskArgus";
 import {
@@ -131,7 +132,9 @@ export default function ProspectDetail() {
   const [enriching, setEnriching] = useState(false);
   const [enrichNotes, setEnrichNotes] = useState<string | null>(null);
 
-  const prospect = prospects.find(p => p.id === id);
+  // Resolve prospect from intelligence data OR pipeline DB
+  const { findProspect, loading: pipelineLoading } = usePipelineProspects(prospects);
+  const prospect = findProspect(id);
 
   const enrichContacts = useCallback(async () => {
     if (!prospect || enriching) return;
@@ -161,7 +164,7 @@ export default function ProspectDetail() {
   }, [prospect, enriching, industries, profile, toast]);
 
   // If prospect not found but still loading or using seed data, show loading
-  if (!prospect && (loading || isUsingSeedData)) {
+  if (!prospect && (loading || isUsingSeedData || pipelineLoading)) {
     return (
       <IntelligenceLoader>
         <DashboardLayout>
@@ -182,7 +185,8 @@ export default function ProspectDetail() {
 
   if (!prospect) return <Navigate to="/prospects" replace />;
 
-  const industry = industries.find(i => i.id === prospect.industryId);
+  const industry = industries.find(i => i.id === prospect.industryId) 
+    || industries.find(i => i.name.toLowerCase() === (prospect.industryId || "").toLowerCase());
   const relatedSignals = signals.filter(s => prospect.relatedSignals?.includes(s.id));
   const industrySignals = signals.filter(s => s.industryTags.includes(prospect.industryId)).filter(s => !prospect.relatedSignals?.includes(s.id));
   const industryProspects = prospects.filter(p => p.industryId === prospect.industryId && p.id !== prospect.id).sort((a, b) => b.vigylScore - a.vigylScore);

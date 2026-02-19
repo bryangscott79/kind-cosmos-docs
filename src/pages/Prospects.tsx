@@ -1,6 +1,6 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Search, MapPin, Building2, Globe2, Star, Loader2, ChevronLeft, ChevronRight, Sparkles, Navigation, RefreshCw, Download, CheckSquare, Square, ArrowRight } from "lucide-react";
+import { Search, MapPin, Building2, Globe2, Star, Loader2, ChevronLeft, ChevronRight, Sparkles, Navigation, RefreshCw, Download, CheckSquare, Square, ArrowRight, CheckCircle2 } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import ProspectCard from "@/components/ProspectCard";
 import IntelligenceLoader from "@/components/IntelligenceLoader";
@@ -80,6 +80,48 @@ function inferScope(prospect: Prospect, userState: string, userCountry: string, 
     return "national";
   }
   return "international";
+}
+
+// Animated loading steps for company analysis
+function DreamLoadingSteps({ company }: { company: string }) {
+  const [step, setStep] = useState(0);
+  const steps = [
+    { label: `Researching ${company}...`, desc: "Gathering company data, structure, and recent news" },
+    { label: "Analyzing divisions & departments", desc: "Identifying business units and decision-making centers" },
+    { label: "Evaluating market position", desc: "Assessing competitive landscape and growth signals" },
+    { label: "Finding opportunities for you", desc: "Matching your services to their needs and pain points" },
+    { label: "Building prospect profiles", desc: "Creating actionable dossiers with key contacts" },
+  ];
+
+  useEffect(() => {
+    const timers = steps.map((_, i) =>
+      setTimeout(() => setStep(i), i === 0 ? 500 : i * 2800 + 500)
+    );
+    return () => timers.forEach(clearTimeout);
+  }, []);
+
+  return (
+    <div className="space-y-2">
+      {steps.map((s, i) => (
+        <div
+          key={i}
+          className={`flex items-center gap-2.5 transition-all duration-500 ${i <= step ? "opacity-100" : "opacity-0 translate-y-1"}`}
+        >
+          {i < step ? (
+            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+          ) : i === step ? (
+            <Loader2 className="h-3.5 w-3.5 text-primary animate-spin shrink-0" />
+          ) : (
+            <div className="h-3.5 w-3.5 rounded-full border border-border shrink-0" />
+          )}
+          <div>
+            <p className={`text-xs font-medium ${i <= step ? "text-foreground" : "text-muted-foreground"}`}>{s.label}</p>
+            {i === step && <p className="text-[10px] text-muted-foreground mt-0.5">{s.desc}</p>}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function ProspectSection({
@@ -418,49 +460,60 @@ export default function Prospects() {
           </div>
         )}
 
-        {/* Dream Client */}
-        <div className="mt-4 rounded-lg border border-primary/20 bg-primary/5 p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Star className="h-4 w-4 text-primary" />
-            <h3 className="text-sm font-semibold text-foreground">Dream Client Analyzer</h3>
+        {/* Company Analyzer */}
+        <div className="mt-4 rounded-xl border border-primary/20 bg-gradient-to-br from-primary/5 to-violet-500/5 p-5">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+              <Search className="h-5 w-5 text-primary" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-sm font-bold text-foreground">Analyze Any Company</h3>
+              <p className="text-xs text-muted-foreground mt-0.5 mb-3">
+                Search for any company to get AI-powered intelligence — divisions, opportunities, key contacts, and why they need your services right now.
+              </p>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Search any company — Nike, Olipop, your next client..."
+                  value={dreamInput}
+                  onChange={(e) => setDreamInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && analyzeDreamClient()}
+                  className="flex-1 rounded-md border border-border bg-card px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+                <button
+                  onClick={analyzeDreamClient}
+                  disabled={dreamLoading || !dreamInput.trim()}
+                  className="flex items-center gap-2 rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50 transition-opacity shrink-0"
+                >
+                  {dreamLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                  {dreamLoading ? "Analyzing..." : "Analyze"}
+                </button>
+              </div>
+            </div>
           </div>
-          <p className="text-xs text-muted-foreground mb-3">
-            Enter any company name to discover divisions and opportunities within it.
-          </p>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              placeholder="e.g. Nike, Tesla, Johnson & Johnson..."
-              value={dreamInput}
-              onChange={(e) => setDreamInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && analyzeDreamClient()}
-              className="flex-1 rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-            />
-            <button
-              onClick={analyzeDreamClient}
-              disabled={dreamLoading || !dreamInput.trim()}
-              className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50 transition-opacity"
-            >
-              {dreamLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-              Analyze
-            </button>
-          </div>
+
+          {/* Loading progress steps */}
+          {dreamLoading && (
+            <div className="mt-4 ml-[52px] space-y-2">
+              <DreamLoadingSteps company={dreamInput} />
+            </div>
+          )}
         </div>
 
-        {/* Dream Client Results */}
-        {(dreamOverview || dreamProspects.length > 0) && (
+        {/* Company Analysis Results */}
+        {(dreamOverview || dreamProspects.length > 0) && !dreamLoading && (
           <div className="mt-4">
             {dreamOverview && (
-              <div className="mb-4 rounded-md bg-secondary p-3">
-                <p className="text-xs font-medium text-foreground mb-1">Company Overview</p>
-                <p className="text-xs text-muted-foreground leading-relaxed">{dreamOverview}</p>
+              <div className="mb-4 rounded-lg bg-secondary/60 border border-border p-4">
+                <p className="text-xs font-bold text-foreground mb-1.5 uppercase tracking-wider">Company Overview — {dreamInput}</p>
+                <p className="text-sm text-muted-foreground leading-relaxed">{dreamOverview}</p>
               </div>
             )}
             <ProspectSection
-              title={`Dream Client: ${dreamInput}`}
-              icon={<Star className="h-5 w-5 text-primary" />}
+              title={`Analysis: ${dreamInput}`}
+              icon={<Sparkles className="h-5 w-5 text-primary" />}
               prospects={dreamProspects}
-              emptyMessage="No opportunities found."
+              emptyMessage="No opportunities found. Try a different company name."
             />
           </div>
         )}
