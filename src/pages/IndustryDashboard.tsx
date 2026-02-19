@@ -656,6 +656,49 @@ export default function IndustryDashboard() {
                   </div>
                 </section>
 
+                {/* Contextual next step */}
+                {(() => {
+                  const pipelineCount = prospects.filter(p => p.pipelineStage && p.pipelineStage !== "researching").length;
+                  const highScored = topProspects.filter(p => p.vigylScore >= 80);
+                  const recentSignals = signals.filter(s => {
+                    const d = new Date(s.publishedAt);
+                    const ago = Date.now() - d.getTime();
+                    return ago < 48 * 60 * 60 * 1000 && s.severity >= 4;
+                  });
+
+                  if (highScored.length > 0 && pipelineCount === 0) {
+                    return (
+                      <Link to="/prospects" className="flex items-center gap-3 rounded-lg border border-primary/20 bg-primary/[0.03] p-3 hover:bg-primary/[0.06] transition-colors">
+                        <Target className="h-4 w-4 text-primary shrink-0" />
+                        <p className="text-xs text-foreground"><span className="font-semibold">{highScored.length} high-scoring {persona.prospectLabel.toLowerCase()}</span> — review and add your top picks to {persona.pipelineLabel.toLowerCase()}.</p>
+                        <ArrowRight className="h-3.5 w-3.5 text-primary shrink-0 ml-auto" />
+                      </Link>
+                    );
+                  }
+                  if (pipelineCount > 0) {
+                    const contactedCount = prospects.filter(p => p.pipelineStage === "contacted" || p.pipelineStage === "meeting_scheduled").length;
+                    if (contactedCount > 0) {
+                      return (
+                        <Link to="/outreach" className="flex items-center gap-3 rounded-lg border border-primary/20 bg-primary/[0.03] p-3 hover:bg-primary/[0.06] transition-colors">
+                          <Zap className="h-4 w-4 text-primary shrink-0" />
+                          <p className="text-xs text-foreground"><span className="font-semibold">{contactedCount} {persona.prospectLabel.toLowerCase()} in active stages</span> — generate {persona.outreachLabel.toLowerCase()} to keep momentum.</p>
+                          <ArrowRight className="h-3.5 w-3.5 text-primary shrink-0 ml-auto" />
+                        </Link>
+                      );
+                    }
+                  }
+                  if (recentSignals.length > 0) {
+                    return (
+                      <Link to="/signals" className="flex items-center gap-3 rounded-lg border border-primary/20 bg-primary/[0.03] p-3 hover:bg-primary/[0.06] transition-colors">
+                        <Radio className="h-4 w-4 text-primary shrink-0" />
+                        <p className="text-xs text-foreground"><span className="font-semibold">{recentSignals.length} high-severity signals</span> in the last 48 hours — review for opportunities.</p>
+                        <ArrowRight className="h-3.5 w-3.5 text-primary shrink-0 ml-auto" />
+                      </Link>
+                    );
+                  }
+                  return null;
+                })()}
+
                 {/* Industry Health */}
                 <section>
                   <div className="flex items-center justify-between mb-3">

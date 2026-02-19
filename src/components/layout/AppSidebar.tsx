@@ -12,18 +12,18 @@ function useNavSections() {
     {
       label: "Intelligence",
       items: [
-        { label: "Briefing", path: "/industries", icon: BarChart3, feature: "industries" },
-        { label: "Signals", path: "/signals", icon: Radio, feature: "signals" },
-        { label: "AI Impact", path: "/ai-impact", icon: Brain, feature: "ai_impact" },
+        { label: "Briefing", subtitle: "Your market at a glance", path: "/industries", icon: BarChart3, feature: "industries" },
+        { label: "Signals", subtitle: "What's happening now", path: "/signals", icon: Radio, feature: "signals" },
+        { label: "AI Impact", subtitle: "Where AI meets your industry", path: "/ai-impact", icon: Brain, feature: "ai_impact" },
       ],
     },
     {
       label: persona.navGroupLabel,
       items: [
-        { label: persona.prospectLabel, path: "/prospects", icon: Users, feature: "prospects" },
-        { label: persona.pipelineLabel, path: "/pipeline", icon: Kanban, feature: "pipeline" },
-        { label: persona.outreachLabel, path: "/outreach", icon: PenTool, feature: "outreach" },
-        { label: "Reports", path: "/reports", icon: FileText, feature: "deep_reports" },
+        { label: persona.prospectLabel, subtitle: "Companies to engage", path: "/prospects", icon: Users, feature: "prospects" },
+        { label: persona.pipelineLabel, subtitle: "Track your progress", path: "/pipeline", icon: Kanban, feature: "pipeline" },
+        { label: persona.outreachLabel, subtitle: "AI-crafted messaging", path: "/outreach", icon: PenTool, feature: "outreach" },
+        { label: "Reports", subtitle: "Deep analysis on demand", path: "/reports", icon: FileText, feature: "deep_reports" },
       ],
     },
     {
@@ -88,14 +88,20 @@ export default function AppSidebar() {
                   <Link
                     key={item.path}
                     to={item.path}
-                    className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                    title={(item as any).subtitle || ""}
+                    className={`group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                       active
                         ? "bg-sidebar-accent text-foreground"
                         : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-foreground"
                     }`}
                   >
                     <item.icon className={`h-4 w-4 shrink-0 ${active ? "text-primary" : ""}`} />
-                    <span className="flex-1">{item.label}</span>
+                    <div className="flex-1 min-w-0">
+                      <span>{item.label}</span>
+                      {(item as any).subtitle && (
+                        <p className="text-[9px] text-muted-foreground/60 font-normal leading-tight hidden group-hover:block">{(item as any).subtitle}</p>
+                      )}
+                    </div>
                     {showBadge && (
                       <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold text-primary-foreground">
                         {newSignalCount > 9 ? "9+" : newSignalCount}

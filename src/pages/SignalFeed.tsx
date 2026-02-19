@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Search, ChevronDown, ChevronRight, Globe, Scale, DollarSign, Users, Cpu, Truck, TrendingUp, TrendingDown, Minus, MessageCircle, Swords, Leaf, Bookmark } from "lucide-react";
+import { Search, ChevronDown, ChevronRight, Globe, Scale, DollarSign, Users, Cpu, Truck, TrendingUp, TrendingDown, Minus, MessageCircle, Swords, Leaf, Bookmark, Bell, BellOff, Download } from "lucide-react";
 import { Link } from "react-router-dom";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import SignalCard from "@/components/SignalCard";
@@ -7,9 +7,11 @@ import GlobalSignalBanner from "@/components/GlobalSignalBanner";
 import IntelligenceLoader from "@/components/IntelligenceLoader";
 import { useIntelligence } from "@/contexts/IntelligenceContext";
 import { useSavedSignals } from "@/hooks/useSavedSignals";
+import { useSignalWatchlist } from "@/hooks/useSignalWatchlist";
+import { useToast } from "@/hooks/use-toast";
 import { Signal, getSignalTypeLabel } from "@/data/mockData";
 
-type FilterType = "all" | "saved" | Signal["signalType"];
+type FilterType = "all" | "saved" | "watched" | Signal["signalType"];
 
 const categoryConfig: Record<Signal["signalType"], { icon: typeof Globe; label: string; description: string; color: string }> = {
   political: { icon: Globe, label: "Political & Geopolitical", description: "Trade wars, sanctions, elections, defense spending shifts, and international policy changes", color: "hsl(var(--score-red))" },
@@ -54,14 +56,14 @@ function AffectedIndustries({ signalList, industries }: { signalList: Signal[]; 
   );
 }
 
-function CategorySection({ type, signalList, defaultOpen, industries }: { type: Signal["signalType"]; signalList: Signal[]; defaultOpen: boolean; industries: any[] }) {
+function CategorySection({ type, signalList, defaultOpen, industries, isWatched, onToggleWatch }: { type: Signal["signalType"]; signalList: Signal[]; defaultOpen: boolean; industries: any[]; isWatched: boolean; onToggleWatch: () => void }) {
   const [open, setOpen] = useState(defaultOpen);
   const config = categoryConfig[type];
   const Icon = config.icon;
   const avgSeverity = Math.round(signalList.reduce((sum, s) => sum + s.severity, 0) / signalList.length * 10) / 10;
 
   return (
-    <div className="rounded-xl border border-border bg-card overflow-hidden">
+    <div className={`rounded-xl border bg-card overflow-hidden ${isWatched ? "border-primary/30" : "border-border"}`}>
       <button onClick={() => setOpen(!open)} className="w-full flex flex-col gap-2 p-4 sm:p-5 text-left hover:bg-accent/30 transition-colors sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg shrink-0" style={{ backgroundColor: `${config.color}15` }}>
@@ -72,12 +74,20 @@ function CategorySection({ type, signalList, defaultOpen, industries }: { type: 
               <h2 className="text-base font-semibold text-foreground">{config.label}</h2>
               <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">{signalList.length} signal{signalList.length !== 1 ? "s" : ""}</span>
               <span className="text-[10px] text-muted-foreground">Avg severity: <span className="font-mono font-semibold">{avgSeverity}</span>/5</span>
+              {isWatched && <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 border border-primary/20 px-2 py-0.5 text-[9px] font-medium text-primary"><Bell className="h-2.5 w-2.5" /> Watching</span>}
             </div>
             <p className="text-xs text-muted-foreground mt-0.5 hidden sm:block">{config.description}</p>
           </div>
         </div>
         <div className="flex items-center gap-3 ml-13 sm:ml-0">
           <SentimentSummary signals={signalList} />
+          <button
+            onClick={(e) => { e.stopPropagation(); onToggleWatch(); }}
+            className={`p-1.5 rounded-md transition-colors ${isWatched ? "text-primary hover:bg-primary/10" : "text-muted-foreground hover:text-foreground hover:bg-accent"}`}
+            title={isWatched ? "Stop watching" : "Watch this category"}
+          >
+            {isWatched ? <BellOff className="h-3.5 w-3.5" /> : <Bell className="h-3.5 w-3.5" />}
+          </button>
           {open ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
         </div>
       </button>
@@ -99,8 +109,11 @@ export default function SignalFeed() {
   const { data } = useIntelligence();
   const { signals, industries } = data;
   const { savedSignals } = useSavedSignals();
+  const { rules, addRule, removeRule, isWatching, isSignalWatched } = useSignalWatchlist();
+  const { toast } = useToast();
 
   const savedSignalIds = useMemo(() => new Set(savedSignals.map(s => s.signal_id)), [savedSignals]);
+  const watchedCount = useMemo(() => signals.filter(s => isSignalWatched(s.signalType, s.industryTags)).length, [signals, rules]);
 
   const filtered = useMemo(() => {
     if (filter === "saved") {
@@ -108,10 +121,15 @@ export default function SignalFeed() {
         .filter(s => savedSignalIds.has(s.id))
         .filter(s => s.title.toLowerCase().includes(search.toLowerCase()) || s.summary.toLowerCase().includes(search.toLowerCase()));
     }
+    if (filter === "watched") {
+      return signals
+        .filter(s => isSignalWatched(s.signalType, s.industryTags))
+        .filter(s => s.title.toLowerCase().includes(search.toLowerCase()) || s.summary.toLowerCase().includes(search.toLowerCase()));
+    }
     return signals
       .filter(s => filter === "all" || s.signalType === filter)
       .filter(s => s.title.toLowerCase().includes(search.toLowerCase()) || s.summary.toLowerCase().includes(search.toLowerCase()));
-  }, [search, filter, signals, savedSignalIds]);
+  }, [search, filter, signals, savedSignalIds, rules]);
 
   const groupedByCategory = useMemo(() => {
     const groups: Record<string, Signal[]> = {};
@@ -125,6 +143,7 @@ export default function SignalFeed() {
   const types: { value: FilterType; label: string; count: number; icon?: typeof Bookmark }[] = [
     { value: "all", label: "All", count: signals.length },
     { value: "saved", label: "Saved", count: savedSignalIds.size, icon: Bookmark },
+    { value: "watched", label: "Watched", count: watchedCount, icon: Bell },
     ...categoryOrder.map(type => ({
       value: type as FilterType,
       label: categoryConfig[type].label.split(" ")[0],
@@ -133,6 +152,29 @@ export default function SignalFeed() {
   ];
 
   const totalSources = filtered.reduce((sum, s) => sum + (s.sources?.length || 0), 0);
+
+  const exportSignals = () => {
+    const headers = ["Title", "Type", "Sentiment", "Severity", "Summary", "Sales Implication", "Published", "Sources"];
+    const rows = filtered.map(s => [
+      `"${s.title.replace(/"/g, '""')}"`,
+      getSignalTypeLabel(s.signalType),
+      s.sentiment,
+      s.severity,
+      `"${s.summary.replace(/"/g, '""')}"`,
+      `"${(s.salesImplication || "").replace(/"/g, '""')}"`,
+      s.publishedAt,
+      (s.sources || []).map(src => src.name).join("; "),
+    ]);
+    const csv = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `vigyl-signals-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: "Exported", description: `${filtered.length} signals exported to CSV.` });
+  };
 
   return (
     <IntelligenceLoader>
@@ -146,9 +188,14 @@ export default function SignalFeed() {
         </div>
 
         <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="relative max-w-xs flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input type="text" placeholder="Search signals..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full rounded-md border border-border bg-secondary pl-9 pr-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
+          <div className="flex items-center gap-2 flex-1">
+            <div className="relative max-w-xs flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input type="text" placeholder="Search signals..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full rounded-md border border-border bg-secondary pl-9 pr-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
+            </div>
+            <button onClick={exportSignals} className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors shrink-0">
+              <Download className="h-3.5 w-3.5" /> Export
+            </button>
           </div>
           <div className="flex flex-wrap gap-1.5">
             {types.map(t => (
@@ -163,7 +210,23 @@ export default function SignalFeed() {
         {filter === "all" ? (
           <div className="mt-6 space-y-4">
             {categoryOrder.filter(type => groupedByCategory[type]).map((type, i) => (
-              <CategorySection key={type} type={type} signalList={groupedByCategory[type]} defaultOpen={i < 2} industries={industries} />
+              <CategorySection
+                key={type}
+                type={type}
+                signalList={groupedByCategory[type]}
+                defaultOpen={i < 2}
+                industries={industries}
+                isWatched={isWatching(type)}
+                onToggleWatch={() => {
+                  if (isWatching(type)) {
+                    const rule = rules.find(r => r.signalType === type && !r.industryId);
+                    if (rule) removeRule(rule.id);
+                  } else {
+                    addRule(type);
+                  }
+                  toast({ title: isWatching(type) ? "Stopped watching" : "Now watching", description: `${categoryConfig[type].label} signals` });
+                }}
+              />
             ))}
           </div>
         ) : filter === "saved" ? (
@@ -177,6 +240,20 @@ export default function SignalFeed() {
                 </div>
                 <p className="text-sm font-semibold text-foreground">No saved signals yet</p>
                 <p className="mt-1 text-xs text-muted-foreground max-w-xs">Save signals from expanded cards to build a watchlist of the market movements that matter most to your business.</p>
+              </div>
+            )}
+          </div>
+        ) : filter === "watched" ? (
+          <div className="mt-6 space-y-3">
+            {filtered.length > 0 ? (
+              filtered.map(signal => <SignalCard key={signal.id} signal={signal} />)
+            ) : (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-secondary mb-3">
+                  <Bell className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <p className="text-sm font-semibold text-foreground">No watched categories yet</p>
+                <p className="mt-1 text-xs text-muted-foreground max-w-xs">Click the bell icon on any signal category to start watching it. Watched signals will appear here.</p>
               </div>
             )}
           </div>

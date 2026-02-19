@@ -16,6 +16,7 @@ import {
   getScoreColorHsl, getPressureLabel, pipelineStageLabels, getSignalTypeLabel
 } from "@/data/mockData";
 import AskArgus from "@/components/AskArgus";
+import { useReportHistory } from "@/hooks/useReportHistory";
 
 // ─── Report type config ───
 const reportTypes = [
@@ -521,6 +522,7 @@ export default function Reports() {
   const [generating, setGenerating] = useState(false);
   const [generatedReports, setGeneratedReports] = useState<GeneratedReport[]>([]);
   const [viewingReport, setViewingReport] = useState<GeneratedReport | null>(null);
+  const { entries: reportHistory, addEntry: addHistoryEntry, clearHistory } = useReportHistory();
 
   const activeReport = reportTypes.find((r) => r.id === selectedReport);
   const needsIndustry = selectedReport === "industry_deep_dive" || selectedReport === "ai_readiness";
@@ -588,6 +590,10 @@ export default function Reports() {
       };
       setGeneratedReports(prev => [report, ...prev]);
       setViewingReport(report);
+      addHistoryEntry(selectedReport, title, {
+        industryId: selectedIndustry || undefined,
+        prospectId: selectedProspect || undefined,
+      });
     }
     setGenerating(false);
     setSelectedReport(null);
@@ -722,9 +728,14 @@ export default function Reports() {
           )}
 
           <div>
-            <h3 className="text-sm font-semibold text-foreground mb-3">
-              {generatedReports.length > 0 ? `Generated Reports (${generatedReports.length})` : "Previous Reports"}
-            </h3>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-foreground">
+                {generatedReports.length > 0 ? `This Session (${generatedReports.length})` : "Report History"}
+              </h3>
+              {reportHistory.length > 0 && generatedReports.length === 0 && (
+                <button onClick={clearHistory} className="text-[10px] text-muted-foreground hover:text-foreground transition-colors">Clear</button>
+              )}
+            </div>
             {generatedReports.length > 0 ? (
               <div className="space-y-2">
                 {generatedReports.map(report => {
@@ -744,6 +755,33 @@ export default function Reports() {
                         <p className="text-[10px] text-muted-foreground">{new Date(report.createdAt).toLocaleString()}</p>
                       </div>
                       <ArrowRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                    </button>
+                  );
+                })}
+              </div>
+            ) : reportHistory.length > 0 ? (
+              <div className="space-y-2">
+                <p className="text-[10px] text-muted-foreground mb-2">Previously generated — click to regenerate</p>
+                {reportHistory.slice(0, 8).map(entry => {
+                  const typeConfig = reportTypes.find(r => r.id === entry.type);
+                  const Icon = typeConfig?.icon || FileText;
+                  return (
+                    <button
+                      key={entry.id}
+                      onClick={() => {
+                        setSelectedReport(entry.type);
+                        if (entry.params.industryId) setSelectedIndustry(entry.params.industryId);
+                        if (entry.params.prospectId) setSelectedProspect(entry.params.prospectId);
+                      }}
+                      className="w-full flex items-center gap-3 rounded-lg border border-border bg-card p-3 hover:border-primary/20 transition-colors text-left"
+                    >
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary shrink-0">
+                        <Icon className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-foreground truncate">{entry.title}</p>
+                        <p className="text-[10px] text-muted-foreground">{new Date(entry.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</p>
+                      </div>
                     </button>
                   );
                 })}

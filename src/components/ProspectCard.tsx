@@ -22,7 +22,7 @@ export default function ProspectCard({ prospect }: ProspectCardProps) {
   const [feedbackSending, setFeedbackSending] = useState<string | null>(null);
   const [feedbackGiven, setFeedbackGiven] = useState<string | null>(null);
   const { getSavedForProspect } = useSavedSignals();
-  const { data } = useIntelligence();
+  const { data, isUsingSeedData } = useIntelligence();
   const { industries, signals: allSignals } = data;
   const { user, persona } = useAuth();
   const { toast } = useToast();
@@ -61,7 +61,12 @@ export default function ProspectCard({ prospect }: ProspectCardProps) {
   };
 
   return (
-    <div className={`rounded-lg border bg-card transition-all ${expanded ? "border-primary/30 shadow-md" : "border-border hover:border-primary/20"}`}>
+    <div className={`rounded-lg border bg-card transition-all ${expanded ? "border-primary/30 shadow-md" : "border-border hover:border-primary/20"} ${isUsingSeedData ? "opacity-60" : ""}`}>
+      {isUsingSeedData && (
+        <div className="px-5 pt-3 pb-0">
+          <span className="inline-flex items-center rounded-full bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 text-[9px] font-medium text-amber-600">Sample Data</span>
+        </div>
+      )}
       {/* ── CLICKABLE CARD BODY ── */}
       <button
         onClick={() => setExpanded(!expanded)}

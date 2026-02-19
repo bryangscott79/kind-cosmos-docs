@@ -362,6 +362,7 @@ export default function Onboarding() {
                   { value: "scaling", label: "Scaling", emoji: "📈" },
                   { value: "optimizing", label: "Optimizing", emoji: "⚙️" },
                   { value: "leading", label: "Leading", emoji: "🚀" },
+                  { value: "unsure", label: "Not Sure", emoji: "🤷" },
                 ] as const).map((opt) => (
                   <button
                     key={opt.value}

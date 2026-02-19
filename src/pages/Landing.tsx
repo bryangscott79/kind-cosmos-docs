@@ -123,6 +123,46 @@ export default function Landing() {
       {/* Features */}
       <FeatureShowcase />
 
+      {/* Social Proof / Built For */}
+      <section className="border-y border-border bg-secondary/30">
+        <div className="mx-auto max-w-6xl px-6 py-12">
+          <p className="text-center text-xs font-bold uppercase tracking-[0.15em] text-muted-foreground/60 mb-6">Built for every role in the AI economy</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+            {[
+              { role: "Sales Teams", hook: "Know who to sell to and why, before anyone else" },
+              { role: "Founders", hook: "Spot market shifts and opportunities early" },
+              { role: "Job Seekers", hook: "Find industries that still need humans" },
+              { role: "HR Leaders", hook: "Track workforce transformation in real time" },
+              { role: "Investors", hook: "Signal-driven due diligence at scale" },
+              { role: "Consultants", hook: "Client-ready intelligence on demand" },
+            ].map((item) => (
+              <div key={item.role} className="rounded-lg border border-border bg-card p-3 text-center">
+                <p className="text-xs font-semibold text-foreground">{item.role}</p>
+                <p className="text-[10px] text-muted-foreground mt-1 leading-relaxed">{item.hook}</p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
+            <div className="text-center">
+              <p className="text-lg font-mono font-bold text-primary">50+</p>
+              <p className="text-[10px] text-muted-foreground">Industries tracked</p>
+            </div>
+            <div className="text-center">
+              <p className="text-lg font-mono font-bold text-primary">1,000+</p>
+              <p className="text-[10px] text-muted-foreground">Signals processed daily</p>
+            </div>
+            <div className="text-center">
+              <p className="text-lg font-mono font-bold text-primary">3 zones</p>
+              <p className="text-[10px] text-muted-foreground">AI impact analysis</p>
+            </div>
+            <div className="text-center">
+              <p className="text-lg font-mono font-bold text-primary">Real-time</p>
+              <p className="text-[10px] text-muted-foreground">Market intelligence</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Industry Preview */}
       <section className="mx-auto max-w-6xl px-6 py-16">
         <div
