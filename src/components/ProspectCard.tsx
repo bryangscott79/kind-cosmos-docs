@@ -267,7 +267,7 @@ export default function ProspectCard({ prospect }: ProspectCardProps) {
 
           {/* ── ACTIONS (only in expanded view) ── */}
           <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border">
-            <Link to={`/prospects/${prospect.id}`} onClick={(e) => e.stopPropagation()}
+            <Link to={`/prospects/${prospect.id}`} state={{ prospect }} onClick={(e) => e.stopPropagation()}
               className="flex items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground transition-opacity hover:opacity-90">
               {persona.dossierLabel} <ArrowRight className="h-3 w-3" />
             </Link>

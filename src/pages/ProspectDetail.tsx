@@ -1,5 +1,6 @@
 import { useMemo, useState, useCallback, useEffect } from "react";
-import { Link, useParams, Navigate } from "react-router-dom";
+import type { Prospect } from "@/data/mockData";
+import { Link, useParams, Navigate, useLocation } from "react-router-dom";
 import {
   ArrowLeft, Building2, MapPin, DollarSign, Users, Globe, Briefcase,
   Radio, Calendar, TrendingUp, TrendingDown, Minus, ExternalLink,
@@ -139,6 +140,7 @@ ${prospect.notes}` : ""}
 
 export default function ProspectDetail() {
   const { id } = useParams<{ id: string }>();
+  const location = useLocation();
   const { data, loading, isUsingSeedData } = useIntelligence();
   const { prospects, industries, signals, aiImpact } = data;
   const { persona, profile } = useAuth();
@@ -148,7 +150,9 @@ export default function ProspectDetail() {
 
   // Resolve prospect from intelligence data OR pipeline DB
   const { findProspect, loading: pipelineLoading } = usePipelineProspects(prospects);
-  const prospect = findProspect(id);
+  // Check route state for ad-hoc analyzed prospects (dream clients not yet tracked)
+  const routeProspect = (location.state as any)?.prospect as Prospect | undefined;
+  const prospect = findProspect(id) || (routeProspect?.id === id ? routeProspect : undefined);
 
   // Team data for presentations
   const { members: teamMembers } = useTeamMembers();
