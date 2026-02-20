@@ -242,6 +242,63 @@ function generateScoreHistory(
 
 import { US_INDUSTRIES } from "@/data/industryList";
 
+/**
+ * Maps old signal industryTag IDs (1-12) to sector keywords.
+ * Signals were authored against an original 12-industry set; this mapping
+ * lets us fan them out to the correct sectors in the 100-industry list.
+ */
+const legacyTagToSectors: Record<string, string[]> = {
+  "1": ["Technology & Digital Economy"],                     // Cybersecurity / Tech
+  "2": ["Healthcare & Life Sciences"],                       // Healthcare
+  "3": ["Energy & Utilities"],                               // Energy / Renewables
+  "4": ["Transportation & Logistics"],                       // Transportation
+  "5": ["Financial Services"],                               // Financial Services
+  "6": ["Manufacturing — Durable Goods"],                    // Defense / Manufacturing
+  "7": ["Construction & Infrastructure"],                    // Real Estate / Construction
+  "8": ["Wholesale Trade"],                                  // Wholesale (catch-all)
+  "9": ["Technology & Digital Economy"],                     // Technology
+  "10": ["Manufacturing — Durable Goods", "Manufacturing — Nondurable Goods"], // Manufacturing
+  "11": ["Healthcare & Life Sciences"],                      // Pharmaceuticals
+  "12": ["Retail Trade"],                                    // Retail
+  "13": ["Telecommunications & Media"],                      // Telecom & Media
+};
+
+/** Build a map from industry ID → sector for fast lookup */
+const industryIdToSector = new Map<string, string>();
+
+/**
+ * Given a signal's legacy industry tags, return a set of actual industry IDs
+ * from the 100-industry list that belong to the matching sectors.
+ */
+export function expandSignalTags(tags: string[]): Set<string> {
+  // Lazy-init the map
+  if (industryIdToSector.size === 0) {
+    US_INDUSTRIES.forEach((ind, idx) => {
+      industryIdToSector.set(String(idx + 1), ind.sector);
+    });
+  }
+
+  const matchingSectors = new Set<string>();
+  for (const tag of tags) {
+    const sectors = legacyTagToSectors[tag];
+    if (sectors) sectors.forEach((s) => matchingSectors.add(s));
+  }
+
+  const ids = new Set<string>();
+  industryIdToSector.forEach((sector, id) => {
+    if (matchingSectors.has(sector)) ids.add(id);
+  });
+  // Also include the raw tags (for AI-generated signals that may already use correct IDs)
+  tags.forEach((t) => ids.add(t));
+  return ids;
+}
+
+/** Check if a signal is relevant to a given industry ID */
+export function isSignalRelevantToIndustry(signal: Signal, industryId: string): boolean {
+  if (signal.industryTags.includes(industryId)) return true;
+  return expandSignalTags(signal.industryTags).has(industryId);
+}
+
 // Generate all 100 industries from the canonical list
 function generateIndustries(): Industry[] {
   const trendOptions: ("improving" | "declining" | "stable")[] = ["improving", "declining", "stable"];
@@ -281,6 +338,148 @@ function generateIndustries(): Industry[] {
 }
 
 export const industries: Industry[] = generateIndustries();
+
+// ============================================================
+// Seed AI Impact data so every industry has AI impact info
+// ============================================================
+
+const aiLedTemplates: Record<string, { name: string; description: string; jobsAffected: string[] }[]> = {
+  "Primary & Resources": [
+    { name: "Geological Survey Analysis", description: "AI models analyze seismic/geological data to identify extraction targets", jobsAffected: ["Geologists", "Survey Technicians"] },
+    { name: "Equipment Monitoring", description: "Automated sensor analysis for predictive maintenance on heavy equipment", jobsAffected: ["Maintenance Technicians", "Equipment Inspectors"] },
+  ],
+  "Construction & Infrastructure": [
+    { name: "Blueprint Generation", description: "AI auto-generates construction blueprints from requirements", jobsAffected: ["Drafters", "Junior Architects"] },
+    { name: "Site Safety Monitoring", description: "Computer vision monitors job sites for safety violations", jobsAffected: ["Safety Inspectors"] },
+  ],
+  "Energy & Utilities": [
+    { name: "Grid Load Forecasting", description: "AI predicts energy demand patterns for optimal distribution", jobsAffected: ["Grid Operators", "Demand Planners"] },
+    { name: "Meter Reading & Billing", description: "Automated smart meter analytics replacing manual processes", jobsAffected: ["Meter Readers", "Billing Clerks"] },
+  ],
+  "Manufacturing — Durable Goods": [
+    { name: "Quality Inspection", description: "Computer vision detects defects faster than human inspection", jobsAffected: ["Quality Inspectors", "Line Supervisors"] },
+    { name: "Production Scheduling", description: "AI optimizes production schedules across complex constraints", jobsAffected: ["Production Planners", "Scheduling Coordinators"] },
+  ],
+  "Manufacturing — Nondurable Goods": [
+    { name: "Batch Process Optimization", description: "AI controls chemical/food processing parameters in real-time", jobsAffected: ["Process Operators", "Lab Technicians"] },
+    { name: "Packaging Automation", description: "Robotic systems with AI vision handle packaging at scale", jobsAffected: ["Packaging Workers", "Line Operators"] },
+  ],
+  "Transportation & Logistics": [
+    { name: "Route Optimization", description: "AI calculates optimal delivery routes considering real-time conditions", jobsAffected: ["Dispatchers", "Route Planners"] },
+    { name: "Freight Pricing", description: "Dynamic AI pricing models replace manual rate negotiations", jobsAffected: ["Pricing Analysts", "Rate Negotiators"] },
+  ],
+  "Wholesale Trade": [
+    { name: "Inventory Replenishment", description: "AI auto-orders stock based on demand prediction models", jobsAffected: ["Inventory Managers", "Purchasing Agents"] },
+    { name: "Order Processing", description: "Automated order entry and validation systems", jobsAffected: ["Order Entry Clerks", "Data Entry Staff"] },
+  ],
+  "Retail Trade": [
+    { name: "Demand Forecasting", description: "AI predicts product demand across locations and seasons", jobsAffected: ["Demand Planners", "Buyers"] },
+    { name: "Checkout Automation", description: "Self-checkout and cashierless technology", jobsAffected: ["Cashiers", "Front-end Supervisors"] },
+  ],
+  "Technology & Digital Economy": [
+    { name: "Code Generation", description: "AI copilots write and debug code with minimal human input", jobsAffected: ["Junior Developers", "QA Testers"] },
+    { name: "Threat Detection", description: "AI autonomously identifies and responds to cyber threats", jobsAffected: ["SOC Analysts", "Security Monitors"] },
+  ],
+  "Telecommunications & Media": [
+    { name: "Content Generation", description: "AI creates articles, scripts, and social media content at scale", jobsAffected: ["Content Writers", "Copywriters"] },
+    { name: "Ad Targeting", description: "AI-driven programmatic advertising replaces manual media buying", jobsAffected: ["Media Buyers", "Ad Planners"] },
+  ],
+  "Financial Services": [
+    { name: "Fraud Detection", description: "AI monitors transactions in real-time flagging suspicious activity", jobsAffected: ["Fraud Analysts", "Compliance Officers"] },
+    { name: "Credit Scoring", description: "AI underwriting models assess risk faster than traditional methods", jobsAffected: ["Underwriters", "Credit Analysts"] },
+  ],
+  "Healthcare & Life Sciences": [
+    { name: "Diagnostic Imaging", description: "AI reads X-rays, MRIs, and CT scans with high accuracy", jobsAffected: ["Radiologists (routine reads)", "Lab Technicians"] },
+    { name: "Claims Processing", description: "Automated insurance claims adjudication", jobsAffected: ["Claims Processors", "Billing Coders"] },
+  ],
+};
+
+const collaborativeTemplates: Record<string, { name: string; description: string }[]> = {
+  "Primary & Resources": [{ name: "Exploration Planning", description: "AI suggests targets, humans make final exploration decisions" }, { name: "Environmental Compliance", description: "AI monitors emissions, humans manage remediation strategies" }],
+  "Construction & Infrastructure": [{ name: "Project Management", description: "AI tracks progress and flags risks, PMs make decisions" }, { name: "Cost Estimation", description: "AI generates estimates, humans refine with local knowledge" }],
+  "Energy & Utilities": [{ name: "Outage Response", description: "AI prioritizes repair crews, humans execute restoration" }, { name: "Renewable Integration", description: "AI balances grid, engineers design integration" }],
+  "Manufacturing — Durable Goods": [{ name: "Product Design", description: "AI generates design options, engineers select and refine" }, { name: "Supply Chain Management", description: "AI forecasts disruptions, procurement teams respond" }],
+  "Manufacturing — Nondurable Goods": [{ name: "R&D Formulation", description: "AI suggests formulations, scientists validate and test" }, { name: "Regulatory Compliance", description: "AI tracks changing regulations, teams implement changes" }],
+  "Transportation & Logistics": [{ name: "Fleet Management", description: "AI monitors vehicle health, managers schedule maintenance" }, { name: "Capacity Planning", description: "AI forecasts demand, planners allocate resources" }],
+  "Wholesale Trade": [{ name: "Customer Segmentation", description: "AI clusters customers, sales teams personalize outreach" }, { name: "Pricing Strategy", description: "AI suggests pricing, managers set final rates" }],
+  "Retail Trade": [{ name: "Merchandising", description: "AI recommends product placement, visual teams execute" }, { name: "Customer Service", description: "AI handles initial queries, humans resolve complex issues" }],
+  "Technology & Digital Economy": [{ name: "Product Development", description: "AI accelerates prototyping, teams guide product vision" }, { name: "Customer Success", description: "AI flags at-risk accounts, CSMs intervene" }],
+  "Telecommunications & Media": [{ name: "Content Strategy", description: "AI analyzes engagement, editors curate and commission" }, { name: "Network Planning", description: "AI models coverage, engineers design deployments" }],
+  "Financial Services": [{ name: "Portfolio Management", description: "AI generates recommendations, advisors tailor to clients" }, { name: "Regulatory Reporting", description: "AI compiles data, compliance teams review and submit" }],
+  "Healthcare & Life Sciences": [{ name: "Treatment Planning", description: "AI suggests treatment options, physicians make decisions" }, { name: "Drug Discovery", description: "AI identifies targets, researchers validate in lab" }],
+};
+
+const humanLedTemplates: Record<string, { name: string; description: string }[]> = {
+  "Primary & Resources": [{ name: "Community Relations", description: "Managing relationships with local communities and stakeholders" }, { name: "Safety Leadership", description: "On-site safety culture and emergency response" }],
+  "Construction & Infrastructure": [{ name: "Client Relationships", description: "Building trust and managing complex stakeholder needs" }, { name: "Skilled Trades", description: "Hands-on construction work requiring expertise and judgment" }],
+  "Energy & Utilities": [{ name: "Policy Advocacy", description: "Engaging regulators and shaping energy policy" }, { name: "Field Operations", description: "Physical maintenance and emergency response" }],
+  "Manufacturing — Durable Goods": [{ name: "Innovation Strategy", description: "Setting R&D direction and breakthrough product vision" }, { name: "Labor Relations", description: "Managing workforce relationships and negotiations" }],
+  "Manufacturing — Nondurable Goods": [{ name: "Brand Management", description: "Shaping brand identity and consumer perception" }, { name: "Sustainability Strategy", description: "Driving circular economy and green manufacturing initiatives" }],
+  "Transportation & Logistics": [{ name: "Driver Operations", description: "Skilled driving and last-mile delivery in complex environments" }, { name: "Customer Negotiations", description: "Enterprise contract negotiations and relationship management" }],
+  "Wholesale Trade": [{ name: "Relationship Sales", description: "Building long-term partnerships with key accounts" }, { name: "Market Development", description: "Identifying and entering new market segments" }],
+  "Retail Trade": [{ name: "Store Experience", description: "Creating memorable in-store customer experiences" }, { name: "Brand Partnerships", description: "Negotiating and managing brand collaborations" }],
+  "Technology & Digital Economy": [{ name: "Strategic Vision", description: "Setting product direction and company strategy" }, { name: "Enterprise Sales", description: "Complex B2B sales cycles requiring relationship building" }],
+  "Telecommunications & Media": [{ name: "Creative Direction", description: "Original creative vision and storytelling" }, { name: "Talent Management", description: "Discovering and developing on-screen/on-air talent" }],
+  "Financial Services": [{ name: "Client Advisory", description: "High-touch wealth management and strategic advisory" }, { name: "Deal Structuring", description: "Complex M&A and investment deal negotiations" }],
+  "Healthcare & Life Sciences": [{ name: "Patient Care", description: "Empathetic bedside care and complex surgical procedures" }, { name: "Clinical Trials", description: "Managing patient safety and ethical trial oversight" }],
+};
+
+function generateSeedAiImpact(): AIImpactAnalysis[] {
+  return US_INDUSTRIES.map((ind, idx) => {
+    const rng = seededRandom(idx * 251 + 99);
+    const sectorKey = Object.keys(aiLedTemplates).find((k) => ind.sector.includes(k)) || "Technology & Digital Economy";
+
+    const aiLed = (aiLedTemplates[sectorKey] || []).map((t) => ({
+      ...t,
+      automationLevel: Math.round(70 + rng() * 25),
+      zone: "ai_led" as AIZone,
+      jobsAffected: t.jobsAffected,
+      opportunityType: "efficiency" as const,
+      timeline: "now" as const,
+    }));
+
+    const collab = (collaborativeTemplates[sectorKey] || []).map((t) => ({
+      ...t,
+      automationLevel: Math.round(30 + rng() * 30),
+      zone: "collaborative" as AIZone,
+      jobsAffected: [] as string[],
+      opportunityType: "revenue_growth" as const,
+      timeline: "6_months" as const,
+    }));
+
+    const humanLed = (humanLedTemplates[sectorKey] || []).map((t) => ({
+      ...t,
+      automationLevel: Math.round(5 + rng() * 15),
+      zone: "human_led" as AIZone,
+      jobsAffected: [] as string[],
+      opportunityType: "new_capability" as const,
+      timeline: "2_plus_years" as const,
+    }));
+
+    const automationRate = Math.round(20 + rng() * 45);
+
+    return {
+      industryId: ind.slug,
+      industryName: ind.name,
+      aiLedFunctions: aiLed,
+      humanLedFunctions: humanLed,
+      collaborativeFunctions: collab,
+      automationRate,
+      jobDisplacementIndex: Math.round(15 + rng() * 50),
+      humanResilienceScore: Math.round(100 - automationRate + (rng() - 0.5) * 20),
+      collaborativeOpportunityIndex: Math.round(40 + rng() * 50),
+      valueChain: [],
+      kpis: [
+        { name: "AI Adoption Rate", value: Math.round(20 + rng() * 60), unit: "%", trend: rng() > 0.5 ? "up" : "stable", context: "Industry average AI tool adoption" },
+        { name: "Automation Savings", value: Math.round(5 + rng() * 35), unit: "%", trend: "up", context: "Average cost reduction from AI automation" },
+      ],
+      entityOverlays: {} as Record<EntityType, EntityOverlay>,
+      generatedAt: new Date().toISOString(),
+    };
+  });
+}
+
+export const seedAiImpact: AIImpactAnalysis[] = generateSeedAiImpact();
 
 export const signals: Signal[] = [
   // === POLITICAL & GEOPOLITICAL ===
@@ -328,6 +527,13 @@ export const signals: Signal[] = [
   { id: "s30", title: "Pharma Hiring Surge — 30K Biotech Roles Posted in Q1 2026", summary: "Biotech and pharma sectors posting record job openings in biologics manufacturing, regulatory affairs, and AI/computational biology. Talent competition pushing salaries up 20%.", industryTags: ["11"], signalType: "hiring", sentiment: "positive", severity: 4, salesImplication: "Pharma companies struggling to fill specialized roles need recruitment platforms, contractor staffing, and training solutions. Also sell retention tools to companies losing talent to competitors.", sourceUrl: "#", publishedAt: "2026-02-09", sources: [{ name: "BioSpace", url: "https://biospace.com", publishedAt: "2026-02-09" }, { name: "LinkedIn Economic Graph", url: "https://economicgraph.linkedin.com", publishedAt: "2026-02-08" }, { name: "Pharmaceutical Executive", url: "https://pharmexec.com", publishedAt: "2026-02-08" }] },
   { id: "s31", title: "API Supply Chain Under Pressure — India Export Restrictions Tighten", summary: "India tightens export controls on 12 active pharmaceutical ingredients, affecting 40% of global generic drug supply. Pharma companies accelerating supplier diversification.", industryTags: ["11"], signalType: "supply_chain", sentiment: "negative", severity: 4, salesImplication: "Generic drug manufacturers need supply chain diversification and risk management solutions urgently. Sell supplier management platforms and alternative sourcing consulting.", sourceUrl: "#", publishedAt: "2026-02-08", sources: [{ name: "Reuters", url: "https://reuters.com", publishedAt: "2026-02-08" }, { name: "FiercePharma", url: "https://fiercepharma.com", publishedAt: "2026-02-08" }, { name: "Pharmaceutical Technology", url: "https://pharmaceutical-technology.com", publishedAt: "2026-02-07" }] },
   { id: "s32", title: "EU Pharma Legislation Overhaul — Shorter Exclusivity Periods", summary: "European Parliament finalizes new pharmaceutical legislation reducing market exclusivity from 10 to 8 years. Generic entry timelines accelerated, reshaping competitive dynamics.", industryTags: ["11"], signalType: "political", sentiment: "negative", severity: 4, salesImplication: "Branded pharma companies need to maximize revenue within shorter exclusivity windows. Sell commercial acceleration tools, launch optimization, and lifecycle management consulting.", sourceUrl: "#", publishedAt: "2026-02-07", sources: [{ name: "European Parliament", url: "https://europarl.europa.eu", publishedAt: "2026-02-07" }, { name: "Scrip Pharma Intelligence", url: "https://scrip.pharmaintelligence.informa.com", publishedAt: "2026-02-07" }, { name: "Financial Times", url: "https://ft.com", publishedAt: "2026-02-06" }] },
+
+  // === TELECOMMUNICATIONS & MEDIA ===
+  { id: "s33", title: "FCC Mandates ATSC 3.0 Transition Timeline for All Broadcasters", summary: "FCC sets firm 2028 deadline for all TV broadcasters to support NextGen TV (ATSC 3.0). Estimated $8B in infrastructure upgrades required across the industry.", industryTags: ["13"], signalType: "regulatory", sentiment: "negative", severity: 4, salesImplication: "Broadcasters need ATSC 3.0 transition planning, infrastructure upgrades, and compliance consulting. Target stations that haven't started migration yet — urgency is high.", sourceUrl: "#", publishedAt: "2026-02-11", sources: [{ name: "FCC", url: "https://fcc.gov", publishedAt: "2026-02-11" }, { name: "Broadcasting & Cable", url: "https://broadcastingcable.com", publishedAt: "2026-02-11" }, { name: "TVTechnology", url: "https://tvtechnology.com", publishedAt: "2026-02-10" }] },
+  { id: "s34", title: "AI-Generated Content Reaches 30% of Digital Media Output", summary: "Industry analysis shows AI tools now produce nearly a third of online articles, social posts, and video content. Media companies restructuring newsrooms and production teams around AI workflows.", industryTags: ["13", "9"], signalType: "tech", sentiment: "neutral", severity: 5, salesImplication: "Media companies need AI content tools, quality assurance systems, and workflow automation. Position AI-human collaboration platforms to companies balancing efficiency with editorial quality.", sourceUrl: "#", publishedAt: "2026-02-12", sources: [{ name: "Nieman Lab", url: "https://niemanlab.org", publishedAt: "2026-02-12" }, { name: "Digiday", url: "https://digiday.com", publishedAt: "2026-02-12" }, { name: "The Information", url: "https://theinformation.com", publishedAt: "2026-02-11" }] },
+  { id: "s35", title: "Streaming Consolidation Wave — Three Major Mergers Announced", summary: "Paramount+, Peacock, and a major FAST platform announce consolidation deals. Combined subscriber base exceeds 200M. Ad-supported tiers driving profitability.", industryTags: ["13"], signalType: "competitive", sentiment: "negative", severity: 4, salesImplication: "Surviving streamers and traditional broadcasters need differentiation strategies. Sell audience analytics, ad-tech solutions, and content recommendation engines to companies fighting for attention.", sourceUrl: "#", publishedAt: "2026-02-10", sources: [{ name: "Variety", url: "https://variety.com", publishedAt: "2026-02-10" }, { name: "The Hollywood Reporter", url: "https://hollywoodreporter.com", publishedAt: "2026-02-10" }, { name: "CNBC", url: "https://cnbc.com", publishedAt: "2026-02-09" }] },
+  { id: "s36", title: "5G Revenue Models Remain Elusive — Carriers Pivot to Enterprise", summary: "Consumer 5G ARPU growth stalls at 3% YoY. T-Mobile, Verizon shift focus to enterprise private 5G networks and IoT connectivity as primary revenue drivers.", industryTags: ["13"], signalType: "economic", sentiment: "negative", severity: 3, salesImplication: "Telecom companies need enterprise sales enablement, private 5G deployment tools, and IoT platform partners. The pivot creates opportunities for B2B-focused solution providers.", sourceUrl: "#", publishedAt: "2026-02-09", sources: [{ name: "Light Reading", url: "https://lightreading.com", publishedAt: "2026-02-09" }, { name: "Fierce Wireless", url: "https://fiercewireless.com", publishedAt: "2026-02-09" }, { name: "S&P Global", url: "https://spglobal.com", publishedAt: "2026-02-08" }] },
+  { id: "s37", title: "Local News Deserts Expand — 200 More Outlets Close in 2025", summary: "Northwestern Medill research shows accelerating decline of local journalism. Remaining outlets increasingly relying on AI-assisted reporting and syndicated content.", industryTags: ["13"], signalType: "social", sentiment: "negative", severity: 3, salesImplication: "Surviving local media needs efficiency tools — AI-assisted reporting, automated video production, and programmatic ad platforms that work at smaller scale.", sourceUrl: "#", publishedAt: "2026-02-08", sources: [{ name: "Medill Local News Initiative", url: "https://localnewsinitiative.northwestern.edu", publishedAt: "2026-02-08" }, { name: "Poynter", url: "https://poynter.org", publishedAt: "2026-02-08" }, { name: "Columbia Journalism Review", url: "https://cjr.org", publishedAt: "2026-02-07" }] },
 ];
 
 export type PressureResponse = "contracting" | "strategic_investment" | "growth_mode";

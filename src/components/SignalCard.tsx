@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Signal, SignalImpact, getSignalTypeLabel } from "@/data/mockData";
+import { Signal, SignalImpact, getSignalTypeLabel, isSignalRelevantToIndustry } from "@/data/mockData";
 import { Badge } from "@/components/ui/badge";
 import { Bookmark, BookmarkCheck, ChevronDown, ChevronRight, ExternalLink, Link2, TrendingUp, TrendingDown, Eye, ArrowRight, ShieldAlert, Users, Sparkles, Target } from "lucide-react";
 import { useSavedSignals } from "@/hooks/useSavedSignals";
@@ -69,7 +69,7 @@ export default function SignalCard({ signal }: SignalCardProps) {
 
   // Find prospects in the same industries as this signal
   const industryConnected = prospects.filter(
-    (p) => signal.industryTags.includes(p.industryId) && !directlyConnected.find((d) => d.id === p.id)
+    (p) => isSignalRelevantToIndustry(signal, p.industryId) && !directlyConnected.find((d) => d.id === p.id)
   ).sort((a, b) => b.vigylScore - a.vigylScore).slice(0, 4);
 
   const allConnected = [...directlyConnected, ...industryConnected];

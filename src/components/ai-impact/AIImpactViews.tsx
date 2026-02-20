@@ -7,6 +7,7 @@ import {
   Bot, Handshake, User
 } from "lucide-react";
 import type { AIZone, AIFunction, AIImpactAnalysis, Signal, Prospect, Industry } from "@/data/mockData";
+import { isSignalRelevantToIndustry } from "@/data/mockData";
 import ShareableAIReport from "@/components/ShareableAIReport";
 
 // ─── Shared config ───────────────────────────────
@@ -85,7 +86,7 @@ export function DetailView({ analysis, onBack, prospects, signals, industries }:
   }, [prospects, matchedIndustry]);
   const connectedSignals = useMemo(() => {
     if (!matchedIndustry) return [];
-    return signals.filter((s) => s.industryTags.includes(matchedIndustry.id)).sort((a, b) => b.publishedAt.localeCompare(a.publishedAt)).slice(0, 5);
+    return signals.filter((s) => isSignalRelevantToIndustry(s, matchedIndustry.id)).sort((a, b) => b.publishedAt.localeCompare(a.publishedAt)).slice(0, 5);
   }, [signals, matchedIndustry]);
 
   const actionableInsights = useMemo(() => {
