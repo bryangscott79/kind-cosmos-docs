@@ -404,6 +404,155 @@ ${impactData ? `Industry AI Automation: ${impactData.automationRate}%, Opportuni
           <div className="grid gap-6 lg:grid-cols-3">
             {/* Main content */}
             <div className="lg:col-span-2 space-y-6">
+
+              {/* ── Industry Health ── */}
+              {industry && (
+                <div className="rounded-xl border border-border bg-card p-5">
+                  <SectionHeader icon={<TrendingUp className="h-4 w-4 text-primary" />} title={`${industry.name} — Industry Health`} />
+                  <div className="flex items-start gap-5">
+                    <div className="shrink-0">
+                      <div className="relative" style={{ width: 72, height: 72 }}>
+                        <svg width={72} height={72} className="rotate-[-90deg]">
+                          <circle cx={36} cy={36} r={30} fill="none" stroke="hsl(var(--border))" strokeWidth={5} />
+                          <circle cx={36} cy={36} r={30} fill="none" stroke={getScoreColorHsl(industry.healthScore)} strokeWidth={5}
+                            strokeDasharray={2 * Math.PI * 30} strokeDashoffset={2 * Math.PI * 30 * (1 - industry.healthScore / 100)}
+                            strokeLinecap="round" className="transition-all duration-700" />
+                        </svg>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                          <span className="text-lg font-mono font-bold" style={{ color: getScoreColorHsl(industry.healthScore) }}>{industry.healthScore}</span>
+                          <span className="text-[7px] text-muted-foreground uppercase">Health</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0 space-y-2">
+                      <div className="flex flex-wrap gap-2">
+                        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                          industry.trendDirection === "improving" ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300" :
+                          industry.trendDirection === "declining" ? "bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300" :
+                          "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
+                        }`}>
+                          {industry.trendDirection === "improving" ? <TrendingUp className="h-3 w-3" /> : industry.trendDirection === "declining" ? <TrendingDown className="h-3 w-3" /> : <Minus className="h-3 w-3" />}
+                          {industry.trendDirection.charAt(0).toUpperCase() + industry.trendDirection.slice(1)}
+                        </span>
+                      </div>
+                      {industry.topSignals && industry.topSignals.length > 0 && (
+                        <div className="flex flex-wrap gap-1 pt-1">
+                          {industry.topSignals.slice(0, 4).map((d, i) => (
+                            <span key={i} className="rounded bg-secondary px-1.5 py-0.5 text-[9px] text-muted-foreground">{d}</span>
+                          ))}
+                        </div>
+                      )}
+                      <Link to={`/industries/${industry.id}`} className="text-[10px] text-primary font-medium hover:underline">
+                        View full industry profile →
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ── AI Impact for this Industry ── */}
+              {impactData && (
+                <div className="rounded-xl border border-border bg-card p-5">
+                  <SectionHeader icon={<Brain className="h-4 w-4 text-primary" />} title={`AI Impact — ${industry?.name || "Industry"}`} badge={`${impactData.automationRate}% Automated`} />
+                  <div className="grid grid-cols-3 gap-3 mb-3">
+                    <div className="rounded-lg bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 p-3 text-center">
+                      <Bot className="h-4 w-4 text-rose-600 dark:text-rose-400 mx-auto mb-1" />
+                      <p className="text-lg font-mono font-bold text-rose-600 dark:text-rose-400">{impactData.aiLedFunctions.length}</p>
+                      <p className="text-[9px] text-rose-600/70 dark:text-rose-400/70">AI-Led Functions</p>
+                    </div>
+                    <div className="rounded-lg bg-violet-50 dark:bg-violet-500/10 border border-violet-200 dark:border-violet-500/20 p-3 text-center">
+                      <Handshake className="h-4 w-4 text-violet-600 dark:text-violet-400 mx-auto mb-1" />
+                      <p className="text-lg font-mono font-bold text-violet-600 dark:text-violet-400">{impactData.collaborativeFunctions.length}</p>
+                      <p className="text-[9px] text-violet-600/70 dark:text-violet-400/70">Collaborative</p>
+                    </div>
+                    <div className="rounded-lg bg-sky-50 dark:bg-sky-500/10 border border-sky-200 dark:border-sky-500/20 p-3 text-center">
+                      <User className="h-4 w-4 text-sky-600 dark:text-sky-400 mx-auto mb-1" />
+                      <p className="text-lg font-mono font-bold text-sky-600 dark:text-sky-400">{impactData.humanLedFunctions.length}</p>
+                      <p className="text-[9px] text-sky-600/70 dark:text-sky-400/70">Human-Led</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-0.5 h-2 rounded-full overflow-hidden">
+                    {(() => {
+                      const total = impactData.aiLedFunctions.length + impactData.collaborativeFunctions.length + impactData.humanLedFunctions.length;
+                      return total > 0 ? (
+                        <>
+                          <div className="h-full bg-rose-500 rounded-full" style={{ width: `${(impactData.aiLedFunctions.length / total) * 100}%` }} />
+                          <div className="h-full bg-violet-500 rounded-full" style={{ width: `${(impactData.collaborativeFunctions.length / total) * 100}%` }} />
+                          <div className="h-full bg-sky-500 rounded-full" style={{ width: `${(impactData.humanLedFunctions.length / total) * 100}%` }} />
+                        </>
+                      ) : null;
+                    })()}
+                  </div>
+                  {(impactData.aiLedFunctions.length > 0 || impactData.collaborativeFunctions.length > 0) && (
+                    <div className="mt-3 pt-3 border-t border-border space-y-1.5">
+                      <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Key Functions Being Transformed</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {[...impactData.aiLedFunctions.slice(0, 3).map((f: any) => ({ name: f.function || f.name || f, type: "ai" })),
+                          ...impactData.collaborativeFunctions.slice(0, 3).map((f: any) => ({ name: f.function || f.name || f, type: "collab" }))
+                        ].map((f, i) => (
+                          <span key={i} className={`rounded px-2 py-0.5 text-[9px] font-medium ${
+                            f.type === "ai" ? "bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300" : "bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300"
+                          }`}>
+                            {typeof f.name === "string" ? f.name : "Function"}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <Link to="/ai-impact" className="text-[10px] text-primary font-medium hover:underline block mt-2">
+                    View full AI impact dashboard →
+                  </Link>
+                </div>
+              )}
+
+              {/* ── Market Signals for this Industry ── */}
+              {(relatedSignals.length > 0 || industrySignals.length > 0) && (
+                <div className="rounded-xl border border-border bg-card p-5">
+                  <SectionHeader icon={<Radio className="h-4 w-4 text-primary" />} title={`Market Signals — ${industry?.name || "Industry"}`} badge={`${relatedSignals.length + industrySignals.length}`} />
+                  {relatedSignals.length > 0 && (
+                    <>
+                      <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Direct Company Signals</p>
+                      <div className="space-y-2 mb-4">
+                        {relatedSignals.map(s => (
+                          <div key={s.id} className="rounded-lg border border-border p-3">
+                            <div className="flex items-center gap-2 mb-1">
+                              <div className={`h-2 w-2 rounded-full shrink-0 ${s.sentiment === "positive" ? "bg-emerald-500" : s.sentiment === "negative" ? "bg-rose-500" : "bg-slate-400"}`} />
+                              <span className="text-xs font-semibold text-foreground">{s.title}</span>
+                              <span className="text-[9px] rounded-full bg-secondary px-1.5 py-0.5 text-muted-foreground">{s.severity}/5</span>
+                            </div>
+                            <p className="text-[11px] text-muted-foreground leading-relaxed ml-4">{s.salesImplication}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                  {industrySignals.length > 0 && (
+                    <>
+                      <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                        {relatedSignals.length > 0 ? "Broader " : ""}{industry?.name} Industry Signals
+                      </p>
+                      <div className="space-y-2">
+                        {industrySignals.slice(0, 6).map(s => (
+                          <div key={s.id} className="rounded-lg border border-border p-3">
+                            <div className="flex items-center gap-2 mb-1">
+                              <div className={`h-1.5 w-1.5 rounded-full shrink-0 ${s.sentiment === "positive" ? "bg-emerald-500" : s.sentiment === "negative" ? "bg-rose-500" : "bg-slate-400"}`} />
+                              <span className="text-xs font-semibold text-foreground">{s.title}</span>
+                              <span className="text-[9px] rounded-full bg-secondary px-1.5 py-0.5 text-muted-foreground">{getSignalTypeLabel(s.signalType)}</span>
+                            </div>
+                            <p className="text-[11px] text-muted-foreground leading-relaxed ml-4">{s.salesImplication}</p>
+                          </div>
+                        ))}
+                        {industrySignals.length > 6 && (
+                          <Link to="/signals" className="text-[10px] text-primary font-medium hover:underline block">
+                            View all {industrySignals.length} signals →
+                          </Link>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
               {/* Why Now */}
               <div className="rounded-xl border border-border bg-card p-5">
                 <SectionHeader icon={<Clock className="h-4 w-4 text-primary" />} title={persona.whyNowLabel} />
@@ -417,49 +566,6 @@ ${impactData ? `Industry AI Automation: ${impactData.automationRate}%, Opportuni
                 whyNow={prospect.whyNow}
                 contacts={prospect.decisionMakers}
               />
-
-              {/* Related Signals */}
-              <div className="rounded-xl border border-border bg-card p-5">
-                <SectionHeader icon={<Radio className="h-4 w-4 text-primary" />} title="Direct Signals" badge={`${relatedSignals.length}`} />
-                {relatedSignals.length > 0 ? (
-                  <div className="space-y-2">
-                    {relatedSignals.map(s => (
-                      <div key={s.id} className="rounded-lg border border-border p-3">
-                        <div className="flex items-center gap-2 mb-1">
-                          <div className={`h-2 w-2 rounded-full shrink-0 ${s.sentiment === "positive" ? "bg-emerald-500" : s.sentiment === "negative" ? "bg-rose-500" : "bg-slate-400"}`} />
-                          <span className="text-xs font-semibold text-foreground">{s.title}</span>
-                          <span className="text-[9px] rounded-full bg-secondary px-1.5 py-0.5 text-muted-foreground">{s.severity}/5</span>
-                        </div>
-                        <p className="text-[11px] text-muted-foreground leading-relaxed ml-4">{s.salesImplication}</p>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-xs text-muted-foreground">No directly linked signals. See industry signals below.</p>
-                )}
-
-                {industrySignals.length > 0 && (
-                  <div className="mt-4 pt-3 border-t border-border">
-                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                      Other {industry?.name} signals ({industrySignals.length})
-                    </p>
-                    <div className="space-y-1.5">
-                      {industrySignals.slice(0, 4).map(s => (
-                        <div key={s.id} className="flex items-center gap-2">
-                          <div className={`h-1.5 w-1.5 rounded-full shrink-0 ${s.sentiment === "positive" ? "bg-emerald-500" : s.sentiment === "negative" ? "bg-rose-500" : "bg-slate-400"}`} />
-                          <span className="text-[11px] text-muted-foreground truncate">{s.title}</span>
-                          <span className="text-[9px] text-muted-foreground shrink-0">{getSignalTypeLabel(s.signalType)}</span>
-                        </div>
-                      ))}
-                      {industrySignals.length > 4 && (
-                        <Link to="/signals" className="text-[10px] text-primary font-medium hover:underline">
-                          View all {industrySignals.length} signals →
-                        </Link>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
 
               {/* Competitors */}
               {prospect.competitors && prospect.competitors.length > 0 && (
