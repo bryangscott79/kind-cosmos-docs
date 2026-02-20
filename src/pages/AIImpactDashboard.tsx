@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import {
   Brain, Bot, User, Handshake, Sparkles, Loader2, RefreshCw,
   Search, X, HelpCircle, Lock, CreditCard, ChevronUp, ChevronDown,
@@ -140,6 +140,7 @@ function IndustryCard({ analysis, onClick, onCompare, isCompareMode, isSelected 
 
 export default function AIImpactDashboard() {
   const { slug } = useParams();
+  const navigate = useNavigate();
   const { data } = useIntelligence();
   const { tier } = useAuth();
   const canViewFull = hasAccess(tier, "starter");
@@ -283,14 +284,15 @@ export default function AIImpactDashboard() {
             canViewFull ? (
               <DetailView
                 analysis={selectedAnalysis}
-                onBack={() => setView("overview")}
+                onBack={() => slug ? navigate(-1) : setView("overview")}
+                backLabel={slug ? "Back to Industry" : undefined}
                 prospects={data.prospects}
                 signals={data.signals}
                 industries={data.industries}
               />
             ) : (
               <div className="space-y-4">
-                <button onClick={() => setView("overview")} className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"><ArrowLeft className="h-3.5 w-3.5" /> All Industries</button>
+                <button onClick={() => slug ? navigate(-1) : setView("overview")} className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"><ArrowLeft className="h-3.5 w-3.5" /> {slug ? "Back to Industry" : "All Industries"}</button>
                 <div className="rounded-xl border-2 border-dashed border-primary/20 bg-primary/[0.02] p-12 text-center max-w-lg mx-auto">
                   <Lock className="mx-auto h-10 w-10 text-primary/30 mb-3" />
                   <h3 className="text-base font-semibold text-foreground">Unlock Full AI Impact Analysis</h3>
