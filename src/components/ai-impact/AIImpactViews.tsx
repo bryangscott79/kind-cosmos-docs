@@ -67,8 +67,8 @@ export function FunctionRow({ fn }: { fn: AIFunction }) {
 }
 
 // ─── Detail View ─────────────────────────────────
-export function DetailView({ analysis, onBack, prospects, signals, industries }: {
-  analysis: AIImpactAnalysis; onBack: () => void;
+export function DetailView({ analysis, onBack, prospects, signals, industries, backLabel }: {
+  analysis: AIImpactAnalysis; onBack: () => void; backLabel?: string;
   prospects: Prospect[]; signals: Signal[]; industries: Industry[];
 }) {
   const navigate = useNavigate();
@@ -110,7 +110,7 @@ export function DetailView({ analysis, onBack, prospects, signals, industries }:
     <div className="space-y-6">
       {showShare && <ShareableAIReport analysis={analysis} onClose={() => setShowShare(false)} />}
       <div>
-        <button onClick={onBack} className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-2"><ArrowLeft className="h-3.5 w-3.5" /> All Industries</button>
+        <button onClick={onBack} className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-2"><ArrowLeft className="h-3.5 w-3.5" /> {backLabel || "All Industries"}</button>
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 className="text-xl font-bold text-foreground">{analysis.industryName}</h2>
