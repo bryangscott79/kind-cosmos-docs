@@ -460,21 +460,52 @@ export default function Prospects() {
     track(EVENTS.SIGNALS_EXPORTED, { type: "prospects", count: filtered.length });
   };
 
+  const isUrl = (text: string) => /^https?:\/\//i.test(text.trim()) || /\.[a-z]{2,}$/i.test(text.trim());
+
   const analyzeDreamClient = async () => {
     if (!dreamInput.trim() || !profile) return;
     setDreamLoading(true);
     setDreamOverview(null);
     setDreamProspects([]);
     try {
-      const { data: result, error } = await supabase.functions.invoke("analyze-dream-client", {
-        body: { companyName: dreamInput.trim(), profile },
-      });
-      if (error) throw error;
-      if (!result?.success) throw new Error(result?.error || "Analysis failed");
-      setDreamOverview(result.data.companyOverview);
-      setDreamProspects(result.data.prospects);
-      toast({ title: "✨ Dream Client Analyzed", description: `Found ${result.data.prospects.length} opportunities within ${dreamInput}` });
-      track(EVENTS.DREAM_CLIENT_ANALYZED, { company: dreamInput, opportunities: result.data.prospects.length });
+      const input = dreamInput.trim();
+      
+      // If it looks like a URL, run Firecrawl first to scrape, then analyze
+      if (isUrl(input)) {
+        const { data: scrapeResult, error: scrapeError } = await supabase.functions.invoke("firecrawl-scrape", {
+          body: { url: input, options: { formats: ["markdown"], onlyMainContent: true } },
+        });
+        if (scrapeError) throw scrapeError;
+        
+        const websiteContent = scrapeResult?.data?.markdown || scrapeResult?.markdown || "";
+        const websiteTitle = scrapeResult?.data?.metadata?.title || scrapeResult?.metadata?.title || input;
+        
+        // Now analyze with the scraped content
+        const { data: result, error } = await supabase.functions.invoke("analyze-dream-client", {
+          body: { 
+            companyName: websiteTitle, 
+            profile,
+            websiteContent: websiteContent.slice(0, 8000),
+            websiteUrl: input,
+          },
+        });
+        if (error) throw error;
+        if (!result?.success) throw new Error(result?.error || "Analysis failed");
+        setDreamOverview(result.data.companyOverview);
+        setDreamProspects(result.data.prospects);
+        toast({ title: "✨ Company Analyzed from URL", description: `Found ${result.data.prospects.length} opportunities` });
+        track(EVENTS.DREAM_CLIENT_ANALYZED, { company: websiteTitle, opportunities: result.data.prospects.length, source: "url" });
+      } else {
+        const { data: result, error } = await supabase.functions.invoke("analyze-dream-client", {
+          body: { companyName: input, profile },
+        });
+        if (error) throw error;
+        if (!result?.success) throw new Error(result?.error || "Analysis failed");
+        setDreamOverview(result.data.companyOverview);
+        setDreamProspects(result.data.prospects);
+        toast({ title: "✨ Dream Client Analyzed", description: `Found ${result.data.prospects.length} opportunities within ${input}` });
+        track(EVENTS.DREAM_CLIENT_ANALYZED, { company: input, opportunities: result.data.prospects.length });
+      }
     } catch (err: any) {
       toast({ title: "Analysis failed", description: err.message, variant: "destructive" });
     } finally {
@@ -618,7 +649,7 @@ export default function Prospects() {
               <div className="flex gap-2">
                 <input
                   type="text"
-                  placeholder="Search any company — Nike, Olipop, your next client..."
+                  placeholder="Company name or paste a URL — Nike, https://olipop.com, your next client..."
                   value={dreamInput}
                   onChange={(e) => setDreamInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && analyzeDreamClient()}

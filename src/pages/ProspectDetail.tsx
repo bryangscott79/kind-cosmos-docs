@@ -5,7 +5,8 @@ import {
   Radio, Calendar, TrendingUp, TrendingDown, Minus, ExternalLink,
   Mail, ChevronRight, Bot, Handshake, User, Brain, Sparkles,
   Target, Lightbulb, Shield, Zap, AlertTriangle, Clock, Star, Swords,
-  MessageSquare, LinkIcon, Loader2, Presentation, Copy, Check, Search, CheckCircle2, CircleDashed, RefreshCw
+  MessageSquare, LinkIcon, Loader2, Presentation, Copy, Check, Search, CheckCircle2, CircleDashed, RefreshCw,
+  FileText, Crosshair, PenTool, Bookmark
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
@@ -22,6 +23,7 @@ import AskArgus from "@/components/AskArgus";
 import CrmPushButton from "@/components/CrmPushButton";
 import ProspectContacts from "@/components/prospect-detail/ProspectContacts";
 import ProspectDetailSidebar from "@/components/prospect-detail/ProspectDetailSidebar";
+import ClientReport from "@/components/ClientReport";
 import {
   getScoreColorHsl, getPressureLabel, pipelineStageLabels,
   getSignalTypeLabel, PipelineStage, isSignalRelevantToIndustry
@@ -142,6 +144,7 @@ export default function ProspectDetail() {
   const { persona, profile } = useAuth();
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
+  const [showReport, setShowReport] = useState(false);
 
   // Resolve prospect from intelligence data OR pipeline DB
   const { findProspect, loading: pipelineLoading } = usePipelineProspects(prospects);
@@ -300,13 +303,42 @@ ${impactData ? `Industry AI Automation: ${impactData.automationRate}%, Opportuni
               </div>
             </div>
 
-            {/* Actions */}
+            {/* Primary CTAs */}
             <div className="mt-4 flex items-center gap-2 flex-wrap">
+              {/* 1. Track This */}
+              <CrmPushButton prospect={prospect} industryName={industry?.name} variant="full" />
+
+              {/* 2. Run Report */}
+              <button
+                onClick={() => setShowReport(true)}
+                className="inline-flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-5 py-2.5 text-xs font-semibold text-primary hover:bg-primary/10 transition-colors"
+              >
+                <FileText className="h-3.5 w-3.5" /> Run Report
+              </button>
+
+              {/* 3. Generate Outreach */}
               <Link to={`/outreach?prospect=${prospect.id}`}
                 className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-brand-blue to-brand-purple px-5 py-2.5 text-xs font-semibold text-white hover:opacity-90 transition-opacity">
-                <Mail className="h-3.5 w-3.5" /> Generate Outreach
+                <PenTool className="h-3.5 w-3.5" /> Generate Outreach
               </Link>
-              <CrmPushButton prospect={prospect} industryName={industry?.name} variant="full" />
+
+              {/* 4. Find Competitors */}
+              {prospect.competitors && prospect.competitors.length > 0 ? (
+                <a href="#competitors"
+                  className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+                  <Crosshair className="h-3.5 w-3.5" /> Competitors ({prospect.competitors.length})
+                </a>
+              ) : (
+                <AskArgus
+                  context={`Find competitors for ${prospect.companyName} in ${industry?.name || "their industry"}. ${argusContext}`}
+                  label="Find Competitors"
+                  greeting={`Let me find competitors for ${prospect.companyName}. I'll look at companies offering similar services in ${industry?.name || "their industry"}.`}
+                />
+              )}
+            </div>
+
+            {/* Secondary actions */}
+            <div className="mt-2 flex items-center gap-2 flex-wrap">
               <AskArgus context={argusContext} label={prospect.companyName}
                 greeting={`I'm looking at the full dossier for ${prospect.companyName} (VIGYL Score: ${prospect.vigylScore}). They're a ${prospect.annualRevenue} ${industry?.name || ""} company with ${prospect.employeeCount.toLocaleString()} employees. What would you like to explore?`} />
               {prospect.websiteUrl && (
@@ -319,8 +351,8 @@ ${impactData ? `Industry AI Automation: ${impactData.automationRate}%, Opportuni
               {/* Generate Presentation Prompt */}
               <Dialog>
                 <DialogTrigger asChild>
-                  <button className="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/5 px-4 py-2.5 text-xs font-medium text-primary hover:bg-primary/10 transition-colors">
-                    <Presentation className="h-3.5 w-3.5" /> Presentation Prompt
+                  <button className="inline-flex items-center gap-1.5 rounded-lg border border-border px-4 py-2.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+                    <Presentation className="h-3.5 w-3.5" /> Deck Prompt
                   </button>
                 </DialogTrigger>
                 <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
@@ -351,6 +383,18 @@ ${impactData ? `Industry AI Automation: ${impactData.automationRate}%, Opportuni
                 </DialogContent>
               </Dialog>
             </div>
+
+            {/* Client Report Modal */}
+            {showReport && (
+              <ClientReport
+                prospect={prospect}
+                industry={industry}
+                signals={data.signals}
+                aiImpact={impactData}
+                userProfile={profile}
+                onClose={() => setShowReport(false)}
+              />
+            )}
           </div>
 
           <div className="grid gap-6 lg:grid-cols-3">
@@ -415,7 +459,7 @@ ${impactData ? `Industry AI Automation: ${impactData.automationRate}%, Opportuni
 
               {/* Competitors */}
               {prospect.competitors && prospect.competitors.length > 0 && (
-                <div className="rounded-xl border border-border bg-card p-5">
+                <div id="competitors" className="rounded-xl border border-border bg-card p-5">
                   <SectionHeader icon={<Swords className="h-4 w-4 text-primary" />} title="Competitive Landscape" badge={`${prospect.competitors.length}`} />
                   <div className="space-y-2">
                     {prospect.competitors.map((c, i) => (
