@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { track, EVENTS } from "@/lib/analytics";
 import type { Industry, Signal, Prospect, AIImpactAnalysis } from "@/data/mockData";
-import { industries as seedIndustries, signals as seedSignals, prospects as seedProspects } from "@/data/mockData";
+import { industries as seedIndustries, signals as seedSignals, prospects as seedProspects, seedAiImpact } from "@/data/mockData";
 
 /**
  * Merge AI-generated industries on top of the full 100-industry seed list.
@@ -31,6 +31,39 @@ function mergeIndustriesWithSeed(aiIndustries: Industry[]): Industry[] {
     }
     return seed;
   });
+}
+
+/**
+ * Merge AI-generated AI impact data with seed data.
+ * AI data takes priority; seed fills gaps for industries not covered by AI generation.
+ */
+function mergeAiImpactWithSeed(aiImpactData: AIImpactAnalysis[]): AIImpactAnalysis[] {
+  if (!aiImpactData || aiImpactData.length === 0) return seedAiImpact;
+
+  const aiMap = new Map<string, AIImpactAnalysis>();
+  for (const item of aiImpactData) {
+    aiMap.set(item.industryId, item);
+    aiMap.set(item.industryName.toLowerCase(), item);
+    // Also map by slug
+    const slug = item.industryName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    aiMap.set(slug, item);
+  }
+
+  return seedAiImpact.map((seed) => {
+    const match = aiMap.get(seed.industryId) || aiMap.get(seed.industryName.toLowerCase());
+    return match || seed;
+  });
+}
+
+/**
+ * Merge AI-generated signals with seed signals.
+ * AI signals take priority by ID; seed signals fill coverage gaps.
+ */
+function mergeSignalsWithSeed(aiSignals: Signal[]): Signal[] {
+  if (!aiSignals || aiSignals.length === 0) return seedSignals;
+  const aiIds = new Set(aiSignals.map((s) => s.id));
+  // Include all AI signals plus any seed signals not already present
+  return [...aiSignals, ...seedSignals.filter((s) => !aiIds.has(s.id))];
 }
 
 interface IntelligenceData {
@@ -66,7 +99,7 @@ const seedData: IntelligenceData = {
   industries: seedIndustries,
   signals: seedSignals,
   prospects: seedProspects,
-  aiImpact: [],
+  aiImpact: seedAiImpact,
 };
 
 const IntelligenceContext = createContext<IntelligenceContextType>({
@@ -161,9 +194,9 @@ export function IntelligenceProvider({ children }: { children: ReactNode }) {
         if (intelligenceData.industries?.length > 0) {
           setData({
             industries: mergeIndustriesWithSeed(intelligenceData.industries || []),
-            signals: intelligenceData.signals || [],
+            signals: mergeSignalsWithSeed(intelligenceData.signals || []),
             prospects: intelligenceData.prospects || [],
-            aiImpact: intelligenceData.aiImpact || [],
+            aiImpact: mergeAiImpactWithSeed(intelligenceData.aiImpact || []),
           });
           console.log("Loaded cached intelligence from", cached.updated_at);
           return true;
@@ -199,6 +232,8 @@ export function IntelligenceProvider({ children }: { children: ReactNode }) {
       setData({
         ...result.data,
         industries: mergeIndustriesWithSeed(result.data.industries || []),
+        signals: mergeSignalsWithSeed(result.data.signals || []),
+        aiImpact: mergeAiImpactWithSeed(result.data.aiImpact || []),
       });
       setIsUsingSeedData(false);
       track(isBackground ? EVENTS.INTELLIGENCE_REFRESHED : EVENTS.INTELLIGENCE_GENERATED, {

@@ -24,7 +24,7 @@ import ProspectContacts from "@/components/prospect-detail/ProspectContacts";
 import ProspectDetailSidebar from "@/components/prospect-detail/ProspectDetailSidebar";
 import {
   getScoreColorHsl, getPressureLabel, pipelineStageLabels,
-  getSignalTypeLabel, PipelineStage
+  getSignalTypeLabel, PipelineStage, isSignalRelevantToIndustry
 } from "@/data/mockData";
 
 const stageOrder: PipelineStage[] = ["researching", "contacted", "meeting_scheduled", "proposal_sent", "won", "lost"];
@@ -168,7 +168,7 @@ export default function ProspectDetail() {
   [prospect, signals]);
 
   const industrySignals = useMemo(() => prospect
-    ? signals.filter(s => s.industryTags.includes(prospect.industryId)).filter(s => !prospect.relatedSignals?.includes(s.id))
+    ? signals.filter(s => isSignalRelevantToIndustry(s, prospect.industryId)).filter(s => !prospect.relatedSignals?.includes(s.id))
     : [],
   [prospect, signals]);
 

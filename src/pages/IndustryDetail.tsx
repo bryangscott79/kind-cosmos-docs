@@ -7,7 +7,7 @@ import SignalCard from "@/components/SignalCard";
 import IntelligenceLoader from "@/components/IntelligenceLoader";
 import { useIntelligence } from "@/contexts/IntelligenceContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { getScoreColorHsl, getTrendIcon } from "@/data/mockData";
+import { getScoreColorHsl, getTrendIcon, isSignalRelevantToIndustry } from "@/data/mockData";
 import AskArgus from "@/components/AskArgus";
 import { XAxis, YAxis, ResponsiveContainer, Tooltip, Area, AreaChart } from "recharts";
 
@@ -58,7 +58,7 @@ export default function IndustryDetail() {
     );
   }
 
-  const relatedSignals = signals.filter((s) => s.industryTags.includes(industry.id));
+  const relatedSignals = signals.filter((s) => isSignalRelevantToIndustry(s, industry.id));
   const relatedProspects = prospects.filter((p) => p.industryId === industry.id).sort((a, b) => b.vigylScore - a.vigylScore);
 
   // Find AI Impact data for this industry

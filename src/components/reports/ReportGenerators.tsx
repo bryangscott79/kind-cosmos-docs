@@ -12,7 +12,8 @@ import {
 } from "lucide-react";
 import {
   Industry, Signal, Prospect, AIImpactAnalysis,
-  getScoreColorHsl, getPressureLabel, pipelineStageLabels, getSignalTypeLabel
+  getScoreColorHsl, getPressureLabel, pipelineStageLabels, getSignalTypeLabel,
+  isSignalRelevantToIndustry
 } from "@/data/mockData";
 
 // ─── Section component ───
@@ -41,7 +42,7 @@ function MetricCard({ label, value, sub, color }: { label: string; value: string
 // ─── Report generators ───
 
 function generateIndustryDeepDive(industry: Industry, signals: Signal[], prospects: Prospect[], aiImpact: AIImpactAnalysis | undefined): React.ReactNode {
-  const relatedSignals = signals.filter(s => s.industryTags.includes(industry.id));
+  const relatedSignals = signals.filter(s => isSignalRelevantToIndustry(s, industry.id));
   const relatedProspects = prospects.filter(p => p.industryId === industry.id).sort((a, b) => b.vigylScore - a.vigylScore);
   const negSignals = relatedSignals.filter(s => s.sentiment === "negative");
   const posSignals = relatedSignals.filter(s => s.sentiment === "positive");
@@ -351,7 +352,7 @@ function generateCompetitiveLandscape(industries: Industry[], signals: Signal[],
             <tbody>
               {sorted.map(ind => {
                 const ai = aiImpactData.find(a => a.industryId === ind.id);
-                const sigCount = signals.filter(s => s.industryTags.includes(ind.id)).length;
+                const sigCount = signals.filter(s => isSignalRelevantToIndustry(s, ind.id)).length;
                 const prosCount = prospects.filter(p => p.industryId === ind.id).length;
                 return (
                   <tr key={ind.id} className="border-b border-border/50 hover:bg-accent/30">
