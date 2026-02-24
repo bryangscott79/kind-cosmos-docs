@@ -547,6 +547,56 @@ export interface RecommendedService {
 
 export type ProspectScope = "local" | "national" | "international";
 
+// =============================================================
+// Enriched Intelligence Types
+// =============================================================
+
+export interface CompanySignal {
+  id: string;
+  type: "opportunity" | "risk" | "trend" | "milestone" | "competitive" | "regulatory";
+  title: string;
+  summary: string;
+  sentiment: "positive" | "negative" | "neutral";
+  severity: number;
+  actionRequired: string;
+  source: string;
+  sourceUrl: string;
+  publishedDate: string;
+  relevanceToUser: string;
+}
+
+export interface CompetitorDetail {
+  name: string;
+  description: string;
+  strength: string;
+  weakness: string;
+  userAdvantage: string;
+}
+
+export interface AIReadiness {
+  score: number;
+  currentAiUsage: string[];
+  aiOpportunities: string[];
+  aiThreats: string[];
+  humanEdge: string[];
+}
+
+export interface OutreachPlaybook {
+  primaryAngle: string;
+  talkingPoints: string[];
+  objections: { objection: string; rebuttal: string }[];
+  competitorWeaknesses: string[];
+  idealTiming: string;
+}
+
+export interface ClientIntelligence {
+  industryOutlook: string;
+  keyTrends: string[];
+  regulatoryWatch: string[];
+  aiTransformationMap: string;
+  recommendedActions: string[];
+}
+
 export interface Prospect {
   id: string;
   companyName: string;
@@ -574,7 +624,15 @@ export interface Prospect {
   isDreamClient?: boolean;
   websiteUrl?: string;
   relatedLinks?: { title: string; url: string }[];
-  competitors?: { name: string; description: string }[];
+  competitors?: { name: string; description: string }[] | CompetitorDetail[];
+  // Enriched intelligence fields
+  companyOverview?: string;
+  marketPosition?: string;
+  competitiveAdvantage?: string;
+  aiReadiness?: AIReadiness;
+  companySignals?: CompanySignal[];
+  outreachPlaybook?: OutreachPlaybook;
+  clientIntelligence?: ClientIntelligence;
 }
 
 export interface OutreachContent {

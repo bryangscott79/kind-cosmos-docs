@@ -140,10 +140,44 @@ Generate diverse, high-quality intelligence. Be concise but specific.
     - For each prospect, include 3-5 key contacts who would be relevant to the opportunity
     - ONLY use names of real, publicly verifiable executives (C-suite, SVPs, VPs) you are CONFIDENT exist at this company from public knowledge
     - If you are NOT confident a specific person holds a role, set name to the functional title (e.g. "Chief Digital Officer") and set verified to false
-    - For verified contacts, set verified to true and include a source (e.g. "Company leadership page", "SEC filing", "Press release")
+    - For verified contacts, set verified to true and include a source (e.g. "Company leadership page", "SEC filing", "Press release", "Public knowledge")
     - For linkedinUrl: generate a LinkedIn SEARCH URL like "https://www.linkedin.com/search/results/people/?keywords=Chief%20Digital%20Officer%20CompanyName" — NEVER use "#" or fake profile URLs
     - Include a brief "relevance" explaining why this person matters for the specific opportunity
     - Prioritize roles that align with the user's services and the prospect's "Why Now" trigger
+
+FOR EVERY SINGLE PROSPECT you MUST also generate these fields (NOT optional):
+
+A) "companyOverview" — 2-3 sentence description of the company, what they do, and their market position
+B) "marketPosition" — One of: "Market Leader", "Strong Challenger", "Niche Specialist", "Emerging Player", "Regional Leader"
+C) "competitiveAdvantage" — One sentence on their competitive moat or differentiator
+D) "competitors" — Array of 3-4 competitors with: name, description, strength (their advantage), weakness (where they fall short), userAdvantage (how the user selling to this prospect beats this competitor)
+E) "aiReadiness" — Object with:
+   - score (0-100): How ready this company is for AI adoption based on size, industry, and tech signals
+   - currentAiUsage (2-3 items): AI tools/platforms they likely already use
+   - aiOpportunities (2-3 items): Where AI could specifically help THIS company
+   - aiThreats (1-2 items): Where AI threatens their business model
+   - humanEdge (2-3 items): What humans do better at THIS specific company
+F) "companySignals" — Array of 3-6 signals SPECIFIC to this company. NEVER empty. Types: opportunity, risk, trend, milestone, competitive, regulatory. Each must have:
+   - id, type, title, summary, sentiment, severity (1-5)
+   - actionRequired: What the user should DO about this signal
+   - source: Publication name (realistic)
+   - sourceUrl: Realistic URL
+   - publishedDate: Recent date near ${today}
+   - relevanceToUser: How this affects the user's pitch to this prospect
+G) "outreachPlaybook" — Object with:
+   - primaryAngle: The ONE compelling reason to reach out NOW
+   - talkingPoints: 3-5 specific talking points for a first conversation
+   - objections: 2-3 objects each with "objection" and "rebuttal"
+   - competitorWeaknesses: 2-3 things competitors can't do that the user can
+   - idealTiming: When and why NOW is the right time
+H) "clientIntelligence" — Intelligence the user can SHARE with the prospect to demonstrate deep market knowledge:
+   - industryOutlook: 2-3 sentences on industry trajectory
+   - keyTrends: 3-5 specific trends affecting their business
+   - regulatoryWatch: 2-3 upcoming regulations or compliance items
+   - aiTransformationMap: 2-3 sentences on how AI is reshaping their industry
+   - recommendedActions: 3-5 things the prospect should consider doing (framed to align with user's services)
+
+CRITICAL: companySignals must NEVER be empty. Every company has news, trends, or events. Generate specific plausible signals for each. Always include at least 1 "opportunity" type and 1 "risk" or "trend" type.
 
 Make everything specific to the user's business capabilities and geography.`;
 
@@ -299,13 +333,88 @@ Make everything specific to the user's business capabilities and geography.`;
                         properties: {
                           name: { type: "string" },
                           description: { type: "string" },
+                          strength: { type: "string", description: "Their competitive advantage" },
+                          weakness: { type: "string", description: "Where they fall short" },
+                          userAdvantage: { type: "string", description: "How the user beats this competitor" },
                         },
-                        required: ["name", "description"],
+                        required: ["name", "description", "strength", "weakness", "userAdvantage"],
                         additionalProperties: false,
                       },
                     },
+                    companyOverview: { type: "string", description: "2-3 sentence description of the company" },
+                    marketPosition: { type: "string", enum: ["Market Leader", "Strong Challenger", "Niche Specialist", "Emerging Player", "Regional Leader"] },
+                    competitiveAdvantage: { type: "string", description: "One sentence on their competitive moat" },
+                    aiReadiness: {
+                      type: "object",
+                      properties: {
+                        score: { type: "number", description: "0-100 AI readiness score" },
+                        currentAiUsage: { type: "array", items: { type: "string" } },
+                        aiOpportunities: { type: "array", items: { type: "string" } },
+                        aiThreats: { type: "array", items: { type: "string" } },
+                        humanEdge: { type: "array", items: { type: "string" } },
+                      },
+                      required: ["score", "currentAiUsage", "aiOpportunities", "aiThreats", "humanEdge"],
+                      additionalProperties: false,
+                    },
+                    companySignals: {
+                      type: "array",
+                      description: "3-6 company-specific signals. NEVER empty.",
+                      items: {
+                        type: "object",
+                        properties: {
+                          id: { type: "string" },
+                          type: { type: "string", enum: ["opportunity", "risk", "trend", "milestone", "competitive", "regulatory"] },
+                          title: { type: "string" },
+                          summary: { type: "string" },
+                          sentiment: { type: "string", enum: ["positive", "negative", "neutral"] },
+                          severity: { type: "number" },
+                          actionRequired: { type: "string" },
+                          source: { type: "string" },
+                          sourceUrl: { type: "string" },
+                          publishedDate: { type: "string" },
+                          relevanceToUser: { type: "string" },
+                        },
+                        required: ["id", "type", "title", "summary", "sentiment", "severity", "actionRequired", "source", "sourceUrl", "publishedDate", "relevanceToUser"],
+                        additionalProperties: false,
+                      },
+                    },
+                    outreachPlaybook: {
+                      type: "object",
+                      properties: {
+                        primaryAngle: { type: "string" },
+                        talkingPoints: { type: "array", items: { type: "string" } },
+                        objections: {
+                          type: "array",
+                          items: {
+                            type: "object",
+                            properties: {
+                              objection: { type: "string" },
+                              rebuttal: { type: "string" },
+                            },
+                            required: ["objection", "rebuttal"],
+                            additionalProperties: false,
+                          },
+                        },
+                        competitorWeaknesses: { type: "array", items: { type: "string" } },
+                        idealTiming: { type: "string" },
+                      },
+                      required: ["primaryAngle", "talkingPoints", "objections", "competitorWeaknesses", "idealTiming"],
+                      additionalProperties: false,
+                    },
+                    clientIntelligence: {
+                      type: "object",
+                      properties: {
+                        industryOutlook: { type: "string" },
+                        keyTrends: { type: "array", items: { type: "string" } },
+                        regulatoryWatch: { type: "array", items: { type: "string" } },
+                        aiTransformationMap: { type: "string" },
+                        recommendedActions: { type: "array", items: { type: "string" } },
+                      },
+                      required: ["industryOutlook", "keyTrends", "regulatoryWatch", "aiTransformationMap", "recommendedActions"],
+                      additionalProperties: false,
+                    },
                   },
-                  required: ["id", "companyName", "industryId", "vigylScore", "pressureResponse", "whyNow", "decisionMakers", "relatedSignals", "pipelineStage", "lastContacted", "notes", "location", "annualRevenue", "employeeCount", "scope"],
+                  required: ["id", "companyName", "industryId", "vigylScore", "pressureResponse", "whyNow", "decisionMakers", "relatedSignals", "pipelineStage", "lastContacted", "notes", "location", "annualRevenue", "employeeCount", "scope", "companyOverview", "marketPosition", "competitiveAdvantage", "aiReadiness", "companySignals", "outreachPlaybook", "clientIntelligence"],
                   additionalProperties: false,
                 },
               },
@@ -587,6 +696,61 @@ Make everything specific to the user's business capabilities and geography.`;
     if (scopeCounts.international === 0 && intelligence.prospects.length > 10) {
       console.warn("WARNING: No international prospects generated — scope inference may need attention");
     }
+
+    // Post-process: ensure enriched intelligence fields are never empty
+    const today_str = new Date().toISOString().split("T")[0];
+    intelligence.prospects.forEach((p: any, idx: number) => {
+      // Ensure companySignals is NEVER empty
+      if (!Array.isArray(p.companySignals) || p.companySignals.length === 0) {
+        p.companySignals = [
+          {
+            id: `cs-${p.id}-fallback-1`,
+            type: "trend",
+            title: `${p.companyName} Industry Momentum`,
+            summary: `The ${p.industryId || "target"} sector continues to evolve with new competitive pressures and technology adoption.`,
+            sentiment: "neutral",
+            severity: 3,
+            actionRequired: "Monitor industry developments and identify specific entry points for engagement.",
+            source: "Industry Analysis",
+            sourceUrl: `https://www.google.com/search?q=${encodeURIComponent(p.companyName + " news")}`,
+            publishedDate: today_str,
+            relevanceToUser: "Emerging industry trends may create new opportunities to provide value.",
+          },
+          {
+            id: `cs-${p.id}-fallback-2`,
+            type: "opportunity",
+            title: `${p.companyName} Growth Potential`,
+            summary: `Companies of this size and profile in this sector are actively investing in technology and operational improvements.`,
+            sentiment: "positive",
+            severity: 3,
+            actionRequired: "Research their specific technology stack and identify modernization opportunities.",
+            source: "Market Intelligence",
+            sourceUrl: `https://www.google.com/search?q=${encodeURIComponent(p.companyName + " technology investment")}`,
+            publishedDate: today_str,
+            relevanceToUser: "Technology investment signals openness to new vendor relationships.",
+          },
+        ];
+        console.log(`Added fallback companySignals for ${p.companyName}`);
+      }
+      // Ensure aiReadiness has defaults
+      if (!p.aiReadiness || typeof p.aiReadiness.score !== "number") {
+        p.aiReadiness = { score: 40, currentAiUsage: ["Basic office automation"], aiOpportunities: ["Process automation", "Data analytics"], aiThreats: ["Competitor AI adoption"], humanEdge: ["Client relationships", "Domain expertise"] };
+      }
+      // Ensure outreachPlaybook exists
+      if (!p.outreachPlaybook || !p.outreachPlaybook.primaryAngle) {
+        p.outreachPlaybook = { primaryAngle: p.whyNow || "Industry timing", talkingPoints: ["Industry-specific challenges", "Technology modernization", "Competitive positioning"], objections: [{ objection: "We already have a solution", rebuttal: "Our approach complements existing tools with specialized capabilities" }], competitorWeaknesses: ["Generic solutions lack industry specificity"], idealTiming: "Current market conditions favor proactive engagement" };
+      }
+      // Ensure clientIntelligence exists
+      if (!p.clientIntelligence || !p.clientIntelligence.industryOutlook) {
+        p.clientIntelligence = { industryOutlook: "The industry is experiencing accelerated digital transformation driven by competitive pressure and evolving customer expectations.", keyTrends: ["Digital transformation acceleration", "AI/ML adoption", "Workforce optimization"], regulatoryWatch: ["Data privacy compliance", "Industry-specific regulations"], aiTransformationMap: "AI is reshaping operations from back-office automation to customer-facing intelligence, with the biggest impact in data processing and decision support.", recommendedActions: ["Audit current technology stack", "Identify automation opportunities", "Develop AI integration roadmap"] };
+      }
+      // Ensure companyOverview
+      if (!p.companyOverview) {
+        p.companyOverview = `${p.companyName} is a ${p.annualRevenue} company with ${p.employeeCount?.toLocaleString() || "unknown"} employees based in ${p.location?.city || "the US"}, ${p.location?.state || ""}.`;
+      }
+      if (!p.marketPosition) p.marketPosition = "Emerging Player";
+      if (!p.competitiveAdvantage) p.competitiveAdvantage = "Established market presence with strong customer relationships.";
+    });
 
     console.log(
       "Generated:",

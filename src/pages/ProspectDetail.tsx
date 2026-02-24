@@ -1,5 +1,5 @@
 import { useMemo, useState, useCallback, useEffect } from "react";
-import type { Prospect } from "@/data/mockData";
+import type { Prospect, CompanySignal } from "@/data/mockData";
 import { Link, useParams, Navigate, useLocation } from "react-router-dom";
 import {
   ArrowLeft, Building2, MapPin, DollarSign, Users, Globe, Briefcase,
@@ -269,8 +269,28 @@ ${impactData ? `Industry AI Automation: ${impactData.automationRate}%, Opportuni
                   }`}>
                     {getPressureLabel(prospect.pressureResponse)}
                   </span>
+                  {prospect.marketPosition && (
+                    <span className="inline-flex rounded-full bg-violet-100 dark:bg-violet-900/30 border border-violet-200 dark:border-violet-800 px-2 py-0.5 text-[10px] font-semibold text-violet-700 dark:text-violet-300">
+                      {prospect.marketPosition}
+                    </span>
+                  )}
+                  {prospect.aiReadiness && (
+                    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                      prospect.aiReadiness.score >= 70 ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300" :
+                      prospect.aiReadiness.score >= 40 ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300" :
+                      "bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300"
+                    }`}>
+                      <Sparkles className="h-3 w-3" /> AI Ready: {prospect.aiReadiness.score}
+                    </span>
+                  )}
                 </div>
                 <p className="text-sm text-muted-foreground mt-1">{industry?.name}</p>
+                {prospect.companyOverview && (
+                  <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed max-w-2xl">{prospect.companyOverview}</p>
+                )}
+                {prospect.competitiveAdvantage && (
+                  <p className="text-[10px] text-primary/80 mt-1 italic">{prospect.competitiveAdvantage}</p>
+                )}
 
                 <div className="flex flex-wrap gap-3 mt-4">
                   <MetricPill icon={<MapPin className="h-3.5 w-3.5" />} label="Location" value={`${prospect.location.city}, ${prospect.location.state}`} />
@@ -505,6 +525,248 @@ ${impactData ? `Industry AI Automation: ${impactData.automationRate}%, Opportuni
                 </div>
               )}
 
+              {/* ── Company Signals (ALWAYS shown) ── */}
+              {prospect.companySignals && prospect.companySignals.length > 0 && (
+                <div className="rounded-xl border border-border bg-card p-5">
+                  <SectionHeader icon={<Zap className="h-4 w-4 text-amber-500" />} title={`${prospect.companyName} Signals`} badge={`${prospect.companySignals.length}`} />
+                  <div className="space-y-2.5">
+                    {prospect.companySignals.map((cs: any) => {
+                      const typeColors: Record<string, string> = {
+                        opportunity: "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300",
+                        risk: "bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300",
+                        trend: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300",
+                        milestone: "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300",
+                        competitive: "bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300",
+                        regulatory: "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300",
+                      };
+                      return (
+                        <div key={cs.id} className="rounded-lg border border-border p-3">
+                          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                            <div className={`h-2 w-2 rounded-full shrink-0 ${cs.sentiment === "positive" ? "bg-emerald-500" : cs.sentiment === "negative" ? "bg-rose-500" : "bg-slate-400"}`} />
+                            <span className="text-xs font-semibold text-foreground flex-1">{cs.title}</span>
+                            <span className={`text-[9px] rounded-full px-1.5 py-0.5 font-medium ${typeColors[cs.type] || "bg-secondary text-muted-foreground"}`}>
+                              {cs.type}
+                            </span>
+                            <span className="text-[9px] rounded-full bg-secondary px-1.5 py-0.5 text-muted-foreground">{cs.severity}/5</span>
+                          </div>
+                          <p className="text-[11px] text-muted-foreground leading-relaxed">{cs.summary}</p>
+                          {cs.actionRequired && (
+                            <p className="text-[11px] mt-1.5 font-medium text-primary">→ {cs.actionRequired}</p>
+                          )}
+                          <div className="flex items-center gap-3 mt-1.5">
+                            {cs.source && (
+                              <span className="text-[9px] text-muted-foreground/70">{cs.source}</span>
+                            )}
+                            {cs.publishedDate && (
+                              <span className="text-[9px] text-muted-foreground/70">{cs.publishedDate}</span>
+                            )}
+                          </div>
+                          {cs.relevanceToUser && (
+                            <p className="text-[10px] text-muted-foreground/80 mt-1 italic">💡 {cs.relevanceToUser}</p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* ── AI Readiness Profile ── */}
+              {prospect.aiReadiness && (
+                <div className="rounded-xl border border-border bg-card p-5">
+                  <SectionHeader icon={<Sparkles className="h-4 w-4 text-violet-500" />} title="AI Readiness Profile" badge={`${prospect.aiReadiness.score}/100`} />
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="flex-1">
+                      <div className="h-3 rounded-full bg-secondary overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-700 ${prospect.aiReadiness.score >= 70 ? "bg-emerald-500" : prospect.aiReadiness.score >= 40 ? "bg-amber-500" : "bg-rose-500"}`}
+                          style={{ width: `${prospect.aiReadiness.score}%` }}
+                        />
+                      </div>
+                    </div>
+                    <span className={`text-sm font-mono font-bold ${prospect.aiReadiness.score >= 70 ? "text-emerald-500" : prospect.aiReadiness.score >= 40 ? "text-amber-500" : "text-rose-500"}`}>
+                      {prospect.aiReadiness.score}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    {prospect.aiReadiness.currentAiUsage?.length > 0 && (
+                      <div className="rounded-lg bg-secondary/30 border border-border p-3">
+                        <p className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Current AI Usage</p>
+                        <div className="flex flex-wrap gap-1">
+                          {prospect.aiReadiness.currentAiUsage.map((item: string, i: number) => (
+                            <span key={i} className="rounded bg-violet-100 dark:bg-violet-900/30 px-1.5 py-0.5 text-[9px] text-violet-700 dark:text-violet-300">{item}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {prospect.aiReadiness.aiOpportunities?.length > 0 && (
+                      <div className="rounded-lg bg-secondary/30 border border-border p-3">
+                        <p className="text-[9px] font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-1.5">AI Opportunities</p>
+                        <div className="flex flex-wrap gap-1">
+                          {prospect.aiReadiness.aiOpportunities.map((item: string, i: number) => (
+                            <span key={i} className="rounded bg-emerald-100 dark:bg-emerald-900/30 px-1.5 py-0.5 text-[9px] text-emerald-700 dark:text-emerald-300">{item}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {prospect.aiReadiness.aiThreats?.length > 0 && (
+                      <div className="rounded-lg bg-secondary/30 border border-border p-3">
+                        <p className="text-[9px] font-semibold text-rose-600 dark:text-rose-400 uppercase tracking-wider mb-1.5">AI Threats</p>
+                        <div className="flex flex-wrap gap-1">
+                          {prospect.aiReadiness.aiThreats.map((item: string, i: number) => (
+                            <span key={i} className="rounded bg-rose-100 dark:bg-rose-900/30 px-1.5 py-0.5 text-[9px] text-rose-700 dark:text-rose-300">{item}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {prospect.aiReadiness.humanEdge?.length > 0 && (
+                      <div className="rounded-lg bg-secondary/30 border border-border p-3">
+                        <p className="text-[9px] font-semibold text-sky-600 dark:text-sky-400 uppercase tracking-wider mb-1.5">Human Edge</p>
+                        <div className="flex flex-wrap gap-1">
+                          {prospect.aiReadiness.humanEdge.map((item: string, i: number) => (
+                            <span key={i} className="rounded bg-sky-100 dark:bg-sky-900/30 px-1.5 py-0.5 text-[9px] text-sky-700 dark:text-sky-300">{item}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* ── Client-Shareable Intelligence ── */}
+              {prospect.clientIntelligence && (
+                <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <SectionHeader icon={<Target className="h-4 w-4 text-primary" />} title="Client-Shareable Intelligence" />
+                    <button
+                      onClick={() => {
+                        const ci = prospect.clientIntelligence!;
+                        const text = [
+                          `📊 ${prospect.companyName} — Market Intelligence`,
+                          ``,
+                          `INDUSTRY OUTLOOK`,
+                          ci.industryOutlook,
+                          ``,
+                          `KEY TRENDS`,
+                          ...ci.keyTrends.map(t => `• ${t}`),
+                          ``,
+                          `REGULATORY WATCH`,
+                          ...ci.regulatoryWatch.map(r => `• ${r}`),
+                          ``,
+                          `AI TRANSFORMATION`,
+                          ci.aiTransformationMap,
+                          ``,
+                          `RECOMMENDED ACTIONS`,
+                          ...ci.recommendedActions.map(a => `• ${a}`),
+                          ``,
+                          `---`,
+                          `Prepared by VIGYL.ai`
+                        ].join("\n");
+                        navigator.clipboard.writeText(text);
+                        toast({ title: "Intelligence copied to clipboard!", description: "Ready to share with prospect." });
+                      }}
+                      className="inline-flex items-center gap-1 rounded-md bg-primary px-2.5 py-1.5 text-[10px] font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+                    >
+                      <Copy className="h-3 w-3" /> Copy All
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-primary/70 mb-3 italic">Share this with the prospect to demonstrate deep market knowledge</p>
+                  {prospect.clientIntelligence.industryOutlook && (
+                    <div className="mb-3">
+                      <p className="text-[10px] font-semibold text-foreground uppercase tracking-wider mb-1">Industry Outlook</p>
+                      <p className="text-xs text-foreground leading-relaxed">{prospect.clientIntelligence.industryOutlook}</p>
+                    </div>
+                  )}
+                  {prospect.clientIntelligence.keyTrends?.length > 0 && (
+                    <div className="mb-3">
+                      <p className="text-[10px] font-semibold text-foreground uppercase tracking-wider mb-1">Key Trends</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {prospect.clientIntelligence.keyTrends.map((t: string, i: number) => (
+                          <span key={i} className="rounded-full bg-primary/10 border border-primary/20 px-2 py-0.5 text-[10px] text-foreground">{t}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {prospect.clientIntelligence.regulatoryWatch?.length > 0 && (
+                    <div className="mb-3">
+                      <p className="text-[10px] font-semibold text-foreground uppercase tracking-wider mb-1">Regulatory Watch</p>
+                      <div className="space-y-1">
+                        {prospect.clientIntelligence.regulatoryWatch.map((r: string, i: number) => (
+                          <div key={i} className="flex items-start gap-1.5">
+                            <AlertTriangle className="h-3 w-3 text-amber-500 mt-0.5 shrink-0" />
+                            <p className="text-[11px] text-foreground">{r}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {prospect.clientIntelligence.aiTransformationMap && (
+                    <div className="mb-3">
+                      <p className="text-[10px] font-semibold text-foreground uppercase tracking-wider mb-1">AI Transformation</p>
+                      <p className="text-xs text-foreground leading-relaxed">{prospect.clientIntelligence.aiTransformationMap}</p>
+                    </div>
+                  )}
+                  {prospect.clientIntelligence.recommendedActions?.length > 0 && (
+                    <div>
+                      <p className="text-[10px] font-semibold text-foreground uppercase tracking-wider mb-1">Recommended Actions</p>
+                      <div className="space-y-1">
+                        {prospect.clientIntelligence.recommendedActions.map((a: string, i: number) => (
+                          <div key={i} className="flex items-start gap-1.5">
+                            <ChevronRight className="h-3 w-3 text-primary mt-0.5 shrink-0" />
+                            <p className="text-[11px] text-foreground">{a}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ── Outreach Playbook ── */}
+              {prospect.outreachPlaybook && (
+                <div className="rounded-xl border border-border bg-card p-5">
+                  <SectionHeader icon={<PenTool className="h-4 w-4 text-primary" />} title="Outreach Playbook" />
+                  {prospect.outreachPlaybook.primaryAngle && (
+                    <div className="rounded-lg bg-gradient-to-r from-primary/10 to-violet-500/10 border border-primary/20 p-3 mb-3">
+                      <p className="text-[9px] text-primary font-semibold uppercase tracking-wider mb-1">Lead With</p>
+                      <p className="text-sm font-medium text-foreground">{prospect.outreachPlaybook.primaryAngle}</p>
+                    </div>
+                  )}
+                  {prospect.outreachPlaybook.talkingPoints?.length > 0 && (
+                    <div className="mb-3">
+                      <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Talking Points</p>
+                      <div className="space-y-1">
+                        {prospect.outreachPlaybook.talkingPoints.map((tp: string, i: number) => (
+                          <div key={i} className="flex items-start gap-1.5">
+                            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary/10 text-[8px] font-bold text-primary shrink-0 mt-0.5">{i + 1}</span>
+                            <p className="text-[11px] text-foreground">{tp}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {prospect.outreachPlaybook.objections?.length > 0 && (
+                    <div className="mb-3">
+                      <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Objection Handling</p>
+                      <div className="space-y-2">
+                        {prospect.outreachPlaybook.objections.map((obj: any, i: number) => (
+                          <div key={i} className="rounded-lg bg-secondary/30 border border-border p-2.5">
+                            <p className="text-[10px] text-rose-600 dark:text-rose-400 font-medium">"{obj.objection}"</p>
+                            <p className="text-[10px] text-emerald-600 dark:text-emerald-400 mt-1">→ {obj.rebuttal}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {prospect.outreachPlaybook.idealTiming && (
+                    <div className="flex items-start gap-1.5">
+                      <Clock className="h-3 w-3 text-amber-500 mt-0.5 shrink-0" />
+                      <p className="text-[10px] text-muted-foreground"><span className="font-semibold text-foreground">Timing:</span> {prospect.outreachPlaybook.idealTiming}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* ── Market Signals for this Industry ── */}
               {(relatedSignals.length > 0 || industrySignals.length > 0) && (
                 <div className="rounded-xl border border-border bg-card p-5">
@@ -571,11 +833,33 @@ ${impactData ? `Industry AI Automation: ${impactData.automationRate}%, Opportuni
               {prospect.competitors && prospect.competitors.length > 0 && (
                 <div id="competitors" className="rounded-xl border border-border bg-card p-5">
                   <SectionHeader icon={<Swords className="h-4 w-4 text-primary" />} title="Competitive Landscape" badge={`${prospect.competitors.length}`} />
-                  <div className="space-y-2">
-                    {prospect.competitors.map((c, i) => (
+                  <div className="space-y-3">
+                    {prospect.competitors.map((c: any, i: number) => (
                       <div key={i} className="rounded-lg border border-border p-3">
-                        <p className="text-xs font-semibold text-foreground">{c.name}</p>
-                        <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">{c.description}</p>
+                        <p className="text-xs font-semibold text-foreground mb-1">{c.name}</p>
+                        <p className="text-[11px] text-muted-foreground leading-relaxed mb-2">{c.description}</p>
+                        {(c.strength || c.weakness || c.userAdvantage) && (
+                          <div className="grid grid-cols-3 gap-2">
+                            {c.strength && (
+                              <div className="rounded bg-rose-50 dark:bg-rose-900/20 p-2">
+                                <p className="text-[8px] font-semibold text-rose-600 dark:text-rose-400 uppercase">Their Strength</p>
+                                <p className="text-[10px] text-rose-700 dark:text-rose-300 mt-0.5">{c.strength}</p>
+                              </div>
+                            )}
+                            {c.weakness && (
+                              <div className="rounded bg-amber-50 dark:bg-amber-900/20 p-2">
+                                <p className="text-[8px] font-semibold text-amber-600 dark:text-amber-400 uppercase">Their Weakness</p>
+                                <p className="text-[10px] text-amber-700 dark:text-amber-300 mt-0.5">{c.weakness}</p>
+                              </div>
+                            )}
+                            {c.userAdvantage && (
+                              <div className="rounded bg-emerald-50 dark:bg-emerald-900/20 p-2">
+                                <p className="text-[8px] font-semibold text-emerald-600 dark:text-emerald-400 uppercase">Your Edge</p>
+                                <p className="text-[10px] text-emerald-700 dark:text-emerald-300 mt-0.5">{c.userAdvantage}</p>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>

@@ -7,7 +7,7 @@ import {
   X, Copy, Check, Download, Share2, Printer, Building2,
   TrendingUp, TrendingDown, Minus, Brain, Bot, Handshake,
   User, Radio, Target, Lightbulb, Shield, Zap, BarChart3,
-  Clock, AlertTriangle, Sparkles, Star
+  Clock, AlertTriangle, Sparkles, Star, ChevronRight
 } from "lucide-react";
 import {
   Prospect, Industry, Signal, AIImpactAnalysis,
@@ -56,38 +56,73 @@ export default function ClientReport({ prospect, industry, signals, aiImpact, us
       `📊 VIGYL Intelligence Report — ${prospect.companyName}`,
       `Generated ${today}`,
       ``,
+      `── EXECUTIVE SUMMARY ──`,
+      prospect.companyOverview || `${prospect.companyName} is a ${prospect.annualRevenue} company in ${industry?.name || "their industry"}.`,
+      prospect.marketPosition ? `Market Position: ${prospect.marketPosition}` : "",
+      prospect.competitiveAdvantage ? `Competitive Edge: ${prospect.competitiveAdvantage}` : "",
+      ``,
       `── COMPANY OVERVIEW ──`,
       `Company: ${prospect.companyName}`,
       `Industry: ${industry?.name || "N/A"}`,
       `Location: ${prospect.location.city}, ${prospect.location.state}`,
       `Revenue: ${prospect.annualRevenue}`,
       `Employees: ${prospect.employeeCount.toLocaleString()}`,
-      `Market Position: ${getPressureLabel(prospect.pressureResponse)}`,
-      `VIGYL Score: ${prospect.vigylScore}/100`,
+      `Market Position: ${prospect.marketPosition || getPressureLabel(prospect.pressureResponse)}`,
+      prospect.aiReadiness ? `AI Readiness Score: ${prospect.aiReadiness.score}/100` : "",
       ``,
       `── WHY NOW ──`,
       prospect.whyNow,
-      ``,
-      `── MARKET SIGNALS (${allRelevantSignals.length}) ──`,
-      ...allRelevantSignals.map(s => `[${s.sentiment?.toUpperCase()}] ${s.title} — Severity ${s.severity}/5\n  → ${s.salesImplication}`),
     ];
+
+    // Company-specific signals
+    if (prospect.companySignals && prospect.companySignals.length > 0) {
+      lines.push(``, `── COMPANY SIGNALS (${prospect.companySignals.length}) ──`);
+      prospect.companySignals.forEach((cs: any) => {
+        lines.push(`[${cs.type?.toUpperCase()}] ${cs.title} — ${cs.sentiment} (${cs.severity}/5)`);
+        lines.push(`  ${cs.summary}`);
+        if (cs.source) lines.push(`  Source: ${cs.source} (${cs.publishedDate})`);
+      });
+    }
+
+    // Market signals
+    if (allRelevantSignals.length > 0) {
+      lines.push(``, `── MARKET SIGNALS (${allRelevantSignals.length}) ──`);
+      allRelevantSignals.forEach(s => lines.push(`[${s.sentiment?.toUpperCase()}] ${s.title} — Severity ${s.severity}/5\n  → ${s.salesImplication}`));
+    }
 
     if (industry) {
       lines.push(``, `── INDUSTRY HEALTH ──`);
       lines.push(`${industry.name}: Health Score ${industry.healthScore}/100 (${industry.trendDirection})`);
-      lines.push(`Positive Signals: ${positiveSignals.length} | Negative: ${negativeSignals.length}`);
     }
 
+    // AI Impact
     if (aiImpact) {
       lines.push(``, `── AI IMPACT ANALYSIS ──`);
       lines.push(`Automation Rate: ${aiImpact.automationRate}%`);
-      lines.push(`AI-Led Functions: ${aiImpact.aiLedFunctions.length}`);
-      lines.push(`Collaborative Functions: ${aiImpact.collaborativeFunctions.length}`);
-      lines.push(`Human-Led Functions: ${aiImpact.humanLedFunctions.length}`);
-      lines.push(`Displacement Risk: ${aiImpact.jobDisplacementIndex}/100`);
-      lines.push(`Collaborative Opportunity: ${aiImpact.collaborativeOpportunityIndex}/100`);
+      lines.push(`AI-Led Functions: ${aiImpact.aiLedFunctions.length} | Collaborative: ${aiImpact.collaborativeFunctions.length} | Human-Led: ${aiImpact.humanLedFunctions.length}`);
     }
 
+    // AI Readiness
+    if (prospect.aiReadiness) {
+      lines.push(``, `── AI READINESS PROFILE ──`);
+      lines.push(`Score: ${prospect.aiReadiness.score}/100`);
+      if (prospect.aiReadiness.currentAiUsage?.length) lines.push(`Current AI Usage: ${prospect.aiReadiness.currentAiUsage.join(", ")}`);
+      if (prospect.aiReadiness.aiOpportunities?.length) lines.push(`AI Opportunities: ${prospect.aiReadiness.aiOpportunities.join(", ")}`);
+      if (prospect.aiReadiness.humanEdge?.length) lines.push(`Human Edge: ${prospect.aiReadiness.humanEdge.join(", ")}`);
+    }
+
+    // Client Intelligence
+    if (prospect.clientIntelligence) {
+      const ci = prospect.clientIntelligence;
+      lines.push(``, `── MARKET INTELLIGENCE ──`);
+      if (ci.industryOutlook) lines.push(`Industry Outlook: ${ci.industryOutlook}`);
+      if (ci.keyTrends?.length) { lines.push(`Key Trends:`); ci.keyTrends.forEach(t => lines.push(`  • ${t}`)); }
+      if (ci.regulatoryWatch?.length) { lines.push(`Regulatory Watch:`); ci.regulatoryWatch.forEach(r => lines.push(`  ⚠ ${r}`)); }
+      if (ci.aiTransformationMap) lines.push(`AI Transformation: ${ci.aiTransformationMap}`);
+      if (ci.recommendedActions?.length) { lines.push(`Recommended Actions:`); ci.recommendedActions.forEach(a => lines.push(`  → ${a}`)); }
+    }
+
+    // How we can help
     if (userProfile?.company_name) {
       lines.push(``, `── HOW ${userProfile.company_name.toUpperCase()} CAN HELP ──`);
       if (userProfile.business_summary) lines.push(userProfile.business_summary);
@@ -101,15 +136,19 @@ export default function ClientReport({ prospect, industry, signals, aiImpact, us
 
     if (prospect.competitors?.length) {
       lines.push(``, `── COMPETITIVE LANDSCAPE ──`);
-      prospect.competitors.forEach(c => lines.push(`• ${c.name}: ${c.description}`));
+      prospect.competitors.forEach((c: any) => {
+        lines.push(`• ${c.name}: ${c.description}`);
+        if (c.strength) lines.push(`  Strength: ${c.strength}`);
+        if (c.weakness) lines.push(`  Weakness: ${c.weakness}`);
+      });
     }
 
     lines.push(``, `── KEY CONTACTS ──`);
-    prospect.decisionMakers.forEach(d => lines.push(`• ${d.name} — ${d.title}`));
+    prospect.decisionMakers.filter(d => d.verified !== false).forEach(d => lines.push(`• ${d.name} — ${d.title}${d.verified ? " ✓" : ""}`));
 
     lines.push(``, `---`, `Powered by VIGYL.ai — AI-Powered Market Intelligence`);
 
-    navigator.clipboard.writeText(lines.join("\n"));
+    navigator.clipboard.writeText(lines.filter(l => l !== undefined).join("\n"));
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -150,6 +189,18 @@ export default function ClientReport({ prospect, industry, signals, aiImpact, us
                 <p className="text-[10px] uppercase tracking-widest text-primary font-semibold">VIGYL Intelligence Report</p>
                 <h1 className="text-xl font-bold text-foreground mt-1">{prospect.companyName}</h1>
                 <p className="text-xs text-muted-foreground mt-1">{industry?.name} · {prospect.location.city}, {prospect.location.state}</p>
+                <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                  {prospect.marketPosition && (
+                    <span className="inline-flex rounded-full bg-violet-100 dark:bg-violet-900/30 px-2 py-0.5 text-[9px] font-semibold text-violet-700 dark:text-violet-300">{prospect.marketPosition}</span>
+                  )}
+                  {prospect.aiReadiness && (
+                    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-semibold ${
+                      prospect.aiReadiness.score >= 70 ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300" :
+                      prospect.aiReadiness.score >= 40 ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300" :
+                      "bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300"
+                    }`}>AI Ready: {prospect.aiReadiness.score}</span>
+                  )}
+                </div>
                 <p className="text-[10px] text-muted-foreground mt-1">{today}</p>
               </div>
               <div className="text-right shrink-0">
@@ -166,14 +217,44 @@ export default function ClientReport({ prospect, industry, signals, aiImpact, us
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <MetricBox label="Revenue" value={prospect.annualRevenue} />
               <MetricBox label="Employees" value={prospect.employeeCount.toLocaleString()} />
-              <MetricBox label="Market Position" value={getPressureLabel(prospect.pressureResponse)} />
-              <MetricBox label="Pipeline Stage" value={pipelineStageLabels[prospect.pipelineStage]} />
+              <MetricBox label="Market Position" value={prospect.marketPosition || getPressureLabel(prospect.pressureResponse)} />
+              <MetricBox label={prospect.aiReadiness ? "AI Readiness" : "Pipeline"} value={prospect.aiReadiness ? `${prospect.aiReadiness.score}/100` : pipelineStageLabels[prospect.pipelineStage]} />
             </div>
+
+            {/* Executive Summary */}
+            {(prospect.companyOverview || prospect.competitiveAdvantage) && (
+              <Section title="Executive Summary" icon={<Building2 className="h-4 w-4 text-primary" />}>
+                {prospect.companyOverview && <p className="text-sm text-foreground leading-relaxed mb-1">{prospect.companyOverview}</p>}
+                {prospect.competitiveAdvantage && <p className="text-xs text-primary/80 italic">{prospect.competitiveAdvantage}</p>}
+              </Section>
+            )}
 
             {/* Why Now */}
             <Section title="Why Now — Timing & Opportunity" icon={<Clock className="h-4 w-4 text-primary" />}>
               <p className="text-sm text-foreground leading-relaxed">{prospect.whyNow}</p>
             </Section>
+
+            {/* Company-Specific Signals */}
+            {prospect.companySignals && prospect.companySignals.length > 0 && (
+              <Section title={`${prospect.companyName} Signals (${prospect.companySignals.length})`} icon={<Zap className="h-4 w-4 text-amber-500" />}>
+                <div className="space-y-2">
+                  {prospect.companySignals.map((cs: any) => (
+                    <div key={cs.id} className="flex items-start gap-2.5 rounded-lg border border-border p-3">
+                      <div className={`mt-1 h-2 w-2 rounded-full shrink-0 ${cs.sentiment === "positive" ? "bg-emerald-500" : cs.sentiment === "negative" ? "bg-rose-500" : "bg-muted-foreground"}`} />
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs font-semibold text-foreground">{cs.title}</span>
+                          <span className="text-[8px] rounded-full bg-secondary px-1.5 py-0.5 text-muted-foreground uppercase">{cs.type}</span>
+                          <span className="text-[9px] text-muted-foreground">{cs.severity}/5</span>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">{cs.summary}</p>
+                        {cs.source && <p className="text-[9px] text-muted-foreground/70 mt-1">{cs.source} · {cs.publishedDate}</p>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Section>
+            )}
 
             {/* Industry Health */}
             {industry && (
@@ -245,6 +326,78 @@ export default function ClientReport({ prospect, industry, signals, aiImpact, us
               </Section>
             )}
 
+            {/* AI Readiness Profile */}
+            {prospect.aiReadiness && (
+              <Section title="AI Readiness Profile" icon={<Sparkles className="h-4 w-4 text-violet-500" />}>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="flex-1 h-2.5 rounded-full bg-secondary overflow-hidden">
+                    <div className={`h-full rounded-full ${prospect.aiReadiness.score >= 70 ? "bg-emerald-500" : prospect.aiReadiness.score >= 40 ? "bg-amber-500" : "bg-rose-500"}`}
+                      style={{ width: `${prospect.aiReadiness.score}%` }} />
+                  </div>
+                  <span className="text-sm font-mono font-bold text-foreground">{prospect.aiReadiness.score}/100</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {prospect.aiReadiness.aiOpportunities?.length > 0 && (
+                    <div className="rounded-lg bg-emerald-50 dark:bg-emerald-900/20 p-2">
+                      <p className="text-[8px] font-bold text-emerald-600 dark:text-emerald-400 uppercase mb-1">AI Opportunities</p>
+                      {prospect.aiReadiness.aiOpportunities.map((item: string, i: number) => (
+                        <p key={i} className="text-[10px] text-emerald-700 dark:text-emerald-300">• {item}</p>
+                      ))}
+                    </div>
+                  )}
+                  {prospect.aiReadiness.humanEdge?.length > 0 && (
+                    <div className="rounded-lg bg-sky-50 dark:bg-sky-900/20 p-2">
+                      <p className="text-[8px] font-bold text-sky-600 dark:text-sky-400 uppercase mb-1">Human Edge</p>
+                      {prospect.aiReadiness.humanEdge.map((item: string, i: number) => (
+                        <p key={i} className="text-[10px] text-sky-700 dark:text-sky-300">• {item}</p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </Section>
+            )}
+
+            {/* Client Intelligence */}
+            {prospect.clientIntelligence && (
+              <Section title="Market Intelligence" icon={<Target className="h-4 w-4 text-primary" />}>
+                {prospect.clientIntelligence.industryOutlook && (
+                  <div className="mb-3">
+                    <p className="text-[9px] font-bold text-muted-foreground uppercase mb-1">Industry Outlook</p>
+                    <p className="text-xs text-foreground leading-relaxed">{prospect.clientIntelligence.industryOutlook}</p>
+                  </div>
+                )}
+                {prospect.clientIntelligence.keyTrends?.length > 0 && (
+                  <div className="mb-3">
+                    <p className="text-[9px] font-bold text-muted-foreground uppercase mb-1">Key Trends</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {prospect.clientIntelligence.keyTrends.map((t: string, i: number) => (
+                        <span key={i} className="rounded-full bg-primary/10 border border-primary/20 px-2 py-0.5 text-[10px] text-foreground">{t}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {prospect.clientIntelligence.aiTransformationMap && (
+                  <div className="mb-3">
+                    <p className="text-[9px] font-bold text-muted-foreground uppercase mb-1">AI Transformation</p>
+                    <p className="text-xs text-foreground leading-relaxed">{prospect.clientIntelligence.aiTransformationMap}</p>
+                  </div>
+                )}
+                {prospect.clientIntelligence.recommendedActions?.length > 0 && (
+                  <div>
+                    <p className="text-[9px] font-bold text-muted-foreground uppercase mb-1">Recommended Actions</p>
+                    <div className="space-y-1">
+                      {prospect.clientIntelligence.recommendedActions.map((a: string, i: number) => (
+                        <div key={i} className="flex items-start gap-1.5">
+                          <ChevronRight className="h-3 w-3 text-primary mt-0.5 shrink-0" />
+                          <p className="text-[11px] text-foreground">{a}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </Section>
+            )}
+
             {/* Our Value Proposition */}
             {userProfile?.company_name && (
               <Section title={`How ${userProfile.company_name} Can Help`} icon={<Sparkles className="h-4 w-4 text-primary" />}>
@@ -275,12 +428,18 @@ export default function ClientReport({ prospect, industry, signals, aiImpact, us
             {prospect.competitors && prospect.competitors.length > 0 && (
               <Section title="Competitive Landscape" icon={<Shield className="h-4 w-4 text-primary" />}>
                 <div className="space-y-2">
-                  {prospect.competitors.map((c, i) => (
+                  {prospect.competitors.map((c: any, i: number) => (
                     <div key={i} className="flex items-start gap-2 rounded-lg border border-border p-3">
                       <span className="flex h-5 w-5 items-center justify-center rounded-full bg-secondary text-[9px] font-bold text-muted-foreground shrink-0">{i + 1}</span>
-                      <div>
+                      <div className="flex-1">
                         <p className="text-xs font-semibold text-foreground">{c.name}</p>
                         <p className="text-[11px] text-muted-foreground mt-0.5">{c.description}</p>
+                        {(c.strength || c.weakness) && (
+                          <div className="flex gap-3 mt-1.5">
+                            {c.strength && <p className="text-[9px] text-rose-600 dark:text-rose-400">Strength: {c.strength}</p>}
+                            {c.weakness && <p className="text-[9px] text-amber-600 dark:text-amber-400">Gap: {c.weakness}</p>}
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -294,8 +453,16 @@ export default function ClientReport({ prospect, industry, signals, aiImpact, us
                 {prospect.decisionMakers.map((dm, i) => (
                   <div key={i} className="flex items-center justify-between rounded-lg border border-border p-3">
                     <div>
-                      <p className="text-xs font-semibold text-foreground">{dm.name}</p>
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-xs font-semibold text-foreground">{dm.name}</p>
+                        {dm.verified ? (
+                          <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 px-1.5 py-0.5 text-[8px] font-semibold text-emerald-700 dark:text-emerald-300">✓ Verified</span>
+                        ) : (
+                          <span className="inline-flex items-center gap-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 px-1.5 py-0.5 text-[8px] font-semibold text-amber-700 dark:text-amber-300">Suggested Role</span>
+                        )}
+                      </div>
                       <p className="text-[10px] text-muted-foreground">{dm.title}</p>
+                      {dm.relevance && <p className="text-[9px] text-muted-foreground/70 mt-0.5 italic">{dm.relevance}</p>}
                     </div>
                   </div>
                 ))}
