@@ -85,78 +85,114 @@ export type Database = {
           ai_maturity_self: string | null
           ai_summary: string | null
           business_summary: string | null
+          case_study_industries: string[] | null
+          company_descriptors: string[] | null
           company_name: string | null
           company_size: string | null
           created_at: string
           customer_industries: string[] | null
+          differentiators: string | null
           entity_type: string | null
+          geographic_focus: string[] | null
           id: string
+          ideal_client_employee_max: number | null
+          ideal_client_employee_min: number | null
+          ideal_client_revenue_max: string | null
+          ideal_client_revenue_min: string | null
+          known_competitors: string[] | null
           location_city: string | null
           location_country: string | null
           location_state: string | null
           onboarding_completed: boolean
           role_title: string | null
+          services: string[] | null
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
           subscription_end: string | null
           subscription_status: string | null
           subscription_tier: string | null
+          tags: string[] | null
           target_industries: string[] | null
           updated_at: string
           user_id: string
           user_persona: string | null
+          value_propositions: string[] | null
           website_url: string | null
         }
         Insert: {
           ai_maturity_self?: string | null
           ai_summary?: string | null
           business_summary?: string | null
+          case_study_industries?: string[] | null
+          company_descriptors?: string[] | null
           company_name?: string | null
           company_size?: string | null
           created_at?: string
           customer_industries?: string[] | null
+          differentiators?: string | null
           entity_type?: string | null
+          geographic_focus?: string[] | null
           id?: string
+          ideal_client_employee_max?: number | null
+          ideal_client_employee_min?: number | null
+          ideal_client_revenue_max?: string | null
+          ideal_client_revenue_min?: string | null
+          known_competitors?: string[] | null
           location_city?: string | null
           location_country?: string | null
           location_state?: string | null
           onboarding_completed?: boolean
           role_title?: string | null
+          services?: string[] | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           subscription_end?: string | null
           subscription_status?: string | null
           subscription_tier?: string | null
+          tags?: string[] | null
           target_industries?: string[] | null
           updated_at?: string
           user_id: string
           user_persona?: string | null
+          value_propositions?: string[] | null
           website_url?: string | null
         }
         Update: {
           ai_maturity_self?: string | null
           ai_summary?: string | null
           business_summary?: string | null
+          case_study_industries?: string[] | null
+          company_descriptors?: string[] | null
           company_name?: string | null
           company_size?: string | null
           created_at?: string
           customer_industries?: string[] | null
+          differentiators?: string | null
           entity_type?: string | null
+          geographic_focus?: string[] | null
           id?: string
+          ideal_client_employee_max?: number | null
+          ideal_client_employee_min?: number | null
+          ideal_client_revenue_max?: string | null
+          ideal_client_revenue_min?: string | null
+          known_competitors?: string[] | null
           location_city?: string | null
           location_country?: string | null
           location_state?: string | null
           onboarding_completed?: boolean
           role_title?: string | null
+          services?: string[] | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           subscription_end?: string | null
           subscription_status?: string | null
           subscription_tier?: string | null
+          tags?: string[] | null
           target_industries?: string[] | null
           updated_at?: string
           user_id?: string
           user_persona?: string | null
+          value_propositions?: string[] | null
           website_url?: string | null
         }
         Relationships: []
