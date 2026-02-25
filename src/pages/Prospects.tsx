@@ -281,7 +281,7 @@ function VerticalButton({ v, sector, expanding, expandVertical, exploredVertical
 export default function Prospects() {
   const [searchParams] = useSearchParams();
   const industryParam = searchParams.get("industry") || "all";
-  const { data, refresh } = useIntelligence();
+  const { data, refresh, isBackgroundRefreshing, lastGeneratedAt } = useIntelligence();
   const { prospects, industries } = data;
   const { profile, persona } = useAuth();
   const { toast } = useToast();
@@ -588,24 +588,39 @@ export default function Prospects() {
                 ? <><span className="font-medium text-foreground">{filtered.length}</span> in {activeIndustry.name}</>
                 : <><span className="font-medium text-foreground">{filtered.length}</span> across all industries</>
               }
+              {lastGeneratedAt && (
+                <span className="text-muted-foreground/50 ml-2">
+                  · Updated {new Date(lastGeneratedAt).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                </span>
+              )}
             </p>
           </div>
-          {filtered.length > 0 && (
-            <div className="flex items-center gap-2 shrink-0">
-              <button onClick={selectAll} className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors" title={selectedIds.size === filtered.length ? "Deselect all" : "Select all"}>
-                {selectedIds.size === filtered.length && filtered.length > 0 ? <CheckSquare className="h-3.5 w-3.5" /> : <Square className="h-3.5 w-3.5" />}
-                {selectedIds.size > 0 ? `${selectedIds.size} selected` : "Select"}
-              </button>
-              {selectedIds.size > 0 && (
-                <button onClick={exportSelected} className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:opacity-90 transition-opacity">
-                  <Download className="h-3.5 w-3.5" /> Export {selectedIds.size}
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={handleRefresh}
+              disabled={refreshing || isBackgroundRefreshing}
+              className="inline-flex items-center gap-1.5 rounded-md border border-primary/20 bg-primary/5 px-3 py-2 text-xs font-medium text-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
+            >
+              {refreshing || isBackgroundRefreshing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+              {refreshing ? "Generating..." : isBackgroundRefreshing ? "Refreshing..." : "Refresh"}
+            </button>
+            {filtered.length > 0 && (
+              <>
+                <button onClick={selectAll} className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors" title={selectedIds.size === filtered.length ? "Deselect all" : "Select all"}>
+                  {selectedIds.size === filtered.length && filtered.length > 0 ? <CheckSquare className="h-3.5 w-3.5" /> : <Square className="h-3.5 w-3.5" />}
+                  {selectedIds.size > 0 ? `${selectedIds.size} selected` : "Select"}
                 </button>
-              )}
-              <button onClick={exportCSV} className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
-                <Download className="h-3.5 w-3.5" /> Export All
-              </button>
-            </div>
-          )}
+                {selectedIds.size > 0 && (
+                  <button onClick={exportSelected} className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:opacity-90 transition-opacity">
+                    <Download className="h-3.5 w-3.5" /> Export {selectedIds.size}
+                  </button>
+                )}
+                <button onClick={exportCSV} className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+                  <Download className="h-3.5 w-3.5" /> Export All
+                </button>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Local context banner with radius slider */}

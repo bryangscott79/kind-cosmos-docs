@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { Save, Building2, Globe, Loader2, Sparkles, MapPin, Users, Briefcase, Target, Check, X, ArrowRight, Search, Plus } from "lucide-react";
+import { Save, Building2, Globe, Loader2, Sparkles, MapPin, Users, Briefcase, Target, Check, X, ArrowRight, Search, Plus, RefreshCw } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useIntelligence } from "@/contexts/IntelligenceContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -128,10 +129,13 @@ function IndustryPicker({ selected, onAdd, onRemove }: { selected: string[]; onA
 
 export default function BusinessProfileSection() {
   const { profile, user, refreshProfile } = useAuth();
+  const { refresh: refreshIntelligence, isBackgroundRefreshing, lastGeneratedAt } = useIntelligence();
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
   const [scraping, setScraping] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
+  const [showRegenPrompt, setShowRegenPrompt] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
 
   const [companyName, setCompanyName] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
@@ -303,7 +307,8 @@ export default function BusinessProfileSection() {
       if (error) throw error;
       setTargetIndustries(updatedIndustries);
       await refreshProfile();
-      toast({ title: "Settings saved", description: "Your profile has been updated." });
+      setShowRegenPrompt(true);
+      toast({ title: "Settings saved", description: "Profile updated. Regenerate your opportunities to apply changes." });
     } catch (err: any) {
       toast({ title: "Save failed", description: err.message, variant: "destructive" });
     } finally {
@@ -739,11 +744,58 @@ export default function BusinessProfileSection() {
         </div>
       </div>
 
-      <button onClick={handleSave} disabled={saving}
-        className="inline-flex items-center gap-2 rounded-md bg-gradient-to-r from-brand-blue to-brand-purple px-5 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50">
-        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-        {saving ? "Saving…" : "Save Changes"}
-      </button>
+      <div className="flex items-center gap-3 flex-wrap">
+        <button onClick={handleSave} disabled={saving || regenerating}
+          className="inline-flex items-center gap-2 rounded-md bg-gradient-to-r from-brand-blue to-brand-purple px-5 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50">
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          {saving ? "Saving…" : "Save Changes"}
+        </button>
+
+        <button
+          onClick={async () => {
+            setRegenerating(true);
+            setShowRegenPrompt(false);
+            toast({ title: "Regenerating intelligence...", description: "This takes 30-60 seconds. Your opportunities will refresh with your updated profile." });
+            try {
+              await refreshIntelligence();
+              toast({ title: "Intelligence regenerated!", description: "Your opportunities now reflect your updated profile." });
+            } catch {
+              toast({ title: "Generation failed", description: "Try again from the Opportunities page.", variant: "destructive" });
+            } finally {
+              setRegenerating(false);
+            }
+          }}
+          disabled={regenerating || saving}
+          className={`inline-flex items-center gap-2 rounded-md border px-5 py-2.5 text-sm font-medium transition-all disabled:opacity-50 ${
+            showRegenPrompt
+              ? "border-primary bg-primary/10 text-primary animate-pulse"
+              : "border-border text-muted-foreground hover:text-foreground hover:bg-accent"
+          }`}
+        >
+          {regenerating || isBackgroundRefreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+          {regenerating || isBackgroundRefreshing ? "Regenerating…" : "Regenerate Opportunities"}
+        </button>
+      </div>
+
+      {showRegenPrompt && (
+        <div className="rounded-lg border-2 border-primary/30 bg-primary/5 p-4 flex items-start gap-3">
+          <Sparkles className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-semibold text-foreground">Profile updated — regenerate your opportunities?</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Your saved changes won't affect existing opportunities until you regenerate. Click "Regenerate Opportunities" above to get fresh prospects matched to your updated services, ideal client profile, and value propositions.
+            </p>
+            {lastGeneratedAt && (
+              <p className="text-[10px] text-muted-foreground/70 mt-1.5">
+                Last generated: {new Date(lastGeneratedAt).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+              </p>
+            )}
+          </div>
+          <button onClick={() => setShowRegenPrompt(false)} className="text-muted-foreground hover:text-foreground shrink-0">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

@@ -89,6 +89,7 @@ interface IntelligenceContextType {
   isUsingSeedData: boolean;
   effectiveUserId: string | null;
   isTeamMember: boolean;
+  lastGeneratedAt: string | null;
   // AI Impact generation (lives in context so it survives navigation)
   aiImpactGen: AiImpactGenState;
   generateAiImpact: (industriesToProcess?: { id: string; name: string }[]) => void;
@@ -112,6 +113,7 @@ const IntelligenceContext = createContext<IntelligenceContextType>({
   isUsingSeedData: false,
   effectiveUserId: null,
   isTeamMember: false,
+  lastGeneratedAt: null,
   aiImpactGen: { generating: false, progress: { current: 0, total: 0, industryName: "" }, error: null },
   generateAiImpact: () => {},
 });
@@ -124,6 +126,7 @@ export function IntelligenceProvider({ children }: { children: ReactNode }) {
   const [initialized, setInitialized] = useState(false);
   const [isBackgroundRefreshing, setIsBackgroundRefreshing] = useState(false);
   const [isUsingSeedData, setIsUsingSeedData] = useState(false);
+  const [lastGeneratedAt, setLastGeneratedAt] = useState<string | null>(null);
 
   // Team owner resolution: if user is a team member, use the owner's data
   const [effectiveUserId, setEffectiveUserId] = useState<string | null>(null);
@@ -199,6 +202,7 @@ export function IntelligenceProvider({ children }: { children: ReactNode }) {
             aiImpact: mergeAiImpactWithSeed(intelligenceData.aiImpact || []),
           });
           console.log("Loaded cached intelligence from", cached.updated_at);
+          setLastGeneratedAt(cached.updated_at);
           return true;
         }
       }
@@ -236,6 +240,7 @@ export function IntelligenceProvider({ children }: { children: ReactNode }) {
         aiImpact: mergeAiImpactWithSeed(result.data.aiImpact || []),
       });
       setIsUsingSeedData(false);
+      setLastGeneratedAt(new Date().toISOString());
       track(isBackground ? EVENTS.INTELLIGENCE_REFRESHED : EVENTS.INTELLIGENCE_GENERATED, {
         industries: result.data.industries?.length,
         prospects: result.data.prospects?.length,
@@ -358,6 +363,7 @@ export function IntelligenceProvider({ children }: { children: ReactNode }) {
         isUsingSeedData,
         effectiveUserId,
         isTeamMember,
+        lastGeneratedAt,
         aiImpactGen,
         generateAiImpact,
       }}

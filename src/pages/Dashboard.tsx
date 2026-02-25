@@ -39,7 +39,7 @@ export default function Dashboard() {
   const { toast } = useToast();
   const [welcomeDismissed, setWelcomeDismissed] = useState(() => localStorage.getItem("vigyl_welcome_dismissed") === "true");
   const navigate = useNavigate();
-  const { data, loading, refresh } = useIntelligence();
+  const { data, loading, refresh, lastGeneratedAt, isBackgroundRefreshing } = useIntelligence();
   const { industries, signals, prospects } = data;
   const { persona, profile } = useAuth();
 
@@ -139,15 +139,22 @@ export default function Dashboard() {
         <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-            <p className="mt-0.5 text-sm text-muted-foreground">{today}</p>
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              {today}
+              {lastGeneratedAt && (
+                <span className="text-muted-foreground/50 ml-2">
+                  · Data from {new Date(lastGeneratedAt).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                </span>
+              )}
+            </p>
           </div>
           <button
             onClick={refresh}
-            disabled={loading}
+            disabled={loading || isBackgroundRefreshing}
             className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors disabled:opacity-50"
           >
-            {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
-            Refresh
+            {loading || isBackgroundRefreshing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+            {loading ? "Generating..." : isBackgroundRefreshing ? "Refreshing..." : "Refresh"}
           </button>
         </div>
 
