@@ -31,6 +31,8 @@ const DigestPreview = lazy(() => import("./pages/DigestPreview"));
 const Admin = lazy(() => import("./pages/Admin"));
 const AcceptInvite = lazy(() => import("./pages/AcceptInvite"));
 const AIImpactDashboard = lazy(() => import("./pages/AIImpactDashboard"));
+const AIToolsCatalog = lazy(() => import("./pages/AIToolsCatalog"));
+const AIToolDetail = lazy(() => import("./pages/AIToolDetail"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -75,6 +77,8 @@ const App = () => (
               <Route path="/reports" element={<ProtectedRoute><TierGate requiredTier="starter" featureName="Reports"><Reports /></TierGate></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               <Route path="/digest-preview" element={<ProtectedRoute><DigestPreview /></ProtectedRoute>} />
+              <Route path="/ai-tools" element={<AIToolsCatalog />} />
+              <Route path="/ai-tools/:slug" element={<AIToolDetail />} />
               <Route path="/admin" element={<Admin />} />
               <Route path="/invite/:token" element={<AcceptInvite />} />
               <Route path="*" element={<NotFound />} />

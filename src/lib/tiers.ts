@@ -84,6 +84,8 @@ export const FEATURE_ACCESS: Record<string, TierKey> = {
   settings: "free",
   export: "pro",
   argus: "pro",
+  ai_tools: "free",
+  ai_tools_impact: "starter",
 };
 
 const tierOrder: TierKey[] = ["free", "starter", "pro", "enterprise"];

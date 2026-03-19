@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { BarChart3, Radio, Users, Kanban, PenTool, Settings, LogOut, CreditCard, Lock, Shield, Menu, X, FileText, Mail, LayoutDashboard } from "lucide-react";
+import { BarChart3, Radio, Users, Kanban, PenTool, Settings, LogOut, CreditCard, Lock, Shield, Menu, X, FileText, Mail, LayoutDashboard, Sparkles } from "lucide-react";
 import vigylLogo from "@/assets/vigyl-logo.png";
 import { useAuth } from "@/contexts/AuthContext";
 import { TIERS, hasAccess, FEATURE_ACCESS, TierKey } from "@/lib/tiers";
@@ -15,6 +15,7 @@ function useNavSections() {
         { label: "Dashboard", subtitle: "Overview & key metrics", path: "/dashboard", icon: LayoutDashboard, feature: "industries" },
         { label: "Industry Health", subtitle: "Health scores, AI impact & trends", path: "/industries", icon: BarChart3, feature: "industries" },
         { label: "Signals", subtitle: "What's happening now", path: "/signals", icon: Radio, feature: "signals" },
+        { label: "AI Tools", subtitle: "Releases & business impact", path: "/ai-tools", icon: Sparkles, feature: "ai_tools" },
       ],
     },
     {

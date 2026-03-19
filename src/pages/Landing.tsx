@@ -31,6 +31,9 @@ export default function Landing() {
             <img src={vigylLogo} alt="VIGYL" className="h-8" />
           </Link>
           <div className="flex items-center gap-4">
+            <Link to="/ai-tools" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              AI Tools
+            </Link>
             <a href="#pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               Pricing
             </a>
